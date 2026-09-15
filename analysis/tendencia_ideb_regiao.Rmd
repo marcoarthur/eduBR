@@ -1,0 +1,192 @@
+---
+title: "Tendência do IDEB por região do Brasil"
+subtitle: "Regressões lineares do IDEB médio sobre o ano da avaliação"
+author: "eduBR — curadoria (especialista em ML)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+    df_print: paged
+params:
+  service: edumaps
+  etapa: null
+  rede: null
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 11, fig.height = 7, dpi = 120
+)
+
+library(eduBR)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+library(tibble)
+```
+
+```{r conexao}
+con <- conecta(service = params$service)
+```
+
+## Objetivo
+
+Caracterizar a **tendência natural** do IDEB em cada macrorregião do Brasil,
+usando **apenas o histórico das avaliações** (o ano). Para cada combinação de
+região e etapa ajustamos uma regressão linear simples do IDEB médio sobre o
+ano:
+
+$$\text{IDEB}_{r,e,a} = \alpha_{r,e} + \beta_{r,e}\,\text{ano}_a + \varepsilon$$
+
+- $\beta_{r,e}$ é a inclinação: **pontos de IDEB ganhos por ano** na região
+  $r$ e etapa $e$;
+- o IDEB médio de cada região/ano/etapa é calculado **no banco** (agregação
+  lazy, antes de materializar);
+- modelos ajustados com `parsnip` (`linear_reg()` / motor `lm`).
+
+```{r tendencia}
+tend <- tendencia_regiao(con, etapa = params$etapa, rede = params$rede)
+tend
+```
+
+```{r cobertura}
+cobertura <- consulta(ideb_regiao(con, etapa = params$etapa, rede = params$rede)) |>
+  group_by(nome_regiao, etapa, ano) |>
+  summarise(escolas = n(), .groups = "drop") |>
+  collect()
+
+cobertura |>
+  group_by(nome_regiao, etapa) |>
+  summarise(
+    anos = n(),
+    escolas_medio = round(mean(escolas)),
+    escolas_min = min(escolas),
+    escolas_max = max(escolas),
+    .groups = "drop"
+  ) |>
+  arrange(etapa, nome_regiao) |>
+  kable(
+    caption = "Cobertura: escolas avaliadas por região e etapa"
+  )
+```
+
+```{r comparacao-temporal, fig.height = 9}
+pred <- unnest(tend, predicoes)
+
+ggplot(pred, aes(x = ano, y = ideb_medio, color = nome_regiao)) +
+  geom_point(size = 1.9, alpha = 0.85) +
+  geom_line(aes(y = .pred), linewidth = 1) +
+  facet_wrap(~etapa, ncol = 1, scales = "free_y") +
+  scale_x_continuous(breaks = seq(2005, 2023, by = 2)) +
+  labs(
+    title = "IDEB médio observado e tendência ajustada por região",
+    subtitle = "Pontos: IDEB médio observado; linhas: reta ajustada (ideb_medio ~ ano)",
+    x = "Ano da avaliação",
+    y = "IDEB médio",
+    color = "Região"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Tendência (inclinação) por região
+
+```{r coeficientes}
+coef <- unnest(tend, coeficientes) |>
+  filter(term == "ano") |>
+  mutate(
+    ic_lo = estimate - 1.96 * std.error,
+    ic_hi = estimate + 1.96 * std.error
+  ) |>
+  arrange(desc(estimate))
+
+coef |>
+  transmute(
+    Região = nome_regiao,
+    Etapa = etapa,
+    `Inclinação (IDEB/ano)` = round(estimate, 4),
+    `Erro padrão` = round(std.error, 4),
+    `p-valor` = signif(p.value, 3)
+  ) |>
+  kable(caption = "Inclinação da reta do IDEB por região e etapa")
+```
+
+```{r forest, fig.height = 6}
+ggplot(coef, aes(x = estimate, y = nome_regiao, color = etapa)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey55") +
+  geom_pointrange(
+    aes(xmin = ic_lo, xmax = ic_hi),
+    position = position_dodge(width = 0.6), size = 0.5
+  ) +
+  labs(
+    title = "Velocidade de crescimento do IDEB por região e etapa",
+    subtitle = "Inclinação (IDEB/ano) com intervalo de 95%",
+    x = "Inclinação (pontos de IDEB por ano)",
+    y = NULL,
+    color = "Etapa"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Qualidade do ajuste
+
+```{r qualidade, fig.height = 5}
+metricas <- unnest(tend, metricas) |>
+  select(nome_regiao, etapa, r.squared, p.value, nobs)
+
+metricas |>
+  arrange(desc(r.squared)) |>
+  transmute(
+    Região = nome_regiao,
+    Etapa = etapa,
+    `R²` = round(r.squared, 3),
+    `p-valor` = signif(p.value, 3),
+    `nº de anos` = nobs
+  ) |>
+  kable(caption = "R² e significância dos modelos por região e etapa")
+```
+
+```{r r2, fig.height = 5}
+ggplot(metricas, aes(x = nome_regiao, y = r.squared, fill = etapa)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(
+    title = "R² da tendência por região e etapa",
+    x = NULL,
+    y = "R²",
+    fill = "Etapa"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Leitura dos resultados
+
+```{r sintese}
+resumo <- coef |>
+  group_by(etapa) |>
+  slice_max(estimate, n = 1) |>
+  ungroup() |>
+  transmute(texto = sprintf(
+    "- **%s**: maior inclinação em **%s** (%.3f IDEB/ano).",
+    etapa, nome_regiao, estimate
+  ))
+
+cat(resumo$texto, sep = "\n")
+```
+
+- O IDEB médio **cresce** em todas as regiões e etapas (inclinações positivas).
+- A etapa **ensino médio** cobre menos anos (a partir de 2017) e concentra os
+  menores R² — a tendência é menos estável.
+- **Fundamental I e II** têm R² alto (série mais longa e regular), sendo a
+  leitura de tendência mais confiável.
+- Estas são tendências **descritivas** e **bivariadas**: servem para conhecer
+  o movimento natural do indicador, não para atribuir causalidade.
+
+```{r encerrar, include=FALSE}
+DBI::dbDisconnect(con)
+```

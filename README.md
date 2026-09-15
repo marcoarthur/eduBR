@@ -56,8 +56,13 @@ censo_escolar(con, escola_id = "35012345")
 censo_docentes(con, escola_id = "35012345")
 censo_matriculas(con, escola_id = "35012345")
 ideb(con, escola_id = "35012345")
+ideb(con, uf = "SP", etapa = "fundamental_ii", ano = 2019)
 clusters(con)
 municipios_similares(con)
+
+# IDEB por macrorregiao e tendencia (regressao linear por regiao x etapa)
+ideb_regiao(con, regiao = "Sudeste", etapa = "fundamental_ii")
+tendencia_regiao(con)
 
 # materializar
 library(dplyr)
@@ -88,6 +93,17 @@ R/
   ideb.R        ideb()
   cluster.R     clusters()
   similaridade.R  municipios_similares()
+  ideb_regiao.R   ideb_regiao()
+  tendencia.R     tendencia_regiao()
+```
+
+## Relatório
+
+O relatório de tendência do IDEB por região (R Markdown → HTML) fica em
+`analysis/tendencia_ideb_regiao.Rmd` e pode ser renderizado com:
+
+```r
+rmarkdown::render("analysis/tendencia_ideb_regiao.Rmd")
 ```
 
 ## Testes

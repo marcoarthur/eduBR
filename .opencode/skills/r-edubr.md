@@ -20,6 +20,8 @@ R/
   ideb.R          ideb()
   cluster.R       clusters()
   similaridade.R  municipios_similares()
+  ideb_regiao.R   ideb_regiao()
+  tendencia.R     tendencia_regiao()
 ```
 
 Todo objeto é uma lista com `tbl` (consulta `dbplyr`), `con` (conexão) e
@@ -91,8 +93,22 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
 | `indicadores()` | `escola_id`, `indicador` | `id_escola`, `indicador_id` |
 | `scores()` | `escola_id` | `co_entidade` |
 | `censo_*()` | `escola_id` | `co_entidade` |
-| `ideb()` | `escola_id` | `id_escola` |
+| `ideb()` | `escola_id`,`uf`,`municipio`,`etapa`,`rede`,`ano` | `id_escola`,`sg_uf`,`no_municipio`,`etapa`,`rede`,`ano` |
+| `ideb_regiao()` | `regiao`,`uf`,`etapa`,`rede`,`ano` | deriva `nome_regiao`/`sigla_regiao` de `sg_uf` |
 | `clusters()` | `run_id` | `run_id` |
+
+## Modelagem (`tendencia_regiao`)
+
+- `ideb_regiao()` é o acesso canônico ao IDEB com macrorregião anexada
+  (mapa UF→região via `case_when`, sem join por município).
+- `tendencia_regiao(con, etapa, rede)` agrega no banco
+  (`mean(ideb_observado)` por região/ano/etapa), materializa (~150 linhas) e
+  ajusta `parsnip::linear_reg()` por região×etapa, devolvendo um
+  `eduBR_tendencia` (list-cols: `modelo`, `coeficientes`, `metricas`,
+  `predicoes`).
+- Report em `analysis/tendencia_ideb_regiao.Rmd` (fora do build;
+  `.Rbuildignore` tem `^analysis$`), renderizado com
+  `rmarkdown::render()`. Exige `parsnip`/`broom`/`tidyr`/`purrr` (Suggests).
 
 ## Conexão
 
@@ -127,6 +143,11 @@ EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
 ## Roadmap de melhorias (backlog das personas)
 
 Pendências abertas na curadoria (`docs/personas/` do repo leaflet):
+
+> Feito nesta rodada: agrupamento por **macrorregião**
+> (`ideb_regiao()`) e a primeira modelagem descritiva
+> (`tendencia_regiao()` + report). Isso **não** resolve o join
+> escola→município por código — a região é derivada da UF.
 
 - `[alta]` join escola→município **por código** (`co_municipio`), hoje só
   por nome — expor chave ou helper.
