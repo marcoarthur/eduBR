@@ -4,12 +4,32 @@
 \alias{ideb}
 \title{IDEB por escola}
 \usage{
-ideb(con, escola_id = NULL)
+ideb(
+  con,
+  escola_id = NULL,
+  uf = NULL,
+  municipio = NULL,
+  etapa = NULL,
+  rede = NULL,
+  ano = NULL
+)
 }
 \arguments{
 \item{con}{Conexão criada por \code{\link[=conecta]{conecta()}}.}
 
-\item{escola_id}{Filtro opcional pelo código INEP da escola.}
+\item{escola_id}{Filtro opcional pelo código INEP da escola (\code{id_escola}).}
+
+\item{uf}{Filtro opcional pela sigla da UF (ex.: \code{"SP"}).}
+
+\item{municipio}{Filtro opcional pelo nome do município.}
+
+\item{etapa}{Filtro opcional pela etapa
+(\code{"fundamental_i"}, \code{"fundamental_ii"} ou \code{"ensino_medio"}).}
+
+\item{rede}{Filtro opcional pela rede
+(\code{"Municipal"}, \code{"Estadual"}, \code{"Federal"} ou \code{"Privada"}).}
+
+\item{ano}{Filtro opcional pelo ano da avaliação (ex.: \code{2019}).}
 }
 \value{
 Objeto S3 de classe \code{eduBR_ideb}.
@@ -23,6 +43,7 @@ preguiçosa; materialize com \code{\link[tibble:as_tibble]{as_tibble()}}.
 \dontrun{
 con <- conecta()
 ideb(con, escola_id = "35012345")
+ideb(con, uf = "SP", etapa = "fundamental_ii", ano = 2019)
 }
 
 }
