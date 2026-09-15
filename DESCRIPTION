@@ -1,0 +1,26 @@
+Package: eduBR
+Title: Acesso de Alto Nível a Dados Educacionais Brasileiros
+Version: 0.0.0.9000
+Authors@R: 
+    person("Marco", "Silva", , "arthurpbs@gmail.com", role = c("aut", "cre"))
+Description: Biblioteca de alto nível para explorar a base pública do
+    EduMaps (Censo Escolar, IDEB, IBGE e OpenStreetMap) armazenada em
+    PostgreSQL. Define objetos S3 e funções de domínio (escola, município,
+    rede, indicador, censo, IDEB e cluster) que isolam o usuário dos nomes
+    físicos de schema e tabela, além de conecta() para abrir a conexão via
+    driver PostgreSQL.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 8.0.0
+Imports:
+    DBI,
+    RPostgres,
+    dplyr,
+    dbplyr,
+    tibble,
+    rlang
+Suggests:
+    testthat (>= 3.0.0),
+    withr
+Config/testthat/edition: 3
