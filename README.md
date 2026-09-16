@@ -78,6 +78,10 @@ res <- executar_regressao(con, espec)
 coeficientes(res)
 metricas(res)
 # ou a partir de um YAML: espec <- ler_espec("analysis/regressoes_censo.yaml")
+especs <- ler_especs("analysis/regressoes_multi.yaml")  # lista "analises:"
+
+# materializar (com limite, para exploracao)
+coletar(escolas(con, uf = "SP"), n = 100)
 
 # materializar
 library(dplyr)
@@ -114,9 +118,10 @@ R/
   ideb_inse.R     ideb_inse()
   regressao_inse.R  regressao_inse()
   regiao.R        helpers de macrorregiao (UF -> regiao)
-  espec.R         especificar_regressao(), ler_espec() (camada declarativa)
+  espec.R         especificar_regressao(), ler_espec(), ler_especs()
   regressao.R     executar_regressao() (motor por cortes)
   saida.R         coeficientes(), metricas()
+  coletar.R       coletar() (materializacao com limite)
 ```
 
 ## Relatórios

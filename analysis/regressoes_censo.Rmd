@@ -131,13 +131,26 @@ ggplot(co_reg, aes(x = estimate, y = sg_uf, color = etapa)) +
   theme_minimal(base_size = 12)
 ```
 
+## Utilitários: várias specs e coleta com limite
+
+```{r utils}
+# várias análises num só YAML -> lista nomeada de specs
+especs <- ler_especs("regressoes_multi.yaml")
+names(especs)
+
+# exploração: limite de linhas (evita materializar tudo)
+coletar(ideb(con, uf = "SP", ano = 2023L), n = 200)
+```
+
 ## Observações
 
 - Uma spec → **81 modelos** (27 UFs × 3 etapas) sem loop manual.
-- Resultado padronizado: `coeficientes()` e `metricas()` achatam as
-  list-columns.
+- Resultado padronizado: `coeficientes()` e `metricas()` retornam tabelas
+  limpas (só os cortes + coefs/métricas).
 - Qualquer domínio do [catalogo()] pode ser a fonte (`fonte =`), ou passe um
   objeto eduBR em `dados =` (ex.: `ideb_regiao()`, `ideb_inse()`).
+- Exploração: use `coletar(x, n = ...)`; sem `n`, avisa que está
+  materializando tudo.
 - No YAML, `y`/`n`/`yes`/`no` são lidos como lógicos — use aspas se forem
   nomes de coluna.
 

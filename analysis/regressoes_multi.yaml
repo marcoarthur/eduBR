@@ -1,0 +1,13 @@
+analises:
+  - id: ideb_nota_uf
+    fonte: ideb
+    outcome: ideb_observado
+    predictors: [nota_media]
+    cuts: [sg_uf]
+    filtro: {ano: 2023}
+  - id: ideb_notas_uf
+    fonte: ideb
+    outcome: ideb_observado
+    predictors: [nota_matematica, nota_portugues]
+    cuts: [sg_uf]
+    filtro: {ano: 2023}

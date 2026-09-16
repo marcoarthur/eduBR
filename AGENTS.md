@@ -38,9 +38,10 @@ R/
   ideb_inse.R     ideb_inse()
   regressao_inse.R  regressao_inse()
   regiao.R        helpers de macrorregião (UF -> região)
-  espec.R         especificar_regressao(), ler_espec() (camada declarativa)
+  espec.R         especificar_regressao(), ler_espec(), ler_especs() (camada declarativa)
   regressao.R     executar_regressao() (motor por cortes)
   saida.R         coeficientes(), metricas()
+  coletar.R       coletar() (materialização com limite)
 man/              Rd gerados por roxygen2 (não editar à mão)
 tests/testthat/   testes unitários + smoke opcional
 analysis/         reports R Markdown (fora do build; HTML gitignored)
@@ -131,6 +132,8 @@ No container, o pacote fica em `/home/rsuser/projetos/eduBR`; importe com
   lenta.
 - `coeficientes()`/`metricas()` achatam as list-cols. Exemplos em
   `analysis/regressoes_censo.yaml` + `regressoes_censo.Rmd`.
+- `ler_especs()` lê um YAML com lista `analises:`; `coletar(x, n=)` materializa
+  com limite e avisa quando não há `n` (evita o `collect` total implícito).
 - YAML: `y`/`n`/`yes`/`no` viram lógicos (use aspas se forem nome de coluna).
 
 ## Skills

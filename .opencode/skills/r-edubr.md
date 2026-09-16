@@ -26,9 +26,10 @@ R/
   ideb_inse.R     ideb_inse()
   regressao_inse.R  regressao_inse()
   regiao.R        eduBR_mutate_regiao(), eduBR_filtrar_regiao()
-  espec.R         especificar_regressao(), ler_espec()
+  espec.R         especificar_regressao(), ler_espec(), ler_especs()
   regressao.R     executar_regressao()
   saida.R         coeficientes(), metricas()
+  coletar.R       coletar() (materializacao com limite)
 ```
 
 Todo objeto é uma lista com `tbl` (consulta `dbplyr`), `con` (conexão) e
@@ -146,8 +147,16 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
   a base remota é lenta). Logístico converte o desfecho para fator.
   Devolve `eduBR_regressoes` (list-cols `modelo`/`coeficientes`/`metricas`/
   `predicoes` + `n`).
-- `coeficientes(x)` / `metricas(x)` achatam as list-cols.
-- Report/exemplo: `analysis/regressoes_censo.yaml` + `regressoes_censo.Rmd`.
+- `coeficientes(x)` / `metricas(x)` achatam as list-cols e devolvem **tabela
+  limpa** (só cortes + coefs/métricas).
+- `ler_especs(caminho)` lê um YAML com lista `analises:` → lista nomeada de
+  specs (`id` ou `analise_<i>`).
+- Modo logístico: o desfecho é coagido a fator; `metricas()` ganha `auc`
+  (método de postos, sem dependência) e `mcfadden` (pseudo-R²).
+- Exploração: `coletar(x, n = ...)` materializa com limite (`head`/`LIMIT`);
+  sem `n`, **avisa** que está coletando tudo (silencie com `avisar = FALSE`).
+- Report/exemplo: `analysis/regressoes_censo.yaml` + `regressoes_multi.yaml`
+  + `regressoes_censo.Rmd`.
 - **Pegadinha YAML**: `y`/`n`/`yes`/`no` viram lógicos — aspas se forem
   nome de coluna.
 
