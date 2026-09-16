@@ -38,6 +38,9 @@ R/
   ideb_inse.R     ideb_inse()
   regressao_inse.R  regressao_inse()
   regiao.R        helpers de macrorregião (UF -> região)
+  espec.R         especificar_regressao(), ler_espec() (camada declarativa)
+  regressao.R     executar_regressao() (motor por cortes)
+  saida.R         coeficientes(), metricas()
 man/              Rd gerados por roxygen2 (não editar à mão)
 tests/testthat/   testes unitários + smoke opcional
 analysis/         reports R Markdown (fora do build; HTML gitignored)
@@ -117,6 +120,18 @@ No container, o pacote fica em `/home/rsuser/projetos/eduBR`; importe com
 - Documentação roxygen2 (`markdown = TRUE`); `NAMESPACE`/`man/` só via
   `devtools::document()`.
 - Dependências declaradas em `DESCRIPTION` (`Imports` ordenado).
+
+## Camada declarativa de regressão
+
+- `especificar_regressao()`/`ler_espec()` criam um `eduBR_espec`;
+  `executar_regressao(con, espec, dados = NULL)` roda a mesma regressão para
+  cada combinação de `cuts`.
+- Fonte agnóstica: `fonte` (domínio do catálogo) ou `dados` (objeto eduBR).
+  **Projeta só as colunas necessárias antes do `collect`** — a base remota é
+  lenta.
+- `coeficientes()`/`metricas()` achatam as list-cols. Exemplos em
+  `analysis/regressoes_censo.yaml` + `regressoes_censo.Rmd`.
+- YAML: `y`/`n`/`yes`/`no` viram lógicos (use aspas se forem nome de coluna).
 
 ## Skills
 

@@ -26,6 +26,9 @@ R/
   ideb_inse.R     ideb_inse()
   regressao_inse.R  regressao_inse()
   regiao.R        eduBR_mutate_regiao(), eduBR_filtrar_regiao()
+  espec.R         especificar_regressao(), ler_espec()
+  regressao.R     executar_regressao()
+  saida.R         coeficientes(), metricas()
 ```
 
 Todo objeto é uma lista com `tbl` (consulta `dbplyr`), `con` (conexão) e
@@ -130,6 +133,23 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
 - Report em `analysis/regressao_inse_regiao.Rmd`.
 - Ambos os reports rodam com `rmarkdown::render()` (`.Rbuildignore` tem
   `^analysis$`) e exigem `parsnip`/`broom`/`tidyr`/`purrr` (Suggests).
+
+**Camada declarativa (`espec.R` + `regressao.R` + `saida.R`)**
+
+- `especificar_regressao(outcome, predictors, cuts, modelo, fonte, filtro, id)`
+  ou `ler_espec(caminho)` (YAML) → `eduBR_espec`. `modelo` ∈
+  {`"linear"`, `"logistico"`}. `filtro` = lista nomeada de igualdades.
+- `executar_regressao(con, espec, dados = NULL)` roda a **mesma regressão
+  para cada combinação de `cuts`**; fonte via `fonte` (domínio do catálogo,
+  resolve em `eduBR_tbl()`) **ou** `dados` (objeto eduBR/`tbl` — precedência).
+  Projeta só `outcome`+`predictors`+`cuts` **antes do `collect`** (pushdown;
+  a base remota é lenta). Logístico converte o desfecho para fator.
+  Devolve `eduBR_regressoes` (list-cols `modelo`/`coeficientes`/`metricas`/
+  `predicoes` + `n`).
+- `coeficientes(x)` / `metricas(x)` achatam as list-cols.
+- Report/exemplo: `analysis/regressoes_censo.yaml` + `regressoes_censo.Rmd`.
+- **Pegadinha YAML**: `y`/`n`/`yes`/`no` viram lógicos — aspas se forem
+  nome de coluna.
 
 ## Conexão
 

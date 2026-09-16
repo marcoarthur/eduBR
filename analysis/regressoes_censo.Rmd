@@ -1,0 +1,146 @@
+---
+title: "Regressões do censo/IDEB por recortes (camada declarativa)"
+subtitle: "A mesma especificação rodada para muitos cortes (UF, região, etapa)"
+author: "eduBR — curadoria (especialista em ML)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+    df_print: paged
+params:
+  service: edumaps
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 11, fig.height = 7, dpi = 120
+)
+
+library(eduBR)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+library(tibble)
+```
+
+```{r conexao}
+con <- conecta(service = params$service)
+```
+
+## Objetivo
+
+Demonstrar a **camada declarativa** do `eduBR`: uma *especificação*
+(`especificar_regressao()` ou `ler_espec()`) descreve desfecho, preditores e
+cortes, e `executar_regressao()` roda a **mesma regressão para cada
+combinação de cortes**, devolvendo resultados padronizados.
+
+Aqui ajustamos `ideb_observado ~ nota_media` para cada **UF × etapa** (2023),
+a partir de um spec em YAML.
+
+## Spec em YAML
+
+```{r spec-yaml}
+espec <- ler_espec("regressoes_censo.yaml")
+espec
+```
+
+## Execução (mesma regressão para todos os cortes)
+
+```{r executar}
+res <- executar_regressao(con, espec)
+res
+```
+
+```{r extrair}
+co <- coeficientes(res)
+met <- metricas(res)
+
+cat("Modelos ajustados:", nrow(res), "\n")
+cat("Coeficientes extraidos:", nrow(co), "\n")
+```
+
+## R² por UF × etapa
+
+```{r heatmap}
+ggplot(met, aes(x = etapa, y = sg_uf, fill = r.squared)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = round(r.squared, 2)), size = 2.4) +
+  scale_fill_viridis_c(option = "C", na.value = "grey90") +
+  labs(
+    title = "R² do ajuste IDEB ~ média das notas, por UF e etapa (2023)",
+    x = NULL, y = NULL, fill = "R²"
+  ) +
+  theme_minimal(base_size = 11)
+```
+
+## Inclinação (nota_media) por etapa
+
+```{r inclinacao}
+co |>
+  filter(term == "nota_media") |>
+  ggplot(aes(x = etapa, y = estimate)) +
+  geom_boxplot(fill = "#cfe3ff", outlier.size = 0.6) +
+  labs(
+    title = "Inclinação de nota_media sobre o IDEB, por etapa",
+    subtitle = "Cada ponto e uma UF (um modelo por UF × etapa)",
+    x = NULL, y = "Inclinação (IDEB por ponto de nota)"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Recorte por região (spec em R + `dados =`)
+
+A mesma camada aceita um objeto eduBR como fonte (`dados =`). Aqui usamos
+`ideb_regiao()` para restringir ao Sudeste e cortar por UF:
+
+```{r por-regiao}
+dados_reg <- ideb_regiao(con, regiao = "Sudeste", ano = 2023)
+
+espec_reg <- especificar_regressao(
+  outcome    = "ideb_observado",
+  predictors = "nota_media",
+  cuts       = c("sg_uf", "etapa"),
+  id         = "sudeste_uf_etapa"
+)
+
+res_reg <- executar_regressao(con, espec_reg, dados = dados_reg)
+co_reg <- coeficientes(res_reg) |>
+  filter(term == "nota_media") |>
+  mutate(
+    ic_lo = estimate - 1.96 * std.error,
+    ic_hi = estimate + 1.96 * std.error
+  )
+
+ggplot(co_reg, aes(x = estimate, y = sg_uf, color = etapa)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey60") +
+  geom_pointrange(
+    aes(xmin = ic_lo, xmax = ic_hi),
+    position = position_dodge(width = 0.6), size = 0.5
+  ) +
+  labs(
+    title = "Inclinação de nota_media sobre o IDEB — UFs do Sudeste (2023)",
+    subtitle = "Intervalo de 95%",
+    x = "Inclinação (IDEB por ponto de nota)", y = NULL, color = "Etapa"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Observações
+
+- Uma spec → **81 modelos** (27 UFs × 3 etapas) sem loop manual.
+- Resultado padronizado: `coeficientes()` e `metricas()` achatam as
+  list-columns.
+- Qualquer domínio do [catalogo()] pode ser a fonte (`fonte =`), ou passe um
+  objeto eduBR em `dados =` (ex.: `ideb_regiao()`, `ideb_inse()`).
+- No YAML, `y`/`n`/`yes`/`no` são lidos como lógicos — use aspas se forem
+  nomes de coluna.
+
+```{r encerrar, include=FALSE}
+DBI::dbDisconnect(con)
+```
