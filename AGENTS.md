@@ -32,8 +32,16 @@ R/
   ideb.R          ideb()
   cluster.R       clusters()
   similaridade.R  municipios_similares()
+  ideb_regiao.R   ideb_regiao()
+  tendencia.R     tendencia_regiao()
+  inse.R          inse()
+  ideb_inse.R     ideb_inse()
+  regressao_inse.R  regressao_inse()
+  regiao.R        helpers de macrorregião (UF -> região)
 man/              Rd gerados por roxygen2 (não editar à mão)
 tests/testthat/   testes unitários + smoke opcional
+analysis/         reports R Markdown (fora do build; HTML gitignored)
+tools/sync-rstudio.sh  rsync do repo p/ o RStudio Server (rstudio.dev)
 DESCRIPTION       metadados e dependências
 NAMESPACE         gerado por roxygen2 (não editar à mão)
 ```
@@ -62,6 +70,31 @@ devtools::check()                                # antes de PR
 
 O smoke (`tests/testthat/test-smoke.R`) é pulado sem `EDUBR_SMOKE=1`.
 Testes unitários **não** tocam o banco.
+
+## Sincronização com o RStudio Server (rstudio.dev)
+
+O RStudio Server roda no container `rstudio.dev` (`ubatexu.lan:2024`, SSH
+como `root`), acessível na web em `ubatexu.lan:8787`. O pareamento é um
+`rsync` do working tree para `/home/rsuser/projetos/eduBR`.
+
+```bash
+tools/sync-rstudio.sh      # manual (de qualquer lugar dentro do repo)
+```
+
+- **Sem `--delete`**: o que for criado no container (ex.: análises usando o
+  pacote) **não** é apagado; o rsync só adiciona/atualiza.
+- Os arquivos chegam como `root`; o script corrige o dono ao final
+  (`chown -R rsuser:rsuser`, não `chmod`).
+- Exclui `.git/`, `.Rproj.user/`, `.Rhistory`, `.RData` e os HTML gerados.
+- **Automação**: `.git/hooks/post-commit` é um symlink para o script e
+  sincroniza a cada commit. O hook não é versionado — reinstale após clonar:
+
+  ```bash
+  ln -sf ../../tools/sync-rstudio.sh .git/hooks/post-commit
+  ```
+
+No container, o pacote fica em `/home/rsuser/projetos/eduBR`; importe com
+`devtools::load_all("~/projetos/eduBR")` ou `devtools::install(...)`.
 
 ## Database
 
