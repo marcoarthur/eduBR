@@ -19,7 +19,10 @@ coeficientes <- function(x) {
          call. = FALSE)
   }
   rlang::check_installed(c("tidyr", "purrr"), reason = "para achatar coeficientes")
-  tidyr::unnest(x, "coeficientes")
+  tidyr::unnest(x, "coeficientes") |>
+    dplyr::select(
+      -dplyr::any_of(c("n", "modelo", "metricas", "predicoes"))
+    )
 }
 
 #' Métricas das regressões executadas
@@ -38,5 +41,8 @@ metricas <- function(x) {
          call. = FALSE)
   }
   rlang::check_installed(c("tidyr", "purrr"), reason = "para achatar metricas")
-  tidyr::unnest(x, "metricas")
+  tidyr::unnest(x, "metricas") |>
+    dplyr::select(
+      -dplyr::any_of(c("n", "modelo", "coeficientes", "predicoes"))
+    )
 }

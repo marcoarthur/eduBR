@@ -83,6 +83,37 @@ test_that("executar_regressao() ajusta modelo logistico", {
   expect_true("x" %in% co$term)
 })
 
+test_that("metricas() de logistica traz AUC e McFadden", {
+  skip_sem_parsnip()
+
+  d <- tibble::tibble(
+    y = c(0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1),
+    x = c(1, 2, 2, 3, 4, 3, 5, 4, 2, 5, 1, 5)
+  )
+  espec <- especificar_regressao("y", "x", modelo = "logistico")
+  x <- suppressWarnings(executar_regressao("fake_con", espec, dados = d))
+
+  m <- metricas(x)
+  expect_true("auc" %in% names(m))
+  expect_true("mcfadden" %in% names(m))
+  expect_true(is.finite(m$auc) && m$auc >= 0 && m$auc <= 1)
+  expect_false("predicoes" %in% names(m))
+  expect_false("modelo" %in% names(m))
+})
+
+test_that("coeficientes() devolve tabela limpa", {
+  skip_sem_parsnip()
+  local_mocked_bindings(eduBR_tbl = fixture_regressao)
+
+  espec <- especificar_regressao("y", "x", cuts = "uf", fonte = "dados")
+  x <- suppressWarnings(executar_regressao("fake_con", espec))
+
+  co <- coeficientes(x)
+  expect_false(any(c("modelo", "metricas", "predicoes", "n") %in% names(co)))
+  expect_true(all(c("term", "estimate") %in% names(co)))
+  expect_true("uf" %in% names(co))
+})
+
 test_that("coeficientes()/metricas() rejeitam objetos estranhos", {
   expect_error(coeficientes(list()), "executar_regressao")
   expect_error(metricas(data.frame()), "executar_regressao")

@@ -89,6 +89,46 @@ especificar_regressao <- function(outcome, predictors, cuts = NULL,
 #'
 #' @export
 ler_espec <- function(caminho) {
+  eduBR_espec_de_lista(eduBR_ler_yaml(caminho))
+}
+
+#' Lê várias especificações de um YAML
+#'
+#' Lê um arquivo YAML com uma lista `analises:` (cada item com os mesmos
+#' campos de [especificar_regressao()]) e devolve uma lista nomeada de
+#' `eduBR_espec` (nomes = `id`, ou `analise_<i>` quando ausente).
+#'
+#' @param caminho Caminho do arquivo YAML.
+#'
+#' @return Lista nomeada de objetos `eduBR_espec`.
+#'
+#' @examples
+#' \dontrun{
+#' especs <- ler_especs("analysis/regressoes_multi.yaml")
+#' lapply(especs, executar_regressao, con = con)
+#' }
+#'
+#' @export
+ler_especs <- function(caminho) {
+  cfg <- eduBR_ler_yaml(caminho)
+  analises <- cfg$analises
+  if (is.null(analises) || !is.list(analises)) {
+    stop("YAML sem a lista `analises:`.", call. = FALSE)
+  }
+  especs <- lapply(analises, eduBR_espec_de_lista)
+  ids <- vapply(
+    especs,
+    function(e) if (is.null(e$id)) NA_character_ else e$id,
+    character(1)
+  )
+  names(especs) <- ifelse(
+    is.na(ids), sprintf("analise_%d", seq_along(especs)), ids
+  )
+  especs
+}
+
+# Le e valida o mapeamento de topo de um YAML de especificacao.
+eduBR_ler_yaml <- function(caminho) {
   rlang::check_installed("yaml", reason = "para ler especificacoes em YAML")
   if (!is.character(caminho) || length(caminho) != 1L ||
       !file.exists(caminho)) {
@@ -99,6 +139,11 @@ ler_espec <- function(caminho) {
   if (!is.list(cfg)) {
     stop("YAML invalido: esperado um mapeamento no topo.", call. = FALSE)
   }
+  cfg
+}
+
+# Constroi um eduBR_espec a partir de um mapeamento ja lido.
+eduBR_espec_de_lista <- function(cfg) {
   especificar_regressao(
     outcome    = cfg$outcome,
     predictors = unlist(cfg$predictors, use.names = FALSE),

@@ -58,6 +58,49 @@ eduBR_espec_fit <- function(df, espec, formula) {
   list(n = n, modelo = modelo, dados = df)
 }
 
+# AUC (metodo de postos) do desfecho binario, sem dependencia extra.
+eduBR_auc <- function(fit, data, outcome) {
+  y <- data[[outcome]]
+  if (!is.factor(y)) {
+    y <- factor(y)
+  }
+  if (nlevels(y) != 2L) {
+    return(NA_real_)
+  }
+
+  prob <- tryCatch(
+    stats::predict(fit, new_data = data, type = "prob"),
+    error = function(e) NULL
+  )
+  if (is.null(prob) || ncol(prob) < 2L) {
+    return(NA_real_)
+  }
+  prob <- prob[[2]]
+
+  positivo <- y == levels(y)[2]
+  n1 <- sum(positivo)
+  n0 <- sum(!positivo)
+  if (n1 == 0L || n0 == 0L) {
+    return(NA_real_)
+  }
+  r <- rank(prob)
+  (sum(r[positivo]) - n1 * (n1 + 1) / 2) / (n1 * n0)
+}
+
+# broom::glance + metricas de classificacao no modo logistico.
+eduBR_glance <- function(fit, data, espec) {
+  g <- broom::glance(fit)
+  if (identical(espec$modelo, "logistico")) {
+    g$mcfadden <- if (!is.null(g$null.deviance) && g$null.deviance > 0) {
+      1 - (g$deviance / g$null.deviance)
+    } else {
+      NA_real_
+    }
+    g$auc <- eduBR_auc(fit, data, espec$outcome)
+  }
+  g
+}
+
 #' Executa uma especificação de regressão
 #'
 #' Ajusta o modelo descrito em `espec` para cada combinação das colunas de
@@ -126,8 +169,9 @@ executar_regressao <- function(con, espec, dados = NULL) {
       coeficientes = purrr::map(
         .data$modelo, ~ if (is.null(.x)) NULL else broom::tidy(.x)
       ),
-      metricas = purrr::map(
-        .data$modelo, ~ if (is.null(.x)) NULL else broom::glance(.x)
+      metricas = purrr::map2(
+        .data$modelo, .data$data,
+        ~ if (is.null(.x)) NULL else eduBR_glance(.x, .y, espec)
       ),
       predicoes = purrr::map2(
         .data$modelo, .data$data,

@@ -52,3 +52,41 @@ test_that("ler_espec() le um YAML e devolve eduBR_espec", {
 test_that("ler_espec() falha com caminho inexistente", {
   expect_error(ler_espec("/nao/existe.yaml"), "caminho")
 })
+
+test_that("ler_especs() le varias analises de um YAML", {
+  skip_if_not_installed("yaml")
+
+  caminho <- withr::local_tempfile(fileext = ".yaml")
+  writeLines(c(
+    "analises:",
+    "  - id: a1",
+    "    outcome: ideb_observado",
+    "    predictors: [nota_media]",
+    "    cuts: [sg_uf]",
+    "    fonte: ideb",
+    "  - id: a2",
+    "    outcome: ideb_observado",
+    "    predictors: [nota_media]",
+    "    cuts: [etapa]",
+    "    modelo: linear"
+  ), caminho)
+
+  especs <- ler_especs(caminho)
+  expect_type(especs, "list")
+  expect_named(especs, c("a1", "a2"))
+  expect_s3_class(especs[[1]], "eduBR_espec")
+  expect_equal(especs[[1]]$fonte, "ideb")
+  expect_equal(especs[[2]]$cuts, "etapa")
+})
+
+test_that("ler_especs() falha sem a lista analises", {
+  skip_if_not_installed("yaml")
+
+  caminho <- withr::local_tempfile(fileext = ".yaml")
+  writeLines(c(
+    "outcome: ideb_observado",
+    "predictors: [nota_media]"
+  ), caminho)
+
+  expect_error(ler_especs(caminho), "analises")
+})
