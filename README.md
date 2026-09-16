@@ -64,6 +64,11 @@ municipios_similares(con)
 ideb_regiao(con, regiao = "Sudeste", etapa = "fundamental_ii")
 tendencia_regiao(con)
 
+# INSE (nivel socioeconomico, corte 2023) e regressao transversal
+inse(con, uf = "SP", rede = 3)
+ideb_inse(con, regiao = "Nordeste", etapa = "fundamental_ii")
+regressao_inse(con)
+
 # materializar
 library(dplyr)
 escolas(con, uf = "SP") |> as_tibble()
@@ -95,15 +100,19 @@ R/
   similaridade.R  municipios_similares()
   ideb_regiao.R   ideb_regiao()
   tendencia.R     tendencia_regiao()
+  inse.R          inse()
+  ideb_inse.R     ideb_inse()
+  regressao_inse.R  regressao_inse()
+  regiao.R        helpers de macrorregiao (UF -> regiao)
 ```
 
-## Relatório
+## Relatórios
 
-O relatório de tendência do IDEB por região (R Markdown → HTML) fica em
-`analysis/tendencia_ideb_regiao.Rmd` e pode ser renderizado com:
+R Markdowns (→ HTML) em `analysis/`:
 
 ```r
-rmarkdown::render("analysis/tendencia_ideb_regiao.Rmd")
+rmarkdown::render("analysis/tendencia_ideb_regiao.Rmd")  # tendência (2005–2023)
+rmarkdown::render("analysis/regressao_inse_regiao.Rmd")   # IDEB ~ INSE (2023)
 ```
 
 ## Testes

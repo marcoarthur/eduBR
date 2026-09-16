@@ -22,6 +22,10 @@ R/
   similaridade.R  municipios_similares()
   ideb_regiao.R   ideb_regiao()
   tendencia.R     tendencia_regiao()
+  inse.R          inse()
+  ideb_inse.R     ideb_inse()
+  regressao_inse.R  regressao_inse()
+  regiao.R        eduBR_mutate_regiao(), eduBR_filtrar_regiao()
 ```
 
 Todo objeto é uma lista com `tbl` (consulta `dbplyr`), `con` (conexão) e
@@ -56,6 +60,7 @@ de alto nível nunca citam `schema.tabela` direto — sempre via
 | `censo_docentes` | `clean.censo_docentes` |
 | `censo_matriculas` | `clean.censo_matriculas` |
 | `ideb` | `clean.ideb_notas_escolas` |
+| `inse` | `clean.inse` |
 | `clusters` | `analytics.clustering_metadata` |
 | `similaridade` | `analytics.municipio_similaridade` |
 
@@ -95,9 +100,13 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
 | `censo_*()` | `escola_id` | `co_entidade` |
 | `ideb()` | `escola_id`,`uf`,`municipio`,`etapa`,`rede`,`ano` | `id_escola`,`sg_uf`,`no_municipio`,`etapa`,`rede`,`ano` |
 | `ideb_regiao()` | `regiao`,`uf`,`etapa`,`rede`,`ano` | deriva `nome_regiao`/`sigla_regiao` de `sg_uf` |
+| `inse()` | `uf`,`municipio`,`ano`,`rede`,`classificacao` | `sg_uf`,`no_municipio`,`nu_ano_saeb`,`tp_tipo_rede`,`inse_classificacao` |
+| `ideb_inse()` | `regiao`,`uf`,`etapa`,`rede` | join `ideb` ⋈ `inse` por `id_escola` e `ano = nu_ano_saeb` |
 | `clusters()` | `run_id` | `run_id` |
 
-## Modelagem (`tendencia_regiao`)
+## Modelagem
+
+**Tendência temporal (`tendencia_regiao`)**
 
 - `ideb_regiao()` é o acesso canônico ao IDEB com macrorregião anexada
   (mapa UF→região via `case_when`, sem join por município).
@@ -106,9 +115,21 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
   ajusta `parsnip::linear_reg()` por região×etapa, devolvendo um
   `eduBR_tendencia` (list-cols: `modelo`, `coeficientes`, `metricas`,
   `predicoes`).
-- Report em `analysis/tendencia_ideb_regiao.Rmd` (fora do build;
-  `.Rbuildignore` tem `^analysis$`), renderizado com
-  `rmarkdown::render()`. Exige `parsnip`/`broom`/`tidyr`/`purrr` (Suggests).
+- Report em `analysis/tendencia_ideb_regiao.Rmd`.
+
+**INSE transversal (`regressao_inse`)**
+
+- O INSE (`clean.inse`) só existe em **2023** e só cobre **públicas** — o
+  modelo é um corte transversal, não uma tendência.
+- `ideb_inse()` faz `inner_join` de `ideb` (2023) com `inse` por `id_escola`
+  e `ano = nu_ano_saeb`, anexando `media_inse`/`inse_classificacao` e a
+  região.
+- `regressao_inse(con, etapa, rede)` ajusta `ideb_observado ~ media_inse`
+  **no nível da escola** por região×etapa; devolve `eduBR_regressao_inse`
+  (mesmas list-cols).
+- Report em `analysis/regressao_inse_regiao.Rmd`.
+- Ambos os reports rodam com `rmarkdown::render()` (`.Rbuildignore` tem
+  `^analysis$`) e exigem `parsnip`/`broom`/`tidyr`/`purrr` (Suggests).
 
 ## Conexão
 
@@ -145,9 +166,10 @@ EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
 Pendências abertas na curadoria (`docs/personas/` do repo leaflet):
 
 > Feito nesta rodada: agrupamento por **macrorregião**
-> (`ideb_regiao()`) e a primeira modelagem descritiva
-> (`tendencia_regiao()` + report). Isso **não** resolve o join
-> escola→município por código — a região é derivada da UF.
+> (`ideb_regiao()`), a modelagem de **tendência** (`tendencia_regiao()`) e a
+> **transversal com INSE** (`inse()`/`ideb_inse()`/`regressao_inse()`), com
+> reports em `analysis/`. Isso **não** resolve o join escola→município por
+> código — a região é derivada da UF.
 
 - `[alta]` join escola→município **por código** (`co_municipio`), hoje só
   por nome — expor chave ou helper.
