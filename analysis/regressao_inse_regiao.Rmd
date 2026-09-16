@@ -1,0 +1,180 @@
+---
+title: "IDEB e nível socioeconômico (INSE) por região do Brasil"
+subtitle: "Regressões lineares do IDEB observado sobre o INSE das escolas (corte 2023)"
+author: "eduBR — curadoria (especialista em ML)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+    df_print: paged
+params:
+  service: edumaps
+  etapa: null
+  rede: null
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 11, fig.height = 8, dpi = 120
+)
+
+library(eduBR)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+library(tibble)
+```
+
+```{r conexao}
+con <- conecta(service = params$service)
+```
+
+## Objetivo
+
+Verificar como o **nível socioeconômico** das escolas (INSE, `clean.inse`)
+se associa ao desempenho (IDEB), **por macrorregião**. Como o INSE só existe
+no SAEB **2023** e cobre apenas escolas **públicas**, o exercício é um
+**corte transversal** (não há dimensão temporal aqui):
+
+$$\text{IDEB}_i = \alpha_{r,e} + \beta_{r,e}\,\text{INSE}_i + \varepsilon_i$$
+
+ajustado **no nível da escola** $i$, para cada região $r$ e etapa $e$.
+A inclinação $\beta_{r,e}$ é o **gradiente socioeconômico**: quantos pontos
+de IDEB acompanham cada unidade de INSE. Modelos com `parsnip`
+(`linear_reg()` / motor `lm`).
+
+```{r regressao}
+reg <- regressao_inse(con, etapa = params$etapa, rede = params$rede)
+reg
+```
+
+## Cobertura
+
+```{r cobertura}
+dados <- unnest(reg, data)
+
+dados |>
+  group_by(nome_regiao, etapa) |>
+  summarise(
+    escolas = n(),
+    inse_medio = round(mean(media_inse, na.rm = TRUE), 2),
+    ideb_medio = round(mean(ideb_observado, na.rm = TRUE), 2),
+    .groups = "drop"
+  ) |>
+  arrange(etapa, nome_regiao) |>
+  kable(
+    caption = "Escolas com INSE, INSE médio e IDEB médio por região e etapa"
+  )
+```
+
+## Regressão por região
+
+```{r coeficientes}
+coef <- unnest(reg, coeficientes) |>
+  filter(term == "media_inse") |>
+  mutate(
+    ic_lo = estimate - 1.96 * std.error,
+    ic_hi = estimate + 1.96 * std.error
+  ) |>
+  arrange(desc(estimate))
+
+coef |>
+  transmute(
+    Região = nome_regiao,
+    Etapa = etapa,
+    `Gradiente (IDEB por INSE)` = round(estimate, 4),
+    `Erro padrão` = round(std.error, 4),
+    `p-valor` = signif(p.value, 3)
+  ) |>
+  kable(caption = "Gradiente socioeconômico do IDEB por região e etapa")
+```
+
+```{r dispersao, fig.height = 10}
+set.seed(1)
+amostra <- unnest(reg, predicoes) |>
+  slice_sample(n = min(nrow(unnest(reg, predicoes)), 15000))
+
+ggplot(
+  amostra,
+  aes(x = media_inse, y = ideb_observado)
+) +
+  geom_point(alpha = 0.06, size = 0.4) +
+  geom_line(aes(y = .pred), color = "firebrick", linewidth = 0.9) +
+  facet_grid(etapa ~ nome_regiao, scales = "free") +
+  labs(
+    title = "IDEB observado versus INSE da escola, por região e etapa",
+    subtitle = "Pontos: escolas (amostra para o gráfico); linha: reta ajustada (2023)",
+    x = "INSE médio da escola",
+    y = "IDEB observado"
+  ) +
+  theme_minimal(base_size = 10)
+```
+
+## Comparação entre regiões
+
+```{r forest, fig.height = 6}
+ggplot(coef, aes(x = estimate, y = nome_regiao, color = etapa)) +
+  geom_vline(xintercept = 0, linetype = "dashed", color = "grey55") +
+  geom_pointrange(
+    aes(xmin = ic_lo, xmax = ic_hi),
+    position = position_dodge(width = 0.6), size = 0.5
+  ) +
+  labs(
+    title = "Gradiente socioeconômico do IDEB por região e etapa",
+    subtitle = "Inclinação (IDEB por unidade de INSE) com intervalo de 95%",
+    x = "Gradiente (IDEB por INSE)",
+    y = NULL,
+    color = "Etapa"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+```{r qualidade, fig.height = 5}
+metricas <- unnest(reg, metricas) |>
+  select(nome_regiao, etapa, r.squared, p.value, nobs)
+
+metricas |>
+  arrange(desc(r.squared)) |>
+  transmute(
+    Região = nome_regiao,
+    Etapa = etapa,
+    `R²` = round(r.squared, 3),
+    `p-valor` = signif(p.value, 3),
+    `nº de escolas` = nobs
+  ) |>
+  kable(caption = "R² e significância dos modelos por região e etapa")
+```
+
+```{r r2, fig.height = 5}
+ggplot(metricas, aes(x = nome_regiao, y = r.squared, fill = etapa)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(
+    title = "R² da relação IDEB ~ INSE por região e etapa",
+    x = NULL,
+    y = "R²",
+    fill = "Etapa"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Leitura dos resultados
+
+- O IDEB cresce com o INSE em **todas** as regiões e etapas (gradientes
+  positivos): escolas mais ricas têm, em média, IDEB mais alto.
+- Comparar os gradientes mostra **onde o desempenho é menos sensível** ao
+  nível socioeconômico (menor inclinação) — pistas para políticas de
+  equidade regional.
+- É um ajuste **bivariado e transversal** (2023): descreve associação, não
+  causalidade, e não inclui a dimensão temporal (impossível, pois o INSE só
+  existe em 2023).
+
+```{r encerrar, include=FALSE}
+DBI::dbDisconnect(con)
+```

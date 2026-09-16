@@ -56,8 +56,32 @@ censo_escolar(con, escola_id = "35012345")
 censo_docentes(con, escola_id = "35012345")
 censo_matriculas(con, escola_id = "35012345")
 ideb(con, escola_id = "35012345")
+ideb(con, uf = "SP", etapa = "fundamental_ii", ano = 2019)
 clusters(con)
 municipios_similares(con)
+
+# IDEB por macrorregiao e tendencia (regressao linear por regiao x etapa)
+ideb_regiao(con, regiao = "Sudeste", etapa = "fundamental_ii")
+tendencia_regiao(con)
+
+# INSE (nivel socioeconomico, corte 2023) e regressao transversal
+inse(con, uf = "SP", rede = 3)
+ideb_inse(con, regiao = "Nordeste", etapa = "fundamental_ii")
+regressao_inse(con)
+
+# camada declarativa: mesma regressao para muitos recortes
+espec <- especificar_regressao(
+  outcome = "ideb_observado", predictors = "nota_media",
+  cuts = c("sg_uf", "etapa"), fonte = "ideb", filtro = list(ano = 2023)
+)
+res <- executar_regressao(con, espec)
+coeficientes(res)
+metricas(res)
+# ou a partir de um YAML: espec <- ler_espec("analysis/regressoes_censo.yaml")
+especs <- ler_especs("analysis/regressoes_multi.yaml")  # lista "analises:"
+
+# materializar (com limite, para exploracao)
+coletar(escolas(con, uf = "SP"), n = 100)
 
 # materializar
 library(dplyr)
@@ -88,6 +112,26 @@ R/
   ideb.R        ideb()
   cluster.R     clusters()
   similaridade.R  municipios_similares()
+  ideb_regiao.R   ideb_regiao()
+  tendencia.R     tendencia_regiao()
+  inse.R          inse()
+  ideb_inse.R     ideb_inse()
+  regressao_inse.R  regressao_inse()
+  regiao.R        helpers de macrorregiao (UF -> regiao)
+  espec.R         especificar_regressao(), ler_espec(), ler_especs()
+  regressao.R     executar_regressao() (motor por cortes)
+  saida.R         coeficientes(), metricas()
+  coletar.R       coletar() (materializacao com limite)
+```
+
+## Relatórios
+
+R Markdowns (→ HTML) em `analysis/`:
+
+```r
+rmarkdown::render("analysis/tendencia_ideb_regiao.Rmd")  # tendência (2005–2023)
+rmarkdown::render("analysis/regressao_inse_regiao.Rmd")   # IDEB ~ INSE (2023)
+rmarkdown::render("analysis/regressoes_censo.Rmd")        # camada declarativa
 ```
 
 ## Testes

@@ -21,6 +21,11 @@ Imports:
     tibble,
     rlang
 Suggests:
+    broom,
+    parsnip,
+    purrr,
     testthat (>= 3.0.0),
-    withr
+    tidyr,
+    withr,
+    yaml
 Config/testthat/edition: 3

@@ -17,6 +17,7 @@ eduBR_catalogo <- function() {
     censo_docentes   = c("clean", "censo_docentes"),
     censo_matriculas = c("clean", "censo_matriculas"),
     ideb             = c("clean", "ideb_notas_escolas"),
+    inse             = c("clean", "inse"),
     clusters         = c("analytics", "clustering_metadata"),
     similaridade     = c("analytics", "municipio_similaridade")
   )

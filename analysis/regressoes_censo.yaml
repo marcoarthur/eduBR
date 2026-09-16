@@ -1,0 +1,11 @@
+id: ideb_nota_uf_etapa
+fonte: ideb
+outcome: ideb_observado
+predictors:
+  - nota_media
+cuts:
+  - sg_uf
+  - etapa
+modelo: linear
+filtro:
+  ano: 2023
