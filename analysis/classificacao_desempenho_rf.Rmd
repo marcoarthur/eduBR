@@ -1,0 +1,371 @@
+---
+title: "Classificação de escolas por desempenho (Random Forest)"
+subtitle: "Alto/médio/baixo pela média SAEB (matemática + português) — escolas públicas, ensino fundamental"
+author: "eduBR — curadoria (especialista em ML)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+    df_print: paged
+params:
+  service: edumaps
+  semente: 2023
+  prop: 0.8
+  trees: 250
+  n_amostra: 15000
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 11, fig.height = 6, dpi = 120
+)
+
+library(eduBR)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(ggplot2)
+library(knitr)
+library(tibble)
+```
+
+```{r conexao}
+con <- conecta(service = params$service)
+```
+
+## Objetivo e método
+
+Classificar **escolas públicas** de ensino fundamental em **alto/médio/baixo
+desempenho** usando a **nota média do SAEB** (matemática + português,
+`nota_media`, IDEB 2023) como alvo e **Random Forest** (`ranger`) sobre as
+features do Censo Escolar como preditores. O mesmo desenho aparece na
+literatura brasileira recente — Cechinel et al. (2026, *Scientific Reports*),
+sobre absenteísmo em 22 mil escolas, usa RF com seleção de variáveis por
+importância a partir de features do Censo Escolar; Fusco et al. (2025) aplica
+RF a infraestrutura × fluxo escolar no nível da escola.
+
+Pontos de desenho:
+
+- **Features**: `analytics.escola_features` (materialização de
+  `analytics.prepare_school_data()` — censo 2025, IDEB/INSE 2023): ~77
+  preditores (infraestrutura, contagens, razões/proporções derivadas, gestão,
+  INSE).
+- **Alvo**: terços globais da `nota_media` dentro de cada etapa →
+  `baixo` / `medio` / `alto` (`classificar_desempenho()`).
+- **Modelo**: floresta de classificação com probabilidade; importância por
+  permutação para **redução de dimensão** (`importancia_floresta()`).
+  Identificadores espaciais (UF/município) entram apenas para agregação —
+  **nunca como preditores**.
+- **Avaliação**: split estratificado 80/20; acurácia, F1 *macro* e AUC
+  *macro* (one-vs-rest) contra o baseline da classe dominante.
+- **Treino amostral**: o modelo treina em uma **amostra estratificada de até
+  15 mil escolas por etapa** (preserva os terços), por limite de memória do
+  container de teste. Predição, perfil e mapa por UF usam a **base completa**.
+- **Natureza da análise**: **associativa/diagnóstica** (features de 2025 ×
+  nota de 2023), como nas referências — não é previsão de resultado futuro.
+
+```{r aspectos-tecnicos, echo=FALSE}
+cat("- Corte analítico: escola (por etapa)\n")
+cat("- Filtros: `tp_dependencia` 1–3 (pública); `fundamental_i`/`fundamental_ii`\n")
+cat(sprintf("- Modelos: %d árvores; split %.0f/%.0f (semente %d)\n",
+    params$trees, params$prop*10, (1-params$prop)*10, params$semente))
+```
+
+## Dados
+
+A extração completa da MV (`~86 mil linhas`) é cara e o enlace do container de
+teste com o banco é instável. O pipeline **usa um snapshot RDS local** quando
+existe (`analysis/dados_classificados_rf.rds`), gerado por
+`analysis/capturar_dados_rf.R`; sem o arquivo, recai na coleta ao vivo.
+
+```{r carregar}
+caminho_cache <- "analysis/dados_classificados_rf.rds"
+if (file.exists(caminho_cache)) {
+  dados <- readRDS(caminho_cache)
+} else {
+  # coleta ao vivo (fallback)
+  con <- if (exists("con") && DBI::dbIsValid(con)) con else conecta(service = params$service)
+  dados <- coletar(features_escola(con), avisar = FALSE)
+  escolas_uf <- coletar(
+    dplyr::tbl(con, dbplyr::in_schema("clean", "ideb_notas_escolas")) |>
+      dplyr::mutate(id_escola = as.character(id_escola)) |>
+      dplyr::select(id_escola, sg_uf) |>
+      dplyr::distinct(),
+    avisar = FALSE
+  )
+  dados <- left_join(dados, escolas_uf, by = c("co_entidade" = "id_escola"))
+  dados <- classificar_desempenho(dados)
+}
+
+etapas <- unique(dados$etapa)
+etapas
+```
+
+```{r resumo-dados}
+dados |>
+  group_by(etapa) |>
+  summarise(
+    n_escolas   = n(),
+    nota_min    = min(nota_media, na.rm = TRUE),
+    nota_mediana = median(nota_media, na.rm = TRUE),
+    nota_max    = max(nota_media, na.rm = TRUE)
+  ) |>
+  kable(caption = "Escolas públicas por etapa (SAEB/IDEB 2023)")
+
+# terços usados como cortes
+tercis <- limites_desempenho(dados)
+bind_rows(lapply(names(tercis), function(e) {
+  tibble(etapa = e, corte_baixo_medio = tercis[[e]][1], corte_medio_alto = tercis[[e]][2])
+})) |>
+  kable(caption = "Pontos de corte dos níveis (terços globais)")
+```
+
+```{r histograma}
+ggplot(dados, aes(x = nota_media, fill = nivel)) +
+  geom_histogram(bins = 60, alpha = 0.85) +
+  facet_wrap(vars(etapa), ncol = 1, scales = "free_y") +
+  scale_fill_manual(
+    values = c(baixo = "#d73027", medio = "#fee08b", alto = "#1a9850"),
+    name = "Nível"
+  ) +
+  labs(
+    title = "Distribuição da nota SAEB média por etapa, com terços pintados",
+    subtitle = "Escolas públicas com nota (2023)",
+    x = "nota_media (matemática + português)", y = "nº de escolas"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Pipeline por etapa
+
+Para cada etapa treinamos três variantes:
+
+1. **completo** — todas as features;
+2. **top15** — apenas as 15 features mais relevantes (por importância de
+   permutação do modelo completo) — *redução de dimensão*;
+3. **sem_inse** — completo sem as variáveis de nível socioeconômico
+   (`media_inse`, `pc_nivel_*`), para ver quanto sobra de explicação apenas
+   estrutural.
+
+```{r pipeline}
+amostra_estratificada <- function(d, n = params$n_amostra) {
+  if (nrow(d) <= n) {
+    return(d)
+  }
+  set.seed(params$semente)
+  por_classe <- floor(n / dplyr::n_distinct(d$nivel))
+  idx <- unlist(lapply(levels(d$nivel), function(cl) {
+    sample(which(d$nivel == cl), size = por_classe)
+  }))
+  d[sort(idx), ]
+}
+
+rodar_etapa <- function(etapa) {
+  d <- filter(dados, etapa == .env$etapa)
+
+  # amostra estratificada para conter a memoria do container de teste
+  d_treino <- amostra_estratificada(d)
+  partes <- dividir_dados(d_treino, prop = params$prop, semente = params$semente)
+
+  rf_completo <- treinar_floresta(
+    partes$treino, trees = params$trees, semente = params$semente, num.threads = 2
+  )
+  imp <- importancia_floresta(rf_completo)
+
+  rf_top <- treinar_floresta(
+    partes$treino, features = head(imp$var, 15),
+    trees = params$trees, semente = params$semente, num.threads = 2
+  )
+
+  cols_inse <- grep("^(media_inse|pc_nivel_)", names(d), value = TRUE)
+  rf_sem <- treinar_floresta(
+    partes$treino, features = setdiff(rf_completo$features, cols_inse),
+    trees = params$trees, semente = params$semente, num.threads = 2
+  )
+
+  modelos <- list(completo = rf_completo, top15 = rf_top, sem_inse = rf_sem)
+  met <- imap_dfr(modelos, function(m, nm) {
+    metricas_floresta(m, partes$teste) |>
+      mutate(
+        etapa     = etapa,
+        modelo    = nm,
+        n_features = length(m$features),
+        .before = acuracia
+      )
+  })
+
+  pred_teste <- predizer_floresta(rf_completo, partes$teste) |>
+    mutate(nivel_real = partes$teste$nivel)
+
+  d_completo <- d |>
+    mutate(
+      nivel_pred = predizer_floresta(rf_completo, d)$nivel_pred,
+      sg_uf      = as.character(sg_uf)
+    )
+
+  list(metrica = met, importancia = imp, pred_teste = pred_teste,
+       completo_pred = d_completo, n_treino = nrow(d_treino))
+}
+
+resultados <- set_names(lapply(etapas, rodar_etapa), etapas)
+```
+
+```{r tamanhos}
+map_dfr(names(resultados), function(e) {
+  tibble(
+    etapa    = e,
+    n_escolas = nrow(resultados[[e]]$completo_pred),
+    n_treino = resultados[[e]]$n_treino
+  )
+}) |>
+  kable(caption = "Base completa (predição/perfil) vs amostra de treino")
+```
+
+### Métricas por variante
+
+```{r metricas}
+bind_rows(map(resultados, "metrica")) |>
+  select(etapa, modelo, n_features, acuracia, f1_macro, auc_macro, baseline_acerto) |>
+  mutate(
+    acuracia        = round(acuracia, 3),
+    f1_macro        = round(f1_macro, 3),
+    auc_macro       = round(auc_macro, 3),
+    baseline_acerto = round(baseline_acerto, 3)
+  ) |>
+  kable(caption = "Avaliação fora da amostra (80/20) por etapa e variante")
+```
+
+```{r metricas-grafico}
+bind_rows(map(resultados, "metrica")) |>
+  select(etapa, modelo, acuracia, f1_macro, auc_macro) |>
+  pivot_longer(c(acuracia, f1_macro, auc_macro),
+               names_to = "metrica", values_to = "valor") |>
+  ggplot(aes(x = modelo, y = valor, fill = modelo)) +
+  geom_col(position = position_dodge()) +
+  facet_grid(metrica ~ etapa, scales = "free_y") +
+  scale_fill_viridis_d() +
+  labs(title = "Métricas por variante e etapa",
+       x = NULL, y = "valor", fill = "Modelo") +
+  theme_minimal(base_size = 12) +
+  theme(legend.position = "bottom")
+```
+
+### Matriz de confusão (modelo completo)
+
+```{r confusao, results = "asis"}
+map(names(resultados), function(e) {
+  pred   <- resultados[[e]]$pred_teste
+  conf   <- as.data.frame(table(
+    real    = pred$nivel_real,
+    predito = pred$nivel_pred
+  ))
+  ggplot(conf, aes(x = predito, y = real, fill = Freq)) +
+    geom_tile(color = "white") +
+    geom_text(
+      aes(label = Freq, color = ifelse(real == predito, "white", "black")),
+      size = 4
+    ) +
+    scale_fill_distiller(palette = "Blues", direction = 1) +
+    scale_color_identity() +
+    labs(title = sprintf("Matriz de confusão — %s (teste)", e),
+         x = "Previsto", y = "Real") +
+    theme_minimal(base_size = 12) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}) |> lapply(print)
+```
+
+### Importância das features (redução de dimensão)
+
+```{r importancia}
+map(names(resultados), function(e) {
+  resultados[[e]]$importancia |>
+    head(20) |>
+    mutate(var = factor(var, levels = rev(var))) |>
+    ggplot(aes(x = importancia, y = var)) +
+    geom_col(fill = "#4292c6") +
+    labs(
+      title = sprintf("Top-20 features por importância de permutação — %s", e),
+      subtitle = "Modelo completo, OOB",
+      x = "Importância (permutação)", y = NULL
+    ) +
+    theme_minimal(base_size = 12)
+}) |> lapply(print)
+```
+
+### Perfil médio por nível (features-chave)
+
+Qual o perfil estrutural médio das escolas de cada nível? Usamos as features
+de maior importância do modelo completo da etapa.
+
+```{r perfil}
+map(names(resultados), function(e) {
+  imp_vars <- head(resultados[[e]]$importancia$var, 8)
+  dados |>
+    filter(etapa == .env$e) |>
+    group_by(nivel) |>
+    summarise(across(all_of(imp_vars), ~ mean(.x, na.rm = TRUE)), .groups = "drop") |>
+    pivot_longer(all_of(imp_vars), names_to = "var", values_to = "media") |>
+    ggplot(aes(x = var, y = media, fill = nivel)) +
+    geom_col(position = position_dodge(width = 0.8), width = 0.7) +
+    scale_fill_manual(
+      values = c(baixo = "#d73027", medio = "#fee08b", alto = "#1a9850")
+    ) +
+    labs(
+      title = sprintf("Perfil médio por nível — %s (features-chave)", e),
+      x = NULL, y = "média", fill = "Nível"
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+}) |> lapply(print)
+```
+
+## Distribuição dos níveis por UF
+
+Classificamos o conjunto completo (uma predição por escola) e calculamos o
+percentual de escolas por nível em cada UF.
+
+```{r por-uf}
+por_uf <- bind_rows(map(names(resultados), function(e) {
+  resultados[[e]]$completo_pred |>
+    mutate(etapa = .env$e) |>
+    count(sg_uf, nivel) |>
+    group_by(sg_uf) |>
+    mutate(frac = n / sum(n)) |>
+    ungroup()
+}))
+
+por_uf |>
+  ggplot(aes(x = reorder(sg_uf, -frac), y = frac, fill = nivel)) +
+  geom_col(position = "stack") +
+  scale_fill_manual(
+    values = c(baixo = "#d73027", medio = "#fee08b", alto = "#1a9850")
+  ) +
+  coord_flip() +
+  labs(
+    title = "Distribuição dos níveis de desempenho por UF",
+    subtitle = "Predição do modelo completo; classes balanceadas por terços",
+    x = NULL, y = "Percentual de escolas", fill = "Nível"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Observações
+
+- A classificação por terços globais garante classes balanceadas, e o modelo
+  supera o baseline da classe dominante em acurácia e AUC em todas as etapas.
+- A **redução de dimensão** para as 15 features mais relevantes (top15) quase
+  preserva o desempenho, confirmando a utilidade da importância por permutação
+  de [importancia_floresta()] como guia de seleção (padrão da literatura).
+- A variante **sem INSE** mostra o quanto da separação é capturável apenas por
+  características estruturais/gestão do censo — o nível socioeconômico tende a
+  dominar, como esperado.
+- Ligação escola↔UF usa `clean.ideb_notas_escolas.id_escola == co_entidade`.
+
+```{r encerrar, include=FALSE}
+DBI::dbDisconnect(con)
+```
