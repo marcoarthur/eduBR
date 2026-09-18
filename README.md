@@ -80,6 +80,15 @@ metricas(res)
 # ou a partir de um YAML: espec <- ler_espec("analysis/regressoes_censo.yaml")
 especs <- ler_especs("analysis/regressoes_multi.yaml")  # lista "analises:"
 
+# Random Forest de desempenho (alto/medio/baixo, terços por etapa)
+d <- features_escola(con, etapa = c("fundamental_i", "fundamental_ii"))
+d <- coletar(classificar_desempenho(d), avisar = FALSE)
+partes <- dividir_dados(d)
+rf <- treinar_floresta(partes$treino)        # ranger, probabilidade + importancia
+importancia_floresta(rf)                     # reducao de dimensao (top-k)
+pred <- predizer_floresta(rf, partes$teste)
+metricas_floresta(rf, partes$teste)          # acuracia, F1/AUC macro, baseline
+
 # materializar (com limite, para exploracao)
 coletar(escolas(con, uf = "SP"), n = 100)
 
@@ -122,6 +131,9 @@ R/
   regressao.R     executar_regressao() (motor por cortes)
   saida.R         coeficientes(), metricas()
   coletar.R       coletar() (materializacao com limite)
+  desempenho.R    features_escola(), classificar_desempenho(), limites_desempenho()
+  floresta.R      dividir_dados(), treinar_floresta(), importancia_floresta(),
+                  predizer_floresta(), metricas_floresta()
 ```
 
 ## Relatórios
@@ -132,9 +144,13 @@ R Markdowns (→ HTML) em `analysis/`:
 rmarkdown::render("analysis/tendencia_ideb_regiao.Rmd")  # tendência (2005–2023)
 rmarkdown::render("analysis/regressao_inse_regiao.Rmd")   # IDEB ~ INSE (2023)
 rmarkdown::render("analysis/regressoes_censo.Rmd")        # camada declarativa
+rmarkdown::render("analysis/classificacao_desempenho_rf.Rmd")  # RF alto/médio/baixo
 ```
 
 ## Testes
+
+Rodar **apenas no container de teste** (`rstudio.dev`, como `rsuser`) — nunca
+na máquina local:
 
 ```r
 devtools::test()                 # testes unitarios (sem banco)

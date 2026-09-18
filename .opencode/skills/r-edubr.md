@@ -30,6 +30,9 @@ R/
   regressao.R     executar_regressao()
   saida.R         coeficientes(), metricas()
   coletar.R       coletar() (materializacao com limite)
+  desempenho.R    features_escola(), classificar_desempenho(), limites_desempenho()
+  floresta.R      dividir_dados(), treinar_floresta(), importancia_floresta(),
+                  predizer_floresta(), metricas_floresta(), print.eduBR_floresta()
 ```
 
 Todo objeto é uma lista com `tbl` (consulta `dbplyr`), `con` (conexão) e
@@ -67,6 +70,7 @@ de alto nível nunca citam `schema.tabela` direto — sempre via
 | `inse` | `clean.inse` |
 | `clusters` | `analytics.clustering_metadata` |
 | `similaridade` | `analytics.municipio_similaridade` |
+| `escola_features` | `analytics.escola_features` |
 
 Ao adicionar uma relação: registrar em `eduBR_catalogo()` **e** documentar a
 função de acesso correspondente.
@@ -160,6 +164,43 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
 - **Pegadinha YAML**: `y`/`n`/`yes`/`no` viram lógicos — aspas se forem
   nome de coluna.
 
+**Random Forest de desempenho (`desempenho.R` + `floresta.R`)**
+
+- `features_escola(con, etapa = c("fundamental_i", "fundamental_ii"), publica = TRUE)`
+  materializa (lazy) a MV `analytics.escola_features` (~80 colunas; ~77
+  features; curricula: infra, contagens, razões, gestão, INSE), filtrando
+  `tp_dependencia` ∈ {1,2,3} (públicas). **Não tem UF** — anexar depois com
+  `clean.ideb_notas_escolas` por `id_escola == co_entidade`.
+- `classificar_desempenho(dados, nota = "nota_media", grupo = "etapa")` define
+  os níveis `baixo/medio/alto` por **terços globais dentro de cada grupo**;
+  `limites_desempenho(x)` devolve vetor simples (1 grupo) ou lista nomeada.
+- `treinar_floresta(dados, alvo = "nivel", features = NULL)` ajusta **ranger**
+  (`classification=TRUE`, `probability=TRUE`, `importance="permutation"`). As
+  exclusões padrão incluem **identificadores espaciais** (`sg_uf`, `uf`,
+  `sg_regiao`, `regiao`, `co_municipio`, `co_uf`, `no_municipio`) — UF é
+  rótulo de agregação, **nunca** preditor. Métricas: `acuracia`, `f1_macro`,
+  `auc_macro` (ranking/Wilcoxon por classe, sem dependência), `baseline_acerto`
+  (classe dominante); atributos `confusao`, `f1_classe`, `auc_classe`.
+- Fluxo: `coletar(features_escola(con))` → `classificar_desempenho()` →
+  `dividir_dados()` (estratificado) → `treinar_floresta()` →
+  `importancia_floresta()` (tibble `var`/`importancia` desc; guia de redução de
+  dimensão) → `predizer_floresta()` (fator `nivel_pred` + `p_<classe>`) →
+  `metricas_floresta()`.
+- Report/exemplo: `analysis/classificacao_desempenho_rf.Rmd`. `ranger` fica em
+  **Suggests** (check 0/0/0); **não** usar `vip` (instalação só no container;
+  daria NOTA no check local).
+- Ambiente de execução: **container `rstudio.dev` (rsuser)** — o treino usa
+  **amostra estratificada de até 15 mil escolas por etapa** (`n_amostra`),
+  `num.threads = 2` e `trees = 250`; sem isso o container estoura memória
+  (`Killed` por OOM, host ~8 GB) ao treinar com a base completa (41k fund. I).
+  Predição/perfil/UF usam a base completa. Render completo ≈ 25–30 min, rodar
+  em background (`nohup`) e acompanhar o log.
+- Pegadinhas recentes: knitr não renderiza ggplot dentro de listas de `map()`
+  — usar `.map(...) |> lapply(print)`; `dplyr::select()` **não** aceita objeto
+  S3 eduBR — para joins auxiliares usar `tbl(con, in_schema(...))` direto;
+  `co_entidade` é `character` mas `id_escola` é `integer64` — `as.character()`
+  antes do join.
+
 ## Conexão
 
 `conecta(service = "edumaps")` valida o argumento e delega a
@@ -194,7 +235,13 @@ EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
 
 Pendências abertas na curadoria (`docs/personas/` do repo leaflet):
 
-> Feito nesta rodada: agrupamento por **macrorregião**
+> Feito nesta rodada: **Random Forest de desempenho escolar** (alto/médio/baixo
+> por terços de `nota_media` do SAEB/IDEB, escolas públicas fund. I/II) com
+> `features_escola()`/`classificar_desempenho()`, floresta com importância por
+> permutação (`desempenho.R`/`floresta.R`) e report
+> `analysis/classificacao_desempenho_rf.Rmd`.
+>
+> Feito na rodada anterior: agrupamento por **macrorregião**
 > (`ideb_regiao()`), a modelagem de **tendência** (`tendencia_regiao()`) e a
 > **transversal com INSE** (`inse()`/`ideb_inse()`/`regressao_inse()`), com
 > reports em `analysis/`. Isso **não** resolve o join escola→município por

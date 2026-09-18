@@ -6,3 +6,5 @@
 .quarto
 analysis/*.html
 analysis/*_files/
+analysis/*.rds
+tests/testthat/_problems/
