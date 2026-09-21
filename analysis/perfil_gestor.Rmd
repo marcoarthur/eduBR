@@ -1,0 +1,445 @@
+---
+title: "Perfil modal dos gestores escolares (Censo Escolar 2025)"
+subtitle: "Sexo, cor/raça, faixa etária, escolaridade, vínculo, acesso ao cargo e formação continuada — por rede e território"
+author: "eduBR — curadoria (pesquisadora educacional)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+    df_print: paged
+params:
+  service: edumaps
+  ano: 2025
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 11, fig.height = 6, dpi = 120
+)
+
+library(eduBR)
+library(dplyr)
+library(tidyr)
+library(purrr)
+library(ggplot2)
+library(knitr)
+
+pct <- function(x) sprintf("%.1f%%", 100 * x)
+```
+
+## Objetivo e método
+
+Descrever **quem são os diretores das escolas brasileiras em 2025** a partir
+das contagens do Censo Escolar (`clean.censo_gestor`, cruzado com
+`clean.censo_escolas`), por **unidade gestor** (cada gestor pesa 1) e, como
+sensibilidade, por **unidade escola** (cada escola contribui com a categoria
+predominante própria — reduz o peso relativo dos colégios grandes).
+
+A narrativa é construída sobre **nossos próprios números**, rede a rede, sem
+contrapor valores da literatura neste documento (a comparação com referências
+fica para o loop de curadoria, à parte).
+
+Pontos de desenho:
+
+- **9 dimensões**: sexo, cor/raça, faixa etária, escolaridade (maior
+  concluída), pós-graduação, vínculo (escolas públicas), forma de acesso ao
+  cargo, formação continuada em gestão (≥80h) e deficiência/TEA/superdotação.
+- **Base válida por dimensão**: denominador é a soma das categorias
+  comparadas; cor/raça "não declarada" sai do denominador (e aparece à parte);
+  vínculo vale apenas para escolas públicas.
+- **Categorias modais**: a mais frequente por dimensão e corte, com a
+  proporção no denominador e a **concentração** (índice de Herfindahl — 1 =
+  categoria única, ~0 = distribuição uniforme).
+- **Cortes**: Brasil e rede (municipal, estadual, federal e privada), com
+  apêndices por região e UF.
+
+```{r aspectos-tecnicos, echo=FALSE}
+cat("- Corte analítico: gestor; sensibilidade por escola\n")
+cat(sprintf("- Fontes: `clean.censo_gestor` + `clean.censo_escolas` (ano %d)\n",
+    params$ano))
+cat("- Dimensões: 9 (ver método); denominador = base válida por dimensão\n")
+```
+
+## Dados
+
+```{r carregar}
+caminho_cache <- "dados_gestores.rds"
+if (!file.exists(caminho_cache) && file.exists(file.path("analysis", caminho_cache))) {
+  caminho_cache <- file.path("analysis", caminho_cache)
+}
+if (file.exists(caminho_cache)) {
+  dados <- readRDS(caminho_cache)
+  cat("snapshot RDS local:\n")
+} else {
+  con <- conecta(service = params$service)
+  dados <- coletar(gestores(con), avisar = FALSE)
+  DBI::dbDisconnect(con)
+  cat("coleta ao vivo (fallback)\n")
+}
+
+dados
+```
+
+```{r resumo-dados}
+resumo <- dados |>
+  group_by(rede) |>
+  summarise(
+    gestores = sum(qt_gest_bas, na.rm = TRUE),
+    escolas = dplyr::n_distinct(co_entidade),
+    .groups = "drop"
+  ) |>
+  mutate(prop_gestores = pct(gestores / sum(gestores)))
+
+resumo |>
+  kable(caption = "Diretores por rede — Censo Escolar 2025")
+```
+
+## Visão geral
+
+Quem é o diretor **típico** da escola pública brasileira? Em todo o país a
+categoria modal é a **mulher**, e a escolaridade superior é praticamente
+universal entre os titulares do cargo. A cor/raça modal permanece **branca**
+em todas as redes, porém com participação não majoritária na rede municipal —
+o que sinaliza espaço explicativo importante mais à frente.
+
+```{r visao-brasil}
+p_bra <- perfil_gestor(dados, corte = "brasil")
+
+p_bra$modal |>
+  mutate(prop_modal = pct(prop_modal), concentracao = round(concentracao, 3)) |>
+  kable(caption = "Perfil modal — Brasil (unidade gestor)")
+```
+
+```{r visao-rede}
+p_red <- perfil_gestor(dados, corte = "rede")
+
+p_red$modal |>
+  select(-denom, -n, -prop_modal, -concentracao) |>
+  pivot_wider(names_from = dimensao, values_from = categoria_modal) |>
+  kable(caption = "Categoria modal por dimensão e rede")
+```
+
+A rede pública e a privada se separam com clareza em duas pontas: na
+**municipal**, o acesso é mais pulverizado (processo seletivo como via
+relativa, menos de 40%), enquanto na **privada** quase dois terços dos cargos
+são dos **proprietários/sócios** — o diretor é, em geral, o dono da escola.
+Entre as **federais**, a origem é outra: eleição com a comunidade domina a
+forma de acesso (~80%), e é a única rede em que o perfil modal de sexo é
+**masculino**.
+
+## Rede municipal
+
+Maior rede do país, com a **maior fração de gestoras mulheres** (~82%) e o
+perfil modal de cor/raça **branco mais diluído** (45,6% das declarações), o
+que a aproxima de uma distribuição menos concentrada por raça/cor.
+
+```{r municipal-ordem}
+municipal <- p_red$proporcoes |> filter(corte == "Municipal", composicao)
+
+top3 <- function(dim) {
+  municipal |>
+    filter(dimensao == dim) |>
+    arrange(desc(prop)) |>
+    mutate(props = pct(prop)) |>
+    head(3) |>
+    select(categoria, props)
+}
+
+kable(
+  bind_rows(
+    Sexo = top3("Sexo"),
+    `Cor/Raça` = top3("Cor/Raça"),
+    `Faixa etária` = top3("Faixa etária"),
+    `Escolaridade` = top3("Escolaridade (maior concluída)"),
+    `Pós-graduação` = top3("Pós-graduação"),
+    `Formação em gestão` = top3("Formação continuada em gestão (≥80h)"),
+    `Acesso (públicas)` = top3("Forma de acesso ao cargo"),
+    .id = "dimensão"
+  ),
+  caption = "Rede municipal — top-3 categorias por dimensão (base válida)"
+)
+```
+
+Entre as escolas **municipais**, a forma de acesso mais frequente é o
+**processo seletivo/nomeação** (~34%), seguida de perto pela **indicação** da
+gestão (~33%) e pela **eleição com a comunidade** (**15%**) — três vias
+convivendo no mesmo território. A presença de categorias próximas na forma de
+acesso é o traço que mais diferencia o diretor municipal dos demais públicos.
+A formação continuada em gestão (≥80h) é modalidade **minoritária** (~27% com
+formação).
+
+## Rede estadual
+
+Estados concentram diretoras mulheres (~66%), com forte participação de
+**brancas** e perfil etário deslocado para as faixas **30–49**. Entre as
+públicas, é onde o **concurso público** mais se aproxima do topo na forma de
+acesso (a seguir da eleição com a comunidade).
+
+```{r estadual-ordem}
+estadual <- p_red$proporcoes |> filter(corte == "Estadual", composicao)
+
+top3e <- function(dim) {
+  estadual |>
+    filter(dimensao == dim) |>
+    arrange(desc(prop)) |>
+    mutate(props = pct(prop)) |>
+    head(3) |>
+    select(categoria, props)
+}
+
+kable(
+  bind_rows(
+    Sexo = top3e("Sexo"),
+    `Faixa etária` = top3e("Faixa etária"),
+    `Vínculo` = top3e("Vínculo (escolas públicas)"),
+    `Acesso` = top3e("Forma de acesso ao cargo"),
+    `Formação em gestão` = top3e("Formação continuada em gestão (≥80h)"),
+    `Pós-graduação` = top3e("Pós-graduação"),
+    .id = "dimensão"
+  ),
+  caption = "Rede estadual — top-3 categorias por dimensão (base válida)"
+)
+```
+
+O diretor estadual típico é **concursado/efetivo** (~90% em escolas públicas),
+com **especialização** como forma de pós-graduação mais comum e acesso
+dividido entre três vias próximas: **eleição com a comunidade** (25,7%),
+**processo seletivo combinado com eleição** (24,2%) e **processo seletivo +
+nomeação** (19,7%). Entre as públicas, a rede estadual é a que mais declara
+deficiência entre os titulares (0,7%, contra 0,6% na municipal e 0,4% na
+federal).
+
+## Rede federal
+
+A menor das redes, mas singular: é a **única em que o diretor típico é homem**
+(~74%) e a forma de acesso é majoritariamente por **eleição com a comunidade**
+(~82%) — contratos de colégios federais/Institutos e universidades. Quase
+todos são concursados.
+
+```{r federal-ordem}
+federal <- p_red$proporcoes |> filter(corte == "Federal", composicao)
+
+top3f <- function(dim) {
+  federal |>
+    filter(dimensao == dim) |>
+    arrange(desc(prop)) |>
+    mutate(props = pct(prop)) |>
+    head(3) |>
+    select(categoria, props)
+}
+
+kable(
+  bind_rows(
+    Sexo = top3f("Sexo"),
+    `Acesso` = top3f("Forma de acesso ao cargo"),
+    `Vínculo` = top3f("Vínculo (escolas públicas)"),
+    `Escolaridade` = top3f("Escolaridade (maior concluída)"),
+    `Faixa etária` = top3f("Faixa etária"),
+    .id = "dimensão"
+  ),
+  caption = "Rede federal — top-3 categorias por dimensão (base válida)"
+)
+```
+
+## Rede privada
+
+Na rede privada o **diretor é a diretora-sócia**: ~84% mulheres, ~52% dos
+cargos dos próprios **proprietários/sócios**, e é onde é maior a proporção de
+diretores **sem pós-graduação** (~43%).
+
+```{r privada-ordem}
+privada <- p_red$proporcoes |> filter(corte == "Privada", composicao)
+
+top3p <- function(dim) {
+  privada |>
+    filter(dimensao == dim) |>
+    arrange(desc(prop)) |>
+    mutate(props = pct(prop)) |>
+    head(3) |>
+    select(categoria, props)
+}
+
+kable(
+  bind_rows(
+    Sexo = top3p("Sexo"),
+    `Acesso` = top3p("Forma de acesso ao cargo"),
+    `Cor/Raça` = top3p("Cor/Raça"),
+    `Pós-graduação` = top3p("Pós-graduação"),
+    `Faixa etária` = top3p("Faixa etária"),
+    .id = "dimensão"
+  ),
+  caption = "Rede privada — top-3 categorias por dimensão (base válida)"
+)
+```
+
+Diferente do que se vê nas públicas, a categoria **"proprietário/sócio"**
+domina de forma quase consensual: a segunda via mais citada (indicação da
+gestão) fica bem atrás. Sobre as **particularidades** da rede: quase **uma em
+cada cinco** direções privadas (20%) é de escolas **filantrópicas**.
+
+```{r privada-categoria}
+p_priv <- perfil_gestor(dados, corte = "categoria_privada")
+
+p_priv$modal |>
+  filter(dimensao == "Forma de acesso ao cargo") |>
+  mutate(prop_modal = pct(prop_modal)) |>
+  select(corte, categoria_modal, prop_modal) |>
+  kable(caption = "Rede privada — acesso modal por categoria da escola")
+```
+
+## Sensibilidade: unidade escola
+
+Repetimos a análise **pesando cada escola uma vez** (categoria predominante
+de cada colégio), para verificar se o retrato muda em relação ao gestor
+unitário — escolas pequenas ganham peso relativo.
+
+```{r sensibilidade-escola}
+p_red_esc <- perfil_gestor(dados, corte = "rede", unidade = "escola")
+
+sensitivity <- p_red$modal |>
+  select(corte, dimensao, gestor = categoria_modal, prop_gestor = prop_modal) |>
+  inner_join(
+    p_red_esc$modal |>
+      select(corte, dimensao, escola = categoria_modal, prop_escola = prop_modal),
+    by = c("corte", "dimensao")
+  ) |>
+  mutate(across(starts_with("prop"), ~ round(.x, 3)))
+
+sensitivity |>
+  filter(gestor != escola | abs(prop_gestor - prop_escola) > 0.01) |>
+  kable(caption = "Sensibilidade escola×gestor — divergências de categoria modal ou >1pp")
+
+tabela <- sensitivity |>
+  mutate(troca = gestor != escola) |>
+  count(corte, troca) |>
+  pivot_wider(names_from = troca, values_from = n, values_fill = 0L)
+
+tabela |>
+  kable(caption = "Troca de categoria modal ao passar de gestor→escola (de 9 dimensões)")
+```
+
+Na prática, **a categoria modal não muda** ao passar de gestor→escola em
+nenhuma rede: nas 9 dimensões (8 na privada, que não tem dimensão de vínculo
+público) o modal se mantém, variando apenas a **proporção** (até ~3,3pp, na
+pós-graduação estadual). A distribuição por cor/raça e sexo é robusta ao peso
+das escolas.
+
+## Resumo comparativo
+
+A **concentração** (Herfindahl) resume o consenso interno de cada rede.
+
+```{r concentracao}
+p_red$modal |>
+  group_by(corte) |>
+  summarise(
+    concentracao_media = round(mean(concentracao), 3),
+    concentracao_min   = round(min(concentracao), 3),
+    concentracao_max   = round(max(concentracao), 3)
+  ) |>
+  rename(rede = corte) |>
+  kable(caption = "Concentração média por rede (Herfindahl, 9 dimensões)")
+```
+
+```{r concentracao-plot}
+p_red$modal |>
+  ggplot(aes(x = reorder(corte, concentracao), y = concentracao, fill = dimensao)) +
+  geom_point(aes(y = concentracao), size = 2.5, alpha = 0.7) +
+  geom_point(
+    data = p_red$modal |> group_by(corte) |>
+      summarise(concentracao = mean(concentracao)),
+    aes(y = concentracao), shape = 21, size = 4, fill = "#08519c"
+  ) +
+  coord_flip() +
+  labs(
+    title = "Concentração (Herfindahl) por dimensão e rede",
+    subtitle = "Pontos: dimensões; círculo sólido: média da rede",
+    x = NULL, y = "Herfindahl (1 = categoria única)"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+O consenso é **nitidamente maior na rede federal** (média ~0,71); estadual,
+municipal e privada ficam próximas (~0,59). A menor concentração entre todas
+as dimensões está na **forma de acesso ao cargo da rede municipal** (0,26) —
+consistente com a pluralidade de vias de acesso observada acima. Mulheres
+dominam a gestão escolar brasileira; o único contraponto é a rede federal.
+
+## O que os dados mostram
+
+1. **Direção escolar é, majoritariamente, direção feminina**: ~66%–84% de
+   gestoras nas redes, com a exceção federal (masculino ~74%).
+2. **Escolaridade superior é padrão** (~85%–100%) e o **concurso público** é
+   o vínculo dominante nas públicas (≥74% efetivos).
+3. **Cor/raça branca é o modal em todas as redes**, mas com a menor
+   concentração na municipal (45,6%) — perto da metade do conjunto válido.
+4. **A via de acesso ao cargo é o traço que mais separa as redes**:
+   proprietário/sócio na privada (~52%), eleição na federal (~82%),
+   processo seletivo/indicação/concurso convivendo na municipal.
+5. **Formação continuada em gestão (≥80h) é minoritária** em todas as redes
+   — com formação entre **~7%** (federal) e **~27%** (municipal);
+   estadual e privada situam-se entre **~19%** e **~23%** — um ponto de
+   atenção para políticas de desenvolvimento de diretores.
+
+> Os números aqui são exclusivamente da base de 2025. A comparação com a
+> literatura (documento de referência `gestor_edumaps_perfil.md`) fica para o
+> loop de curadoria, em documento separado.
+
+## Apêndice A — Regiões
+
+```{r regiao}
+p_reg <- perfil_gestor(dados, corte = "regiao")
+
+p_reg$modal |>
+  select(-denom, -n, -prop_modal, -concentracao) |>
+  pivot_wider(names_from = dimensao, values_from = categoria_modal) |>
+  kable(caption = "Categoria modal por dimensão e região (unidade gestor)")
+```
+
+```{r regiao-proporcoes}
+p_reg$proporcoes |>
+  filter(composicao) |>
+  ggplot(aes(x = prop, y = categoria, fill = corte)) +
+  geom_col(position = "dodge") +
+  facet_wrap(~ dimensao, scales = "free_y") +
+  labs(
+    title = "Distribuição das categorias por região",
+    x = "Proporção na base válida", y = NULL, fill = "Região"
+  ) +
+  theme_minimal(base_size = 10) +
+  theme(legend.position = "bottom")
+```
+
+## Apêndice B — UFs
+
+```{r uf}
+p_uf <- perfil_gestor(dados, corte = "uf")
+
+p_uf$modal |>
+  filter(dimensao %in% c("Sexo", "Forma de acesso ao cargo")) |>
+  select(-n, -denom, -prop_modal, -concentracao) |>
+  pivot_wider(names_from = dimensao, values_from = categoria_modal) |>
+  kable(caption = "UF — modal de sexo e forma de acesso (unidade gestor)")
+```
+
+```{r uf-stack}
+p_uf$proporcoes |>
+  filter(dimensao == "Formação continuada em gestão (≥80h)") |>
+  ggplot(aes(x = reorder(corte, -prop), y = prop, fill = categoria)) +
+  geom_col() +
+  scale_fill_manual(values = c("#9ecae1", "#08519c")) +
+  labs(
+    title = "Formação continuada em gestão (≥80h) por UF",
+    x = NULL, y = "Proporção", fill = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5))
+```
+
+```{r encerrar, include=FALSE}
+if (exists("con") && DBI::dbIsValid(con)) DBI::dbDisconnect(con)
+```

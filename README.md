@@ -55,6 +55,7 @@ scores(con, escola_id = "35012345")
 censo_escolar(con, escola_id = "35012345")
 censo_docentes(con, escola_id = "35012345")
 censo_matriculas(con, escola_id = "35012345")
+censo_gestor(con, escola_id = "35012345")
 ideb(con, escola_id = "35012345")
 ideb(con, uf = "SP", etapa = "fundamental_ii", ano = 2019)
 clusters(con)
@@ -92,6 +93,13 @@ metricas_floresta(rf, partes$teste)          # acuracia, F1/AUC macro, baseline
 # materializar (com limite, para exploracao)
 coletar(escolas(con, uf = "SP"), n = 100)
 
+# perfil modal dos diretores (censo_gestor 2025, cruzado com censo_escolas)
+g <- gestores(con)                    # contagens por escola + rede/regiao/UF
+p <- perfil_gestor(g, corte = "rede") # categoria modal + concentracao por dimensao
+p$modal
+p$proporcoes
+perfil_gestor(g, corte = "uf", unidade = "escola")  # sensibilidade por escola
+
 # materializar
 library(dplyr)
 escolas(con, uf = "SP") |> as_tibble()
@@ -127,6 +135,7 @@ R/
   ideb_inse.R     ideb_inse()
   regressao_inse.R  regressao_inse()
   regiao.R        helpers de macrorregiao (UF -> regiao)
+  gestor.R        gestores(), perfil_gestor() (perfil modal de diretores)
   espec.R         especificar_regressao(), ler_espec(), ler_especs()
   regressao.R     executar_regressao() (motor por cortes)
   saida.R         coeficientes(), metricas()
@@ -145,6 +154,7 @@ rmarkdown::render("analysis/tendencia_ideb_regiao.Rmd")  # tendência (2005–20
 rmarkdown::render("analysis/regressao_inse_regiao.Rmd")   # IDEB ~ INSE (2023)
 rmarkdown::render("analysis/regressoes_censo.Rmd")        # camada declarativa
 rmarkdown::render("analysis/classificacao_desempenho_rf.Rmd")  # RF alto/médio/baixo
+rmarkdown::render("analysis/perfil_gestor.Rmd")                # perfil modal de diretores
 ```
 
 ## Testes

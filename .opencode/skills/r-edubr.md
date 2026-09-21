@@ -33,6 +33,7 @@ R/
   desempenho.R    features_escola(), classificar_desempenho(), limites_desempenho()
   floresta.R      dividir_dados(), treinar_floresta(), importancia_floresta(),
                   predizer_floresta(), metricas_floresta(), print.eduBR_floresta()
+  gestor.R        gestores(), perfil_gestor() (perfil modal de diretores)
 ```
 
 Todo objeto é uma lista com `tbl` (consulta `dbplyr`), `con` (conexão) e
@@ -66,6 +67,7 @@ de alto nível nunca citam `schema.tabela` direto — sempre via
 | `censo_escolas` | `clean.censo_escolas` |
 | `censo_docentes` | `clean.censo_docentes` |
 | `censo_matriculas` | `clean.censo_matriculas` |
+| `censo_gestor` | `clean.censo_gestor` |
 | `ideb` | `clean.ideb_notas_escolas` |
 | `inse` | `clean.inse` |
 | `clusters` | `analytics.clustering_metadata` |
@@ -201,6 +203,45 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
   `co_entidade` é `character` mas `id_escola` é `integer64` — `as.character()`
   antes do join.
 
+**Perfil de gestores (`gestor.R`)**
+
+- `censo_gestor(con)` acessa `clean.censo_gestor` (2025): **contagens por
+  escola** (`qt_gest_bas`, `qt_gest_fem`, etc.) — uma linha por escola, não
+  por gestor; somar `qt_gest_bas` para o total de diretores (~190k).
+- `gestores(con, rede, uf, regiao, localizacao, ano = 2025)` cruza com
+  `clean.censo_escolas` por `(nu_ano_censo, co_entidade)` e anexa `rede`,
+  `categoria_privada`, `localizacao`, `nome_regiao`/`sigla_regiao` — **lazy**;
+  materialize com `coletar()` ou passe direto a `perfil_gestor()`.
+  Importante: as colunas da tabela `clean` real são **minúsculas**
+  (`nu_ano_censo`, `tp_dependencia`, …), não o `UPPER_CASE` do `.sql` fonte.
+- Filtros e rótulos empurrados para o SQL: `eduBR_case_when_lookup(col, lab)`
+  constrói `case_when` a partir de um vetor nomeado (código → rótulo) —
+  **evite** `.env$vetor[col_sql]` / indexação R dentro de `filter`/`mutate`
+  em `tbl` (dbplyr quebra ou gera SQL gigante); e evite `.env$fn(x)` dentro de
+  `filter` — pré-compute o resultado e use `.env$var`.
+- `perfil_gestor(dados, corte = "brasil"/"rede"/"regiao"/"uf"/"categoria_privada",
+  unidade = "gestor"/"escola", dimensoes = NULL)`:
+  - Materializa (coleta) no primeiro passo — toda agregação roda **em R**.
+  - 9 dimensões (spec em `eduBR_dimensoes_gestor()`): sexo, cor/raça (com
+    `fora = qt_gest_bas_nd` fora do denominador/composição), escolaridade,
+    pós-graduação, faixa etária, vínculo (**restrito à pública**), forma de
+    acesso, formação continuada em gestão (≥80h, `denominador = "complemento"`),
+    deficiência/TEA/superdotação (idem).
+  - Devolve `$proporcoes` (longo: `corte, dimensao, categoria, n, denom, prop,
+    composicao`), `$modal` (`categoria_modal`, `prop_modal`, `concentracao` =
+    Herfindahl) e `$n` (escolas × gestores por corte).
+  - `composicao = FALSE` marca categorias fora da composição (ex.: cor "não
+    declarada") — o modal filtra por `composicao`.
+- Report: `analysis/perfil_gestor.Rmd` (narrativa rede a rede), com snapshot
+  `analysis/capturar_gestor.R` (RDS ~190k linhas; sem ele, coleta ao vivo).
+  Render **no container** (`rstudio.dev`).
+- Pegadinhas recentes: `dplyr::select(tbl_lazy, co_entidade, …)` com nomes
+  "pelados" gera NOTE no `R CMD check` — usar `all_of(c(...))` +
+  `starts_with()`; **strings com acento no código** (rótulos, mensagens) geram
+  WARNING de non-ASCII no check — usar escapes `\uXXXX` (comentários/roxygen
+  podem ficar UTF-8); fixture de teste deve cobrir **todas** as colunas de
+  contagem de todas as dimensões usadas no teste.
+
 ## Conexão
 
 `conecta(service = "edumaps")` valida o argumento e delega a
@@ -235,7 +276,12 @@ EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
 
 Pendências abertas na curadoria (`docs/personas/` do repo leaflet):
 
-> Feito nesta rodada: **Random Forest de desempenho escolar** (alto/médio/baixo
+> Feito nesta rodada: **perfil modal de diretores** (Censo Escolar 2025) —
+> `censo_gestor()` + `gestores()` (join com `censo_escolas`, rótulos no SQL) e
+> `perfil_gestor()` (9 dimensões, unidade gestor/escola, Herfindahl; report
+> `analysis/perfil_gestor.Rmd` com snapshot).
+>
+> Feito na rodada anterior: **Random Forest de desempenho escolar** (alto/médio/baixo
 > por terços de `nota_media` do SAEB/IDEB, escolas públicas fund. I/II) com
 > `features_escola()`/`classificar_desempenho()`, floresta com importância por
 > permutação (`desempenho.R`/`floresta.R`) e report
