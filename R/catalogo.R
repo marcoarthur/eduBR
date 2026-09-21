@@ -16,6 +16,7 @@ eduBR_catalogo <- function() {
     censo_escolas    = c("clean", "censo_escolas"),
     censo_docentes   = c("clean", "censo_docentes"),
     censo_matriculas = c("clean", "censo_matriculas"),
+    censo_gestor     = c("clean", "censo_gestor"),
     ideb             = c("clean", "ideb_notas_escolas"),
     inse             = c("clean", "inse"),
     escola_features  = c("analytics", "escola_features"),

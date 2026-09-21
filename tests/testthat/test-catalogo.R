@@ -8,6 +8,7 @@ test_that("catalogo() expoe as relacoes esperadas", {
     c(
       "escolas", "municipios", "ibge", "populacao", "redes", "indicadores",
       "scores", "censo_escolas", "censo_docentes", "censo_matriculas",
+      "censo_gestor",
       "ideb", "inse", "escola_features", "clusters", "similaridade"
     )
   )
