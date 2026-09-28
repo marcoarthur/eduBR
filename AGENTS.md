@@ -152,9 +152,10 @@ As demais skills do repo EduMaps (`perl-mojolicious`, `sqitch-migrations`,
 ## Personas de curadoria
 
 O pacote é avaliado por três personas cujos perfis **e memória** ficam em
-`~/Projects/leaflet/docs/personas/` (repo EduMaps). Diferente das skills
-(instruções estáticas), usam um **modelo com memória**: registram inputs e
-mantêm um loop de perguntas → respostas → follow-ups.
+`docs/personas/` (neste repo; histórico trazido do repo EduMaps em
+2026-09-28). Diferente das skills (instruções estáticas), usam um **modelo
+com memória**: registram inputs e mantêm um loop de perguntas → respostas
+→ follow-ups.
 
 | Persona | Arquivo | Foco |
 |---------|---------|------|

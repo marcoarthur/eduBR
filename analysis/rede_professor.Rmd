@@ -1,0 +1,329 @@
+---
+title: "Redes de ensino e perfil docente por município"
+subtitle: "Cruzamento de analytics.mv_rede_escolas com clean.censo_docentes — formação, vínculo, especialização e demografia por rede"
+author: "eduBR — curadoria (pesquisadora educacional)"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+    df_print: paged
+params:
+  service: edumaps
+  ano: 2025
+  rede: null
+  uf: null
+  regiao: null
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 11, fig.height = 6, dpi = 120
+)
+
+library(eduBR)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+pct <- function(x) sprintf("%.1f%%", 100 * x)
+```
+
+## Objetivo e método
+
+Descrever as **redes de ensino de cada município** (federal, estadual,
+municipal, privada) e cruzá-las com o **perfil docente** do Censo Escolar,
+em todas as dimensões que `clean.censo_docentes` fornece: formação,
+pós-graduação, vínculo, especialização, disciplina e demografia.
+
+Fontes e desenho:
+
+- **Redes**: `rede_municipio()` sobre `analytics.mv_rede_escolas`
+  (matrículas, docentes, IDEB por município × rede). Filtros de `uf`,
+  `regiao` e `rede` via params, aplicados **no banco** (lazy).
+- **Docentes**: `docentes_rede()` cruza `clean.censo_docentes` com
+  `clean.censo_escolas` por `(nu_ano_censo, co_entidade)`, anexa rede,
+  localização e macrorregião, e **agrupa no banco** pelo `nivel`
+  (`municipio`, `uf`, `regiao`, `brasil`).
+- **Materialização**: agregações empurradas para o SQL; `coletar()`
+  só no fim, sobre o agregado (não sobre os microdados por escola).
+
+```{r conexao}
+con <- conecta(service = params$service)
+```
+
+```{r parametros}
+ano <- params$ano
+filtros <- list(rede = params$rede, uf = params$uf, regiao = params$regiao)
+filtros
+```
+
+## 1. Visão geral das redes
+
+```{r redes}
+redes_tbl <- rede_municipio(
+  con, uf = params$uf, regiao = params$regiao, rede = params$rede
+)
+
+redes_br <- consulta(redes_tbl) |>
+  group_by(rede) |>
+  summarise(
+    municipios = n_distinct(co_municipio),
+    escolas = sum(total_escolas, na.rm = TRUE),
+    matriculas = sum(total_matriculas, na.rm = TRUE),
+    docentes = sum(total_docentes, na.rm = TRUE),
+    ideb_fund_i = mean(ideb_fund_i, na.rm = TRUE),
+    ideb_fund_ii = mean(ideb_fund_ii, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  coletar(avisar = FALSE) |>
+  arrange(desc(matriculas))
+
+redes_br |>
+  transmute(
+    Rede = rede,
+    Municipios = municipios,
+    Escolas = escolas,
+    Matriculas = matriculas,
+    Docentes = docentes,
+    `IDEB fund. I` = round(ideb_fund_i, 2),
+    `IDEB fund. II` = round(ideb_fund_ii, 2)
+  ) |>
+  kable(caption = "Redes de ensino: cobertura e IDEB médio (agregado no banco)")
+```
+
+```{r redes-plot, fig.height=5}
+redes_br |>
+  select(rede, matriculas, docentes) |>
+  pivot_longer(-rede, names_to = "metrica", values_to = "n") |>
+  ggplot(aes(x = rede, y = n / 1e6, fill = metrica)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  labs(title = "Matrículas e docentes por rede (milhões)", x = NULL, y = NULL, fill = NULL) +
+  theme_minimal(base_size = 12)
+```
+
+## 2. Perfil docente por rede
+
+Agregado nacional (`nivel = "brasil"`), com projeção só das colunas de
+formação/vínculo/demografia antes do `collect` (a base remota é lenta).
+
+```{r docentes-brasil}
+cols_perfil <- c(
+  "qt_doc_bas",
+  "qt_doc_bas_esco_ef", "qt_doc_bas_esco_em",
+  "qt_doc_bas_esco_sup_grad",
+  "qt_doc_bas_esco_sup_pos_espec", "qt_doc_bas_esco_sup_pos_mestra",
+  "qt_doc_bas_esco_sup_pos_douto", "qt_doc_bas_esco_sup_pos_nenhum",
+  "qt_doc_bas_vinculo_concur", "qt_doc_bas_vinculo_contra",
+  "qt_doc_bas_vinculo_terceir", "qt_doc_bas_vinculo_clt",
+  "qt_doc_bas_espec_gestao", "qt_doc_bas_espec_nenhum",
+  "qt_doc_bas_fem", "qt_doc_bas_masc",
+  "qt_doc_bas_branca", "qt_doc_bas_preta", "qt_doc_bas_parda",
+  "qt_doc_bas_amarela", "qt_doc_bas_indigena",
+  "qt_doc_bas_pcd", "qt_doc_bas_libras"
+)
+
+doc_br <- docentes_rede(
+  con, ano = ano, rede = params$rede, uf = params$uf,
+  regiao = params$regiao, nivel = "brasil", colunas = cols_perfil
+) |>
+  coletar(avisar = FALSE)
+```
+
+### 2.1 Formação
+
+```{r formacao}
+form <- doc_br |>
+  group_by(rede) |>
+  summarise(
+    docentes = sum(qt_doc_bas, na.rm = TRUE),
+    superior = sum(qt_doc_bas_esco_sup_grad, na.rm = TRUE),
+    espec = sum(qt_doc_bas_esco_sup_pos_espec, na.rm = TRUE),
+    mestrado = sum(qt_doc_bas_esco_sup_pos_mestra, na.rm = TRUE),
+    doutorado = sum(qt_doc_bas_esco_sup_pos_douto, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    p_superior = superior / docentes,
+    p_pos = (espec + mestrado + doutorado) / docentes,
+    p_mestrado_mais = (mestrado + doutorado) / docentes
+  ) |>
+  arrange(desc(p_superior))
+
+form |>
+  transmute(
+    Rede = rede,
+    Docentes = docentes,
+    `% superior` = pct(p_superior),
+    `% pós` = pct(p_pos),
+    `% mestrado+` = pct(p_mestrado_mais)
+  ) |>
+  kable(caption = "Formação docente por rede")
+```
+
+```{r formacao-plot, fig.height=5}
+form |>
+  select(rede, p_superior, p_pos) |>
+  pivot_longer(-rede, names_to = "indicador", values_to = "p") |>
+  ggplot(aes(x = rede, y = 100 * p, fill = indicador)) +
+  geom_col(position = "dodge") +
+  labs(title = "Formação docente por rede (%)", x = NULL, y = NULL, fill = NULL) +
+  theme_minimal(base_size = 12)
+```
+
+### 2.2 Vínculo
+
+```{r vinculo}
+vinc <- doc_br |>
+  group_by(rede) |>
+  summarise(
+    docentes = sum(qt_doc_bas, na.rm = TRUE),
+    concursado = sum(qt_doc_bas_vinculo_concur, na.rm = TRUE),
+    temporario = sum(qt_doc_bas_vinculo_contra, na.rm = TRUE),
+    terceirizado = sum(qt_doc_bas_vinculo_terceir, na.rm = TRUE),
+    clt = sum(qt_doc_bas_vinculo_clt, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(p_concursado = concursado / docentes) |>
+  arrange(desc(p_concursado))
+
+vinc |>
+  transmute(
+    Rede = rede,
+    `% concursado` = pct(concursado / docentes),
+    `% temporário` = pct(temporario / docentes),
+    `% terceirizado` = pct(terceirizado / docentes),
+    `% CLT` = pct(clt / docentes)
+  ) |>
+  kable(caption = "Vínculo docente por rede")
+```
+
+### 2.3 Demografia e inclusão
+
+```{r demografia}
+demo <- doc_br |>
+  group_by(rede) |>
+  summarise(
+    docentes = sum(qt_doc_bas, na.rm = TRUE),
+    fem = sum(qt_doc_bas_fem, na.rm = TRUE),
+    pcd = sum(qt_doc_bas_pcd, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(p_fem = fem / docentes, p_pcd = pcd / docentes)
+
+demo |>
+  transmute(
+    Rede = rede,
+    `% feminino` = pct(p_fem),
+    `% PcD` = pct(p_pcd)
+  ) |>
+  kable(caption = "Sexo e PcD por rede")
+```
+
+## 3. Recorte territorial
+
+Docentes por rede × UF (ou região), para localizar desigualdades.
+
+```{r por-uf}
+doc_uf <- docentes_rede(
+  con, ano = ano, rede = params$rede, uf = params$uf,
+  regiao = params$regiao, nivel = "uf",
+  colunas = c("qt_doc_bas", "qt_doc_bas_esco_sup_grad",
+              "qt_doc_bas_esco_sup_pos_mestra",
+              "qt_doc_bas_esco_sup_pos_douto",
+              "qt_doc_bas_vinculo_concur")
+) |>
+  coletar(avisar = FALSE)
+
+doc_uf |>
+  group_by(sg_uf, rede) |>
+  summarise(
+    docentes = sum(qt_doc_bas, na.rm = TRUE),
+    p_superior = sum(qt_doc_bas_esco_sup_grad, na.rm = TRUE) / docentes,
+    p_mestrado_mais = sum(
+      qt_doc_bas_esco_sup_pos_mestra + qt_doc_bas_esco_sup_pos_douto,
+      na.rm = TRUE
+    ) / docentes,
+    p_concursado = sum(qt_doc_bas_vinculo_concur, na.rm = TRUE) / docentes,
+    .groups = "drop"
+  ) |>
+  arrange(sg_uf, rede) |>
+  head(40) |>
+  kable(caption = "Perfil docente por UF × rede (primeiras 40 linhas)")
+```
+
+```{r uf-plot, fig.height=7}
+doc_uf |>
+  group_by(sg_uf, rede) |>
+  summarise(
+    docentes = sum(qt_doc_bas, na.rm = TRUE),
+    p_superior = sum(qt_doc_bas_esco_sup_grad, na.rm = TRUE) / docentes,
+    .groups = "drop"
+  ) |>
+  ggplot(aes(x = sg_uf, y = 100 * p_superior, fill = rede)) +
+  geom_col(position = "dodge") +
+  labs(
+    title = "% docentes com superior por UF e rede",
+    x = NULL, y = NULL, fill = "Rede"
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+## 4. Cruzamento rede × docente × IDEB
+
+A MV já traz IDEB e % docentes com superior/concursados por
+município × rede — o cruzamento nacional nasce da junção dos dois
+agregados acima.
+
+```{r cruzamento, fig.height=5}
+cruz <- redes_br |>
+  left_join(
+    form |> select(rede, p_superior, p_pos),
+    by = "rede"
+  ) |>
+  left_join(
+    vinc |> select(rede, p_concursado = p_concursado),
+    by = "rede"
+  )
+
+cruz |>
+  transmute(
+    Rede = rede,
+    `IDEB fund. II` = round(ideb_fund_ii, 2),
+    `% superior (censo)` = pct(p_superior),
+    `% pós (censo)` = pct(p_pos),
+    `% concursado (censo)` = pct(p_concursado)
+  ) |>
+  kable(caption = "IDEB (MV) lado a lado com perfil docente (censo)")
+
+ggplot(cruz, aes(x = 100 * p_superior, y = ideb_fund_ii, color = rede)) +
+  geom_point(size = 3) +
+  geom_text(aes(label = rede), vjust = -0.8, show.legend = FALSE) +
+  labs(
+    title = "IDEB fund. II × % docentes com superior, por rede",
+    x = "% superior", y = "IDEB fund. II"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## Leitura dos resultados
+
+- A tabela da seção 1 mostra o **peso de cada rede** (municipal concentra
+  matrículas no fundamental; privada responde por parte relevante das
+  matrículas urbanas).
+- As seções 2–3 quantificam **formação, vínculo e demografia por rede**;
+  diferenças de % superior/pós e de % concursado entre redes e UFs são o
+  achado central para a pesquisadora.
+- A seção 4 é **descritiva e contemporânea** (censo e IDEB do mesmo
+  período): serve para conhecer o painel, não para atribuir causalidade.
+
+```{r encerrar, include=FALSE}
+DBI::dbDisconnect(con)
+```

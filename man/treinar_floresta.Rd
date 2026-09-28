@@ -20,9 +20,11 @@ treinar_floresta(
 \item{alvo}{Nome da coluna alvo (fator). Padrao \code{nivel}.}
 
 \item{features}{Vetor de colunas usadas como preditoras. Padrao \code{NULL}:
-todas exceto \code{alvo} e os identificadores/medidas de desempenho
-(\code{co_entidade}, \code{id_escola}, \code{etapa}, \code{nota_matematica}, \code{nota_portugues},
-\code{nota_media}).}
+todas exceto \code{alvo}, os identificadores espaciais e as medidas de
+desempenho (\code{co_entidade}, \code{id_escola}, \code{etapa}, \code{sg_uf}, \code{co_municipio},
+\code{nota_matematica}, \code{nota_portugues}, \code{nota_media}). Identificadores como UF
+nao devem entrar como preditor: funcionam como rotulo espacial, nao como
+caracteristica da escola.}
 
 \item{semente}{Semente aleatoria.}
 

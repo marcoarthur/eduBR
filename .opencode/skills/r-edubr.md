@@ -274,7 +274,7 @@ EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
 
 ## Roadmap de melhorias (backlog das personas)
 
-Pendências abertas na curadoria (`docs/personas/` do repo leaflet):
+Pendências abertas na curadoria (`docs/personas/` deste repo):
 
 > Feito nesta rodada: **perfil modal de diretores** (Censo Escolar 2025) —
 > `censo_gestor()` + `gestores()` (join com `censo_escolas`, rótulos no SQL) e
