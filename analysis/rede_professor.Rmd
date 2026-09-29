@@ -108,6 +108,35 @@ redes_br |>
   theme_minimal(base_size = 12)
 ```
 
+### Cobertura do IDEB
+
+Nem todo município × rede tem IDEB avaliado (a MV traz `NA` onde não
+houve avaliação). O quadro abaixo conta, por rede, quantos municípios têm
+nota — leitura necessária antes de qualquer comparação de médias.
+
+```{r cobertura-ideb}
+# Só 3 colunas leves atravessam a rede; a contagem roda em R.
+cobertura <- consulta(redes_tbl) |>
+  select(rede, co_municipio, ideb_fund_ii) |>
+  coletar(avisar = FALSE) |>
+  group_by(rede) |>
+  summarise(
+    municipios = n_distinct(co_municipio),
+    com_ideb_ii = n_distinct(co_municipio[!is.na(ideb_fund_ii)]),
+    .groups = "drop"
+  ) |>
+  mutate(sem_ideb_ii = municipios - com_ideb_ii)
+
+cobertura |>
+  transmute(
+    Rede = rede,
+    Municípios = municipios,
+    `Com IDEB fund. II` = com_ideb_ii,
+    `% sem IDEB` = pct(sem_ideb_ii / municipios)
+  ) |>
+  kable(caption = "Cobertura do IDEB fund. II por rede")
+```
+
 ## 2. Perfil docente por rede
 
 Agregado nacional (`nivel = "brasil"`), com projeção só das colunas de
@@ -313,11 +342,27 @@ ggplot(cruz, aes(x = 100 * p_superior, y = ideb_fund_ii, color = rede)) +
   theme_minimal(base_size = 12)
 ```
 
+## Apêndice: dicionário das categóricas
+
+Os códigos do Censo usados nos filtros (`rede`, `localizacao`) e a coluna
+`rede` seguem o padrão abaixo — ver `dicionario()`.
+
+```{r dicionario}
+dicionario() |>
+  transmute(
+    Variável = variavel,
+    Código = codigo,
+    Rótulo = rotulo
+  ) |>
+  kable(caption = "Dicionário das categóricas do Censo cobertas pelo pacote")
+```
+
 ## Leitura dos resultados
 
 - A tabela da seção 1 mostra o **peso de cada rede** (municipal concentra
   matrículas no fundamental; privada responde por parte relevante das
-  matrículas urbanas).
+  matrículas urbanas). A cobertura do IDEB varia por rede — comparar médias
+  sem olhar a cobertura distorce a leitura.
 - As seções 2–3 quantificam **formação, vínculo e demografia por rede**;
   diferenças de % superior/pós e de % concursado entre redes e UFs são o
   achado central para a pesquisadora.

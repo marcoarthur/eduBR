@@ -6,6 +6,11 @@
 #' coordenadas). A consulta é preguiçosa: só vai ao banco quando
 #' materializada, por exemplo com [as_tibble()].
 #'
+#' @details A tabela não traz código IBGE do município: o filtro e o join
+#'   por município são pelo **nome**. O caminho por código
+#'   (`co_municipio`) está em [docentes_rede()] e [gestores()], que cruzam
+#'   com `clean.censo_escolas`.
+#'
 #' @param con Conexão criada por [conecta()].
 #' @param municipio Filtro opcional pelo nome do município.
 #' @param uf Filtro opcional pela sigla da UF (ex.: `"SP"`).

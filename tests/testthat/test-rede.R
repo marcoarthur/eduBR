@@ -10,7 +10,8 @@ fake_mv_rede_escolas_tbl <- function(con, nome) {
     sg_uf = c("SP", "SP", "SP", "SP", "BA", "BA"),
     no_regiao = c("Sudeste", "Sudeste", "Sudeste", "Sudeste", "Nordeste", "Nordeste"),
     codigo_rede = c(2L, 3L, 2L, 3L, 2L, 3L),
-    rede = c("Estadual", "Municipal", "Estadual", "Municipal", "Estadual", "Municipal"),
+    # a MV real traz `rede` em minúscula; o pacote normaliza (ver abaixo)
+    rede = c("estadual", "municipal", "estadual", "municipal", "estadual", "municipal"),
     total_escolas = c(10L, 15L, 50L, 80L, 30L, 40L),
     total_matriculas = c(5000L, 8000L, 25000L, 40000L, 15000L, 20000L),
     total_docentes = c(200L, 300L, 1000L, 1500L, 600L, 800L),
@@ -72,6 +73,20 @@ test_that("rede_municipio() combina filtros", {
   expect_equal(nrow(x), 1L)
   expect_equal(x$no_municipio, "Salvador")
   expect_equal(x$rede, "Estadual")
+})
+
+test_that("redes() e rede_municipio() normalizam o rotulo `rede`", {
+  local_mocked_bindings(eduBR_tbl = fake_mv_rede_escolas_tbl)
+
+  r1 <- as_tibble(redes("fake_con"))
+  r2 <- as_tibble(rede_municipio("fake_con", rede = "municipal"))
+
+  expect_setequal(unique(r1$rede), c("Estadual", "Municipal"))
+  expect_true(all(r2$rede == "Municipal"))
+  expect_equal(
+    unique(r1$rede[r1$codigo_rede == 2L]),
+    "Estadual"
+  )
 })
 
 test_that("rede_municipio() erro em rede invalida", {
