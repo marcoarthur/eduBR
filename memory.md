@@ -40,3 +40,14 @@ implementação ficam no código; memória de curadoria fica em
 - Restam (roadmap na skill): `as_sf()`, `perfil_escola()`/`comparar()`,
   `escolas_similares()`, origem dos `scores()`, logístico (AUC/McFadden),
   `ler_especs()`, INSE histórico, avisos `ideb_inse()`.
+
+## 2026-09-29 — fila de issues #6–#16
+
+- Entregues: #7 `as_sf()`, #8 `escolas_similares()` (fase 1), #9 origem dos
+  `scores()` (docs), #12 `rotular()`, #13 `registrar_relacao()`,
+  #14 parcial (anos em `ideb_inse()`, dados bloqueados), #15 avisos.
+  Já existiam: #10 (AUC/McFadden), #11 (`ler_especs()`).
+- **Decisão #16 (`integer64`)**: manter o tipo do banco + documentar no Rd
+  (feito em `docentes_rede()`/`rede_municipio()`/`redes()`); sem coerção
+  silenciosa para `numeric` — esconderia a precisão real e quebraria a
+  simetria com o Postgres.

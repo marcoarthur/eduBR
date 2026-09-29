@@ -38,7 +38,7 @@ eduBR_catalogo <- function() {
 #'
 #' @export
 catalogo <- function() {
-  cat <- eduBR_catalogo()
+  cat <- utils::modifyList(eduBR_catalogo(), eduBR_catalogo_extra())
   data.frame(
     dominio = names(cat),
     schema  = vapply(cat, `[[`, character(1), 1L),
@@ -47,9 +47,75 @@ catalogo <- function() {
   )
 }
 
+# Relações customizadas da sessão (via registrar_relacao()).
+eduBR_catalogo_extra <- function() {
+  extra <- getOption("eduBR.catalogo.extra", list())
+  if (!is.list(extra)) {
+    extra <- list()
+  }
+  extra
+}
+
+#' Registrar relação customizada no catálogo
+#'
+#' Estende o catálogo do pacote na sessão: `dominio` passa a resolver para
+#' `schema.tabela` em [eduBR_tbl()] (com precedência sobre o embutido) e
+#' aparece em [catalogo()]. Útil para tabelas de análise (`staging.*`) sem
+#' reescrever o pacote. A existência da tabela só é verificada no primeiro
+#' uso (erro do banco, se inexistente).
+#'
+#' @param dominio Nome do domínio (string única, sem espaços).
+#' @param schema Schema da relação (ex.: `"staging"`).
+#' @param tabela Tabela ou view (ex.: `"minha_base"`).
+#'
+#' @return O `dominio`, invisível. Desfaça com [desregistrar_relacao()].
+#'
+#' @examples
+#' \dontrun{
+#' registrar_relacao("minha_base", "staging", "experimento_1")
+#' catalogo()
+#' }
+#'
+#' @export
+registrar_relacao <- function(dominio, schema, tabela) {
+  for (nm in c("dominio", "schema", "tabela")) {
+    v <- get(nm)
+    if (!is.character(v) || length(v) != 1L || is.na(v) || !nzchar(v)) {
+      stop(sprintf("`%s` deve ser uma string nao vazia.", nm), call. = FALSE)
+    }
+  }
+  if (grepl("\\s", dominio)) {
+    stop("`dominio` nao pode conter espacos.", call. = FALSE)
+  }
+  extra <- eduBR_catalogo_extra()
+  extra[[dominio]] <- c(schema, tabela)
+  options(eduBR.catalogo.extra = extra)
+  invisible(dominio)
+}
+
+#' Desregistrar relação customizada
+#'
+#' Remove do catálogo da sessão um domínio registrado por
+#' [registrar_relacao()]. Sem efeito quando o domínio não é customizado.
+#'
+#' @param dominio Nome do domínio.
+#'
+#' @return O `dominio`, invisível.
+#'
+#' @export
+desregistrar_relacao <- function(dominio) {
+  extra <- eduBR_catalogo_extra()
+  extra[[dominio]] <- NULL
+  options(eduBR.catalogo.extra = extra)
+  invisible(dominio)
+}
+
 # Resolve um nome de domínio para uma consulta preguiçosa (dbplyr).
 eduBR_tbl <- function(con, nome) {
-  alvo <- eduBR_catalogo()[[nome]]
+  alvo <- eduBR_catalogo_extra()[[nome]]
+  if (is.null(alvo)) {
+    alvo <- eduBR_catalogo()[[nome]]
+  }
   if (is.null(alvo)) {
     stop(
       sprintf("Relacao desconhecida no catalogo do eduBR: %s", nome),

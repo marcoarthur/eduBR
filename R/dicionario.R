@@ -33,3 +33,48 @@ dicionario <- function() {
     rotulo = unname(unlist(lab[names(vars)]))
   )
 }
+
+# Coluna do Censo -> coluna de rótulo criada por rotular().
+eduBR_colunas_rotulo <- function() {
+  c(
+    tp_dependencia = "rede",
+    tp_categoria_escola_privada = "categoria_privada",
+    tp_localizacao = "localizacao"
+  )
+}
+
+#' Rotula códigos do Censo após o `collect`
+#'
+#' Aplica os rótulos de [dicionario()] às colunas de código presentes no
+#' `data.frame` (`tp_dependencia` → `rede`,
+#' `tp_categoria_escola_privada` → `categoria_privada`,
+#' `tp_localizacao` → `localizacao`), sem remover as originais. Os mesmos
+#' rótulos das colunas derivadas no SQL por [gestores()] e [docentes_rede()].
+#'
+#' @param dados Um `data.frame` (em geral materializado com [coletar()]).
+#'
+#' @return Um `tibble` com as colunas de rótulo adicionadas.
+#'
+#' @examples
+#' \dontrun{
+#' con <- conecta()
+#' censo_escolar(con) |> coletar(n = 10) |> rotular()
+#' }
+#'
+#' @export
+rotular <- function(dados) {
+  if (!is.data.frame(dados)) {
+    stop("`dados` deve ser um data.frame.", call. = FALSE)
+  }
+  df <- tibble::as_tibble(dados)
+  dic <- dicionario()
+  mapa <- eduBR_colunas_rotulo()
+  for (col in names(mapa)) {
+    if (!col %in% names(df) || mapa[[col]] %in% names(df)) {
+      next
+    }
+    sub <- dic[dic$variavel == col, , drop = FALSE]
+    df[[mapa[[col]]]] <- sub$rotulo[match(as.integer(df[[col]]), sub$codigo)]
+  }
+  df
+}
