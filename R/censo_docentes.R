@@ -77,6 +77,9 @@
 #' por grupo, mais as chaves de agrupamento (`rede`, `sg_uf`, `co_municipio`,
 #' `no_municipio`, `nome_regiao`, `sigla_regiao`, `localizacao`).
 #'
+#' @details As contagens chegam como `integer64` (somas de `bigint` no
+#'   Postgres): carregue `bit64` para imprimi-las corretamente.
+#'
 #' @param con Conexão criada por [conecta()].
 #' @param ano Ano do censo (padrão `2025`).
 #' @param rede Filtro pelas redes. Aceita códigos (1–4), nomes

@@ -20,6 +20,19 @@ Acessa \code{clean.mv_escolas_scores}, com os scores consolidados
 diversidade discente, capacidade gestora e sustentabilidade). A consulta
 é preguiçosa; materialize com \code{\link[tibble:as_tibble]{as_tibble()}}.
 }
+\details{
+Origem: materialized view calculada no pipeline EduMaps a partir
+do Censo Escolar (\code{data_pipeline/deploy/escolas_scores.sql}, repo
+EduMaps; chave \code{nu_ano_censo} + \code{co_entidade}). Escala 0–10, quanto
+maior melhor; \code{data_atualizacao} indica a frescura. Bases por score:
+atendimento (densidade aluno-sala, etapas, integral, alimentação);
+infraestrutura (básico, pedagógico, acessibilidade, tecnologia);
+docente (superior, pós, vínculo efetivo, especializações); discente
+(raça, gênero, PcD, EJA); gestora (qualificação, formação em gestão,
+órgãos colegiados, acesso); sustentabilidade (energia, resíduos, área
+verde, educação ambiental). Não há recálculo no pacote (a fórmula vive
+no SQL de carga).
+}
 \examples{
 \dontrun{
 con <- conecta()

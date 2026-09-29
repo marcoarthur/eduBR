@@ -19,6 +19,15 @@
 #' @param etapa Filtro opcional pela etapa.
 #' @param rede Filtro opcional pela rede (`"Municipal"`, `"Estadual"`,
 #'   `"Federal"`).
+#' @param ano_ideb Ano da avaliação IDEB (padrão `NULL` = todos). Com
+#'   `ano_inse` diferente, monta o painel temporal (`inse_{t-1}` → `ideb_t`);
+#'   hoje o INSE só existe em 2023, então o painel depende de cargas futuras.
+#' @param ano_inse Ano do SAEB/INSE (padrão `NULL` = todos).
+#'
+#' @details Associação **contemporânea** quando os anos coincidem (o caso
+#'   atual, 2023): não é configuração de predição. Uma escola aparece **uma
+#'   vez por etapa** do IDEB (join 1:n), com `media_inse` repetida — não
+#'   some escolas sem agrupar por etapa.
 #'
 #' @return Objeto S3 de classe `eduBR_ideb_inse`.
 #'
@@ -30,15 +39,26 @@
 #'
 #' @export
 ideb_inse <- function(con, regiao = NULL, uf = NULL, etapa = NULL,
-                      rede = NULL) {
+                      rede = NULL, ano_ideb = NULL, ano_inse = NULL) {
+  message(
+    "ideb_inse(): INSE e IDEB do mesmo ano = associacao contemporanea ",
+    "(nao preditiva); uma escola entra uma vez por etapa (1:n)."
+  )
+  tb_ideb <- eduBR_tbl(con, "ideb")
+  if (!is.null(ano_ideb)) {
+    tb_ideb <- dplyr::filter(tb_ideb, .data$ano == .env$ano_ideb)
+  }
   ins <- eduBR_tbl(con, "inse") |>
     dplyr::select(dplyr::all_of(c(
       "id_escola", "nu_ano_saeb", "media_inse", "inse_classificacao",
       "qtd_alunos_inse", "tp_tipo_rede", "tp_localizacao"
     )))
+  if (!is.null(ano_inse)) {
+    ins <- dplyr::filter(ins, .data$nu_ano_saeb == .env$ano_inse)
+  }
 
   tb <- dplyr::inner_join(
-    eduBR_tbl(con, "ideb"), ins,
+    tb_ideb, ins,
     by = c("id_escola" = "id_escola", "ano" = "nu_ano_saeb")
   )
   tb <- eduBR_mutate_regiao(tb)

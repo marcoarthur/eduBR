@@ -4,7 +4,15 @@
 \alias{ideb_inse}
 \title{IDEB cruzado com o INSE}
 \usage{
-ideb_inse(con, regiao = NULL, uf = NULL, etapa = NULL, rede = NULL)
+ideb_inse(
+  con,
+  regiao = NULL,
+  uf = NULL,
+  etapa = NULL,
+  rede = NULL,
+  ano_ideb = NULL,
+  ano_inse = NULL
+)
 }
 \arguments{
 \item{con}{Conexao criada por \code{\link[=conecta]{conecta()}}.}
@@ -17,6 +25,12 @@ ideb_inse(con, regiao = NULL, uf = NULL, etapa = NULL, rede = NULL)
 
 \item{rede}{Filtro opcional pela rede (\code{"Municipal"}, \code{"Estadual"},
 \code{"Federal"}).}
+
+\item{ano_ideb}{Ano da avaliação IDEB (padrão \code{NULL} = todos). Com
+\code{ano_inse} diferente, monta o painel temporal (\verb{inse_\{t-1\}} → \code{ideb_t});
+hoje o INSE só existe em 2023, então o painel depende de cargas futuras.}
+
+\item{ano_inse}{Ano do SAEB/INSE (padrão \code{NULL} = todos).}
 }
 \value{
 Objeto S3 de classe \code{eduBR_ideb_inse}.
@@ -28,6 +42,12 @@ Faz \code{inner_join} do IDEB (\code{clean.ideb_notas_escolas}) com o INSE
 UF. Como o INSE so existe em 2023, o resultado e um corte transversal
 daquele ano, restrito as escolas com INSE (apenas publicas). A consulta e
 preguicosa; materialize com \code{\link[tibble:as_tibble]{as_tibble()}}.
+}
+\details{
+Associação \strong{contemporânea} quando os anos coincidem (o caso
+atual, 2023): não é configuração de predição. Uma escola aparece \strong{uma
+vez por etapa} do IDEB (join 1:n), com \code{media_inse} repetida — não
+some escolas sem agrupar por etapa.
 }
 \examples{
 \dontrun{

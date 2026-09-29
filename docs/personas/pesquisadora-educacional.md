@@ -38,6 +38,30 @@
 
 ## Entradas
 
+### 2026-09-29 — 3ª rodada (verificação: rótulo `rede`, dicionário, EDA)
+
+Foco: verificar as correções da rodada anterior (`rede` normalizada,
+`dicionario()`, cobertura do IDEB e apêndice na EDA).
+
+**R5 — `rede` normalizada e join da EDA.**
+- Resposta: `rede_municipio()` devolve `Estadual|Federal|Municipal|Privada`
+  (derivado de `codigo_rede` no SQL) e o `left_join` com `docentes_rede()`
+  casa nas **4 redes, 0 NA** (Federal 584 mun./40.052 doc. … Municipal
+  5.569 mun./1.495.329 doc.).
+- Status: **✓ atendido** — baixa a pendência de normalização.
+
+**R6 — `dicionario()`.**
+- Resposta: `dicionario()` devolve 10 linhas (`tp_dependencia`,
+  `tp_categoria_escola_privada`, `tp_localizacao` → rótulos PT-BR),
+  consistentes com as colunas derivadas no SQL. Cobre **rótulos**, não
+  tipos/ano das relações.
+- Status: **✓ parcial** (pendência de dicionário vira "tipos/ano").
+
+**R7 — EDA com cobertura e apêndice.**
+- Resposta: `analysis/rede_professor.Rmd` renderiza de ponta a ponta com a
+  subseção de cobertura do IDEB por rede e o apêndice do dicionário.
+- Status: **✓ atendido**.
+
 ### 2026-09-28 — 2ª rodada (redes × perfil docente)
 
 Foco: avaliar `rede_municipio()` / `docentes_rede()` e o report
@@ -140,28 +164,24 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 ## Pendências
 
 - [x] Projeção de colunas antes do `collect` (`colunas=` em `docentes_rede()`).
+- [x] Normalizar o rótulo `rede` (derivado de `codigo_rede` no SQL).
+- [x] Cobertura/NA do IDEB por município × rede (subseção na EDA).
 - [ ] Join escola→município **por código** em `escolas()` (parcial: já flui
-  por código via `docentes_rede()`/`gestores()`, que expõem `co_municipio`).
+  por código via `docentes_rede()`/`gestores()`, que expõem `co_municipio`;
+  `clean.escolas` não tem a coluna — inviável sem mudança de carga).
 - [ ] `as_sf()` / suporte PostGIS para mapas regionais.
-- [ ] Dicionário de tipos/ano das relações.
-- [ ] Normalizar o rótulo `rede` de `rede_municipio()` (MV traz minúscula).
+- [ ] Dicionário de tipos/ano das relações (`dicionario()` cobre rótulos).
 
 ## Sugestões priorizadas
 
-- **[alta]** Expor `co_municipio` em `escolas()` para fechar o join por código.
 - **[alta]** Suporte `sf`/PostGIS (`as_sf()`) para a geometria.
 - **[média]** Documentar tipo e ano de referência das chaves/relações
-  (`dicionario()`).
-- **[média]** Normalizar `rede` em `rede_municipio()` para o padrão
-  capitalizado do pacote.
-- **[média]** Documentar cobertura/NA do IDEB por município × rede (a MV
-  traz NA onde não houve avaliação).
+  (rótulos prontos em `dicionario()`).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
-- **Aprova com ressalvas** (2026-09-28): redes por município e perfil
-  docente por rede funcionam por código, com projeção de colunas e
-  agregação no banco — o fluxo de pesquisa regional/nacional está
-  desbloqueado. Ressalvas: `escolas()` segue sem `co_municipio`, e faltam
-  `as_sf()`, dicionário de tipos/ano e a normalização do rótulo `rede`.
+- **Aprova com ressalvas** (2026-09-29): redes, perfil docente, projeção,
+  rótulo `rede`, cobertura do IDEB e dicionário de rótulos verificados
+  contra o banco. Ressalvas restantes: `as_sf()` e dicionário de tipos/ano;
+  `co_municipio` em `escolas()` é inviável na carga atual (documentado).

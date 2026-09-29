@@ -19,6 +19,10 @@ Acessa a view materializada \code{analytics.mv_rede_escolas}, que consolida
 matrículas, docentes e IDEB por município e rede (municipal, estadual,
 privada). A consulta é preguiçosa; materialize com \code{\link[tibble:as_tibble]{as_tibble()}}.
 }
+\details{
+A coluna \code{rede} é normalizada para o padrão do pacote e os
+totais chegam como \code{integer64} (detalhes em \code{\link[=rede_municipio]{rede_municipio()}}).
+}
 \examples{
 \dontrun{
 con <- conecta()

@@ -84,6 +84,22 @@ test_that("ideb_inse() cruza IDEB x INSE e anexa a regiao", {
   expect_false(4 %in% d$id_escola)
 })
 
+test_that("ideb_inse() avisa contemporaneidade e 1:n", {
+  local_mocked_bindings(eduBR_tbl = fake_ideb_inse_tbl)
+
+  expect_message(ideb_inse("fake_con"), "contemporanea")
+  expect_message(ideb_inse("fake_con"), "1:n")
+})
+
+test_that("ideb_inse() filtra por ano_ideb e ano_inse", {
+  local_mocked_bindings(eduBR_tbl = fake_ideb_inse_tbl)
+
+  expect_equal(nrow(as_tibble(ideb_inse("fake_con", ano_ideb = 2023L))), 4L)
+  expect_equal(nrow(as_tibble(ideb_inse("fake_con", ano_ideb = 2022L))), 0L)
+  expect_equal(nrow(as_tibble(ideb_inse("fake_con", ano_inse = 2023L))), 4L)
+  expect_equal(nrow(as_tibble(ideb_inse("fake_con", ano_inse = 2022L))), 0L)
+})
+
 test_that("ideb_inse() filtra por regiao e etapa", {
   local_mocked_bindings(eduBR_tbl = fake_ideb_inse_tbl)
 

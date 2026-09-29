@@ -41,6 +41,18 @@ indicadores <- function(con, escola_id = NULL, indicador = NULL) {
 #' diversidade discente, capacidade gestora e sustentabilidade). A consulta
 #' é preguiçosa; materialize com [as_tibble()].
 #'
+#' @details Origem: materialized view calculada no pipeline EduMaps a partir
+#'   do Censo Escolar (`data_pipeline/deploy/escolas_scores.sql`, repo
+#'   EduMaps; chave `nu_ano_censo` + `co_entidade`). Escala 0–10, quanto
+#'   maior melhor; `data_atualizacao` indica a frescura. Bases por score:
+#'   atendimento (densidade aluno-sala, etapas, integral, alimentação);
+#'   infraestrutura (básico, pedagógico, acessibilidade, tecnologia);
+#'   docente (superior, pós, vínculo efetivo, especializações); discente
+#'   (raça, gênero, PcD, EJA); gestora (qualificação, formação em gestão,
+#'   órgãos colegiados, acesso); sustentabilidade (energia, resíduos, área
+#'   verde, educação ambiental). Não há recálculo no pacote (a fórmula vive
+#'   no SQL de carga).
+#'
 #' @param con Conexão criada por [conecta()].
 #' @param escola_id Filtro opcional pelo código INEP da escola.
 #'

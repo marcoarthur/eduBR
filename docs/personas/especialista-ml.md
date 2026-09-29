@@ -35,6 +35,36 @@
 
 ## Entradas
 
+### 2026-09-29 — 5ª rodada (`docentes_rede`, `coletar`, `dicionario`, `integer64`)
+
+Foco: confrontar as funções novas com as pendências de fronteira
+lazy→collect (M1/M6/M14), dicionário (M2) e `integer64` (M8).
+
+**M17 — `docentes_rede()` compõe sem baixar tudo? (revisita M1/M6/M14).**
+- Resposta: filtros (`uf`/`rede`/ano), projeção (`colunas=`) e `GROUP BY`
+  aparecem no SQL; `coletar(q, n = 5)` empurra `LIMIT 5` (1,5 s) e sem `n`
+  há aviso ("Materializando a consulta sem limite; use `n =` ou filtre
+  antes.").
+- Status: **✓ atendido**.
+
+**M18 — `coletar(n=)` existe? (revisita a pendência nº 1).**
+- Resposta: sim — `coletar()` com `n` + aviso já está no pacote (a memória
+  da 4ª rodada estava desatualizada ao dizer "sem `coletar(n=)`").
+- Status: **✓ atendido** — baixa a pendência nº 1.
+
+**M19 — `dicionario()` vs M2.**
+- Resposta: `dicionario()` cobre os rótulos de `tp_dependencia`,
+  `tp_categoria_escola_privada` e `tp_localizacao`. Tratamento de NA e
+  fatores segue do lado do usuário.
+- Status: **✓ parcial**.
+
+**M20 — `integer64` (revisita M8).**
+- Resposta: as contagens de `docentes_rede()` chegam como `integer64`
+  (confirmado: `doc` é `integer64`); sem `bit64`, a impressão sai como
+  denormal. Documentado no Rd (`@details`) nesta rodada, em vez de
+  normalizar — conversão silenciosa esconderia a precisão real do banco.
+- Status: **documentado** (normalização segue [baixa]).
+
 ### 2026-09-15 — 4ª rodada (camada declarativa de regressão)
 
 Foco: avaliar o motor genérico (`especificar_regressao()`/`ler_espec()` +
@@ -208,8 +238,9 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Pendências
 
-- [ ] Amostragem/limite na materialização (`coletar(n=)`) + aviso de custo.
-- [ ] Dicionário/rótulos para categóricas do Censo.
+- [x] Amostragem/limite na materialização (`coletar(n=)` + aviso existem).
+- [x] Dicionário/rótulos para categóricas do Censo (`dicionario()`).
+- [x] `integer64` documentado (normalização segue [baixa]).
 - [ ] Reprodutibilidade dos `scores()` (documentar ou recalcular).
 - [ ] Ponto de extensão do catálogo.
 - [ ] Normalizar/avisar `integer64` em agregações (`count()`).
@@ -222,8 +253,6 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Sugestões priorizadas
 
-- **[alta]** `coletar(x, n=)` / `head`-like + aviso de custo no `collect`.
-- **[alta]** `dicionario()` para as variáveis categóricas (código → rótulo).
 - **[média]** Documentar origem/fórmula dos `scores()`.
 - **[média]** `registrar_relacao()` para estender o catálogo.
 - **[média]** Expor covariáveis (via `perfil_escola()`) para ampliar a
@@ -242,11 +271,9 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Veredito
 
-- **Aprova com ressalvas** (2026-09-15, 4ª rodada): a camada declarativa
-  (`especificar_regressao()`/`ler_espec()` + `executar_regressao()`) resolve
-  a **escala combinatória** de recortes de forma reproduzível, com pushdown
-  de colunas e fonte agnóstica — boa fundação para o fluxo censo/IDEB.
-  Ressalvas/abertos: falta controle de materialização (`coletar(n=)`),
-  métricas para o modo logístico, `ler_especs()` (multi-spec em YAML) e
-  helpers de saída mais limpos; o dicionário do Censo, a reprodutibilidade dos
-  `scores()` e a extensão do catálogo seguem pendentes.
+- **Aprova com ressalvas** (2026-09-29, 5ª rodada): fronteira lazy→collect
+  sob controle (`coletar(n=)` + aviso + pushdown/agregação no banco),
+  dicionário de rótulos pronto e `integer64` documentado. Ressalvas:
+  métricas para o modo logístico, `ler_especs()` (multi-spec em YAML),
+  reprodutibilidade dos `scores()`, extensão do catálogo, INSE histórico e
+  avisos de contemporaneidade/1:n em `ideb_inse()`.
