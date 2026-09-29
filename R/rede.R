@@ -23,9 +23,20 @@ redes <- function(con, municipio = NULL) {
   if (!is.null(municipio)) {
     tb <- dplyr::filter(tb, .data$co_municipio == .env$municipio)
   }
+  tb <- eduBR_padronizar_rede(tb)
   new_eduBR(
     tb, "eduBR_rede", con,
     list(descricao = "Redes escolares por municipio")
+  )
+}
+
+# A MV traz `rede` em minúscula ("municipal"); padroniza para os rótulos
+# do pacote ("Municipal") a partir de `codigo_rede`, no SQL.
+eduBR_padronizar_rede <- function(tb) {
+  lab <- eduBR_rotulos()
+  dplyr::mutate(
+    tb,
+    rede = !!eduBR_case_when_lookup("codigo_rede", lab$rede)
   )
 }
 
@@ -41,6 +52,10 @@ redes <- function(con, municipio = NULL) {
 #'   `"Sudeste"`, `"SE"`, `"Nordeste"`, `"NE"`, etc.).
 #' @param rede Filtro opcional pela rede. Aceita códigos (1–4) ou nomes:
 #'   `"Federal"`, `"Estadual"`, `"Municipal"`, `"Privada"`.
+#'
+#' @details A coluna `rede` é normalizada para o padrão do pacote
+#'   (`Federal`/`Estadual`/`Municipal`/`Privada`) a partir de `codigo_rede` —
+#'   a MV original traz os rótulos em minúscula.
 #'
 #' @return Objeto S3 de classe `eduBR_rede`.
 #'
@@ -70,6 +85,7 @@ rede_municipio <- function(con, uf = NULL, regiao = NULL, rede = NULL) {
     codigos_rede <- eduBR_codigos_rede(rede)
     tb <- dplyr::filter(tb, .data$codigo_rede %in% .env$codigos_rede)
   }
+  tb <- eduBR_padronizar_rede(tb)
 
   new_eduBR(
     tb, "eduBR_rede", con,

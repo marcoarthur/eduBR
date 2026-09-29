@@ -21,6 +21,12 @@ Acessa a relação de escolas (código INEP, nome, município, UF e
 coordenadas). A consulta é preguiçosa: só vai ao banco quando
 materializada, por exemplo com \code{\link[tibble:as_tibble]{as_tibble()}}.
 }
+\details{
+A tabela não traz código IBGE do município: o filtro e o join
+por município são pelo \strong{nome}. O caminho por código
+(\code{co_municipio}) está em \code{\link[=docentes_rede]{docentes_rede()}} e \code{\link[=gestores]{gestores()}}, que cruzam
+com \code{clean.censo_escolas}.
+}
 \examples{
 \dontrun{
 con <- conecta()

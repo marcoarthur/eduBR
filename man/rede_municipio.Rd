@@ -25,6 +25,11 @@ Consulta \code{analytics.mv_rede_escolas} aplicando filtros por UF, região e/ou
 rede de ensino. Mantém a consulta preguiçosa para agregações posteriores
 no banco antes de materializar.
 }
+\details{
+A coluna \code{rede} é normalizada para o padrão do pacote
+(\code{Federal}/\code{Estadual}/\code{Municipal}/\code{Privada}) a partir de \code{codigo_rede} —
+a MV original traz os rótulos em minúscula.
+}
 \examples{
 \dontrun{
 con <- conecta()
