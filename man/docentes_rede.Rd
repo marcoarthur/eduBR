@@ -51,6 +51,9 @@ agrupada pelo nível territorial solicitado.
 As colunas devolvidas são as contagens de docentes (\verb{qt_doc_bas_*}) somadas
 por grupo, mais as chaves de agrupamento (\code{rede}, \code{sg_uf}, \code{co_municipio},
 \code{no_municipio}, \code{nome_regiao}, \code{sigla_regiao}, \code{localizacao}).
+
+As contagens chegam como \code{integer64} (somas de \code{bigint} no
+Postgres): carregue \code{bit64} para imprimi-las corretamente.
 }
 \examples{
 \dontrun{

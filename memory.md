@@ -27,3 +27,16 @@ implementação ficam no código; memória de curadoria fica em
   nada de duplicar lookup de rede/localização.
 - Lição: `names()` em `tbl_sql` devolve slots internos — derivar colunas de
   variáveis determinísticas, nunca inspecionar a tabela lazy.
+
+## 2026-09-29 — 3ª rodada pesquisadora + 5ª ML
+
+- `rede` normalizada via `codigo_rede` (a MV traz minúscula; o join da EDA
+  não casava — verificado 4/4, 0 NA); `integer64` documentado no Rd em vez
+  de conversão silenciosa.
+- `coletar(n=)` + aviso já existiam (memória da 4ª rodada do ML estava
+  desatualizada); `dicionario()` cobre rótulos (tipos/ano seguem abertos).
+- `co_municipio` em `escolas()` é inviável (`clean.escolas` não tem a
+  coluna) — documentado, não reabrir sem mudança de carga.
+- Restam (roadmap na skill): `as_sf()`, `perfil_escola()`/`comparar()`,
+  `escolas_similares()`, origem dos `scores()`, logístico (AUC/McFadden),
+  `ler_especs()`, INSE histórico, avisos `ideb_inse()`.

@@ -28,7 +28,9 @@ no banco antes de materializar.
 \details{
 A coluna \code{rede} é normalizada para o padrão do pacote
 (\code{Federal}/\code{Estadual}/\code{Municipal}/\code{Privada}) a partir de \code{codigo_rede} —
-a MV original traz os rótulos em minúscula.
+a MV original traz os rótulos em minúscula. Os totais (\code{total_escolas},
+\code{total_matriculas}, …) chegam como \code{integer64} (colunas \code{bigint}):
+carregue \code{bit64} para imprimi-los corretamente.
 }
 \examples{
 \dontrun{

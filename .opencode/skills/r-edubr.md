@@ -276,6 +276,12 @@ EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
 
 Pendências abertas na curadoria (`docs/personas/` deste repo):
 
+> Feito nesta rodada: **redes × perfil docente** — `rede_municipio()`
+> (filtros UF/região/rede, `rede` normalizada via `codigo_rede`) e
+> `docentes_rede()` (join por código, agregação no banco, projeção via
+> `colunas=`), `dicionario()` das categóricas, `integer64` documentado e
+> report `analysis/rede_professor.Rmd` (cobertura do IDEB + apêndice).
+>
 > Feito nesta rodada: **perfil modal de diretores** (Censo Escolar 2025) —
 > `censo_gestor()` + `gestores()` (join com `censo_escolas`, rótulos no SQL) e
 > `perfil_gestor()` (9 dimensões, unidade gestor/escola, Herfindahl; report
@@ -293,12 +299,12 @@ Pendências abertas na curadoria (`docs/personas/` deste repo):
 > reports em `analysis/`. Isso **não** resolve o join escola→município por
 > código — a região é derivada da UF.
 
-- `[alta]` join escola→município **por código** (`co_municipio`), hoje só
-  por nome — expor chave ou helper.
-- `[alta]` `coletar(x, n=)` / limite + aviso de custo na materialização.
-- `[alta]` `dicionario()`/`rotular()` p/ categóricas do Censo
-  (`tp_dependencia`, `tp_localizacao`).
+- `[alta]` join escola→município **por código** em `escolas()`
+  (`clean.escolas` não tem a coluna — inviável sem mudança de carga;
+  documentado no Rd; `docentes_rede()`/`gestores()` já expõem `co_municipio`).
 - `[alta]` `as_sf()` / suporte PostGIS para a geometria.
 - `[alta]` `perfil_escola()`/`comparar()` (escola vs média município/estado).
-- `[média]` projeção/`select` no acesso; `escolas_similares()`; documentar
-  origem dos `scores()`; `print` amigável em PT-BR.
+- `[média]` `rotular()` pós-`collect` (rótulos prontos em `dicionario()`);
+  dicionário de tipos/ano; `escolas_similares()`; documentar origem dos
+  `scores()`; `print` amigável em PT-BR.
+- `[baixa]` normalizar `integer64` em agregações (documentado no Rd).

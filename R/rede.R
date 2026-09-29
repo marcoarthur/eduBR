@@ -9,6 +9,9 @@
 #' @param con Conexão criada por [conecta()].
 #' @param municipio Filtro opcional pelo código IBGE do município.
 #'
+#' @details A coluna `rede` é normalizada para o padrão do pacote e os
+#'   totais chegam como `integer64` (detalhes em [rede_municipio()]).
+#'
 #' @return Objeto S3 de classe `eduBR_rede`.
 #'
 #' @examples
@@ -55,7 +58,9 @@ eduBR_padronizar_rede <- function(tb) {
 #'
 #' @details A coluna `rede` é normalizada para o padrão do pacote
 #'   (`Federal`/`Estadual`/`Municipal`/`Privada`) a partir de `codigo_rede` —
-#'   a MV original traz os rótulos em minúscula.
+#'   a MV original traz os rótulos em minúscula. Os totais (`total_escolas`,
+#'   `total_matriculas`, …) chegam como `integer64` (colunas `bigint`):
+#'   carregue `bit64` para imprimi-los corretamente.
 #'
 #' @return Objeto S3 de classe `eduBR_rede`.
 #'
