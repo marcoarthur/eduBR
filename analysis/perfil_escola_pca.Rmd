@@ -1,0 +1,190 @@
+---
+title: "PCA do perfil escolar"
+subtitle: "Infraestrutura, matrículas, docentes e gestão em dois eixos — com a escola de referência no painel"
+author: "eduBR — curadoria"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+    df_print: paged
+params:
+  service: edumaps
+  etapa: fundamental_ii
+  publica: true
+  escola_id: null
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, message = FALSE, warning = FALSE,
+  fig.width = 11, fig.height = 6, dpi = 120
+)
+
+library(eduBR)
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(knitr)
+
+pct <- function(x) sprintf("%.1f%%", 100 * x)
+```
+
+## Objetivo e método
+
+Documentar o **perfil de uma escola** através de PCA sobre features
+engenheiradas de infraestrutura, matrículas, docentes e gestão
+(`analytics.escola_features`, via `features_escola()`), **sem** medidas de
+desempenho (nota/INSE/percentuais por nível ficam fora dos eixos — entram
+só como contexto, nunca como preditor do próprio perfil).
+
+Desenho:
+
+- recorte por etapa (uma PCA por etapa — escolas de etapas distintas não
+  são comparáveis) e só públicas por padrão;
+- `pca_perfil()` (`stats::prcomp`, centro e escala): colunas sem variância
+  caem com aviso, linhas incompletas são descartadas;
+- a escola de referência (`escola_id`, ou a mais próxima do centroide no
+  plano PC1–PC2) aparece destacada no painel.
+
+```{r conexao}
+con <- conecta(service = params$service)
+```
+
+```{r coleta}
+df <- features_escola(
+  con, etapa = params$etapa, publica = params$publica
+) |>
+  coletar(avisar = FALSE) |>
+  rotular()
+
+cat(sprintf(
+  "%d escolas × %d colunas (%s, %s).\n",
+  nrow(df), ncol(df), params$etapa,
+  if (params$publica) "públicas" else "todas as redes"
+))
+```
+
+```{r pca}
+p <- pca_perfil(df)
+p
+```
+
+## 1. Variância explicada
+
+```{r variancia}
+p$variancia |>
+  head(10) |>
+  transmute(
+    Componente = pc,
+    `% variância` = pct(prop),
+    `% acumulada` = pct(acumulada)
+  ) |>
+  kable(caption = "Variância explicada (10 primeiros componentes)")
+
+ggplot(p$variancia, aes(x = seq_along(pc), y = 100 * prop)) +
+  geom_col() +
+  labs(
+    title = "Scree: % de variância por componente",
+    x = "Componente", y = "% variância"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+## 2. O que pesa em cada eixo
+
+```{r loadings}
+top_loadings <- function(p, pcs = c("PC1", "PC2"), n = 12) {
+  p$loadings |>
+    filter(pc %in% pcs) |>
+    group_by(pc) |>
+    slice_max(abs(peso), n = n, with_ties = FALSE) |>
+    ungroup() |>
+    arrange(pc, desc(abs(peso)))
+}
+
+top <- top_loadings(p)
+
+top |>
+  transmute(
+    Eixo = pc,
+    Variável = variavel,
+    Peso = round(peso, 3)
+  ) |>
+  kable(caption = "Maiores pesos em PC1 e PC2")
+
+ggplot(top, aes(x = reorder(variavel, peso), y = peso, fill = pc)) +
+  geom_col(show.legend = FALSE) +
+  coord_flip() +
+  facet_wrap(~pc, scales = "free_y") +
+  labs(
+    title = "Loadings: o que define cada eixo",
+    x = NULL, y = "Peso"
+  ) +
+  theme_minimal(base_size = 11)
+```
+
+## 3. A escola no painel
+
+```{r escola-ref}
+scores <- p$scores |>
+  left_join(
+    df |> transmute(id = as.character(co_entidade), rede, nota_media),
+    by = "id"
+  )
+
+ref_id <- if (!is.null(params$escola_id)) {
+  as.character(params$escola_id)
+} else {
+  scores$id[which.min(scores$PC1^2 + scores$PC2^2)]
+}
+ref <- scores |> filter(id == ref_id)
+
+cat(sprintf(
+  "Referência: escola %s (rede %s, nota média %s).\n",
+  ref_id, ref$rede,
+  if (is.na(ref$nota_media)) "—" else round(ref$nota_media, 2)
+))
+```
+
+```{r painel, fig.height=7}
+ggplot(scores, aes(x = PC1, y = PC2, color = rede)) +
+  geom_point(size = 0.7, alpha = 0.35) +
+  geom_point(
+    data = ref, aes(x = PC1, y = PC2),
+    color = "black", size = 3.5
+  ) +
+  labs(
+    title = "Escolas no plano PC1–PC2, por rede (ponto preto: referência)",
+    x = "PC1", y = "PC2", color = "Rede"
+  ) +
+  theme_minimal(base_size = 12)
+```
+
+```{r posicao}
+tibble(
+  `PC1 da escola` = round(ref$PC1, 2),
+  `PC2 da escola` = round(ref$PC2, 2),
+  `% escolas abaixo em PC1` = pct(mean(scores$PC1 <= ref$PC1, na.rm = TRUE)),
+  `% escolas abaixo em PC2` = pct(mean(scores$PC2 <= ref$PC2, na.rm = TRUE))
+) |>
+  kable(caption = "Posição da referência no painel")
+```
+
+## Leitura dos resultados
+
+- Os eixos são **descritivos**: PC1 em geral opõe escolas com mais/menos
+  recursos agregados; os loadings da seção 2 dizem o que cada eixo mede
+  **neste** recorte — não generalize para outra etapa/rede sem reestimar.
+- A posição da referência só faz sentido **dentro do recorte** (mesma
+  etapa, mesmas redes); comparar redes distintas no mesmo plano mistura
+  oferta com dependência administrativa.
+- Nota/INSE não entraram na PCA de propósito: servem para perguntar, depois,
+  se o painel posicional se associa ao desempenho — sem contaminar os eixos.
+
+```{r encerrar, include=FALSE}
+DBI::dbDisconnect(con)
+```

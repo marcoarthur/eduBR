@@ -1,0 +1,52 @@
+# pca_perfil() é pura R: fixtures sintéticas com estrutura conhecida.
+
+set.seed(42L)
+bloco1 <- matrix(rnorm(60L), ncol = 2L)
+df_pca <- tibble::tibble(
+  co_entidade = as.character(1:30),
+  etapa = rep("fundamental_ii", 30L),
+  x1 = bloco1[, 1L] * 3,
+  x2 = bloco1[, 1L] * 3 + rnorm(30L, sd = 0.1),
+  x3 = rnorm(30L),
+  nota_media = rnorm(30L, mean = 5),
+  constante = 1,
+  so_na = NA_real_
+)
+
+test_that("pca_perfil() ordena variância e exclui desempenho/constantes", {
+  p <- suppressWarnings(pca_perfil(df_pca))
+
+  expect_s3_class(p, "eduBR_pca")
+  # x1/x2 correlacionadas dominam PC1
+  expect_gt(p$variancia$prop[[1L]], 0.5)
+  expect_equal(sum(p$variancia$prop), 1, tolerance = 1e-8)
+  expect_true(all(c("PC1", "PC2", "PC3") %in% p$variancia$pc))
+  # nota_media, constante e so_na fora
+  expect_false("nota_media" %in% p$loadings$variavel)
+  expect_false("constante" %in% p$loadings$variavel)
+  expect_equal(
+    sort(attr(p, "removidas")),
+    sort(c("constante", "so_na"))
+  )
+  expect_equal(nrow(p$scores), 30L)
+  expect_equal(p$scores$id, as.character(1:30))
+  expect_output(print(p), "eduBR_pca")
+})
+
+test_that("pca_perfil() descarta incompletas e valida entradas", {
+  df <- df_pca
+  df$x3[1L:2L] <- NA_real_
+  p <- suppressWarnings(pca_perfil(df))
+  expect_equal(nrow(p$scores), 28L)
+  expect_equal(attr(p, "n_incompletas"), 2L)
+
+  expect_error(pca_perfil("nao-df"), "data.frame")
+  expect_error(pca_perfil(df_pca, id = "inexistente"), "identificadora")
+  expect_error(
+    pca_perfil(tibble::tibble(co_entidade = "1", etapa = "a")),
+    "sem colunas numéricas"
+  )
+  dup <- df_pca
+  dup$co_entidade[[2L]] <- "1"
+  expect_error(suppressWarnings(pca_perfil(dup)), "duplicados")
+})
