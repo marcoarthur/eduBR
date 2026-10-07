@@ -25,13 +25,56 @@ eduBR_catalogo <- function() {
   )
 }
 
+# Metadados por domínio: granularidade, chave de junção (e tipo no banco),
+# coluna de ano e anos disponíveis no edumaps_dev (levantados em
+# 2026-10-07; mudam com novas cargas).
+eduBR_catalogo_meta <- function() {
+  m <- function(granularidade, chave, tipo_chave, coluna_ano, anos) {
+    list(
+      granularidade = granularidade, chave = chave, tipo_chave = tipo_chave,
+      coluna_ano = coluna_ano, anos = anos
+    )
+  }
+  list(
+    escolas          = m("escola", "codigo_inep", "bigint", NA, NA),
+    municipios       = m("munic\u00edpio", "codigo_ibge", "varchar(7)", NA, NA),
+    ibge             = m("munic\u00edpio", "codigo_ibge", "text", "ano", "vazia no dev"),
+    populacao        = m("munic\u00edpio", "codigo_ibge", "varchar(7)", NA, NA),
+    redes            = m("munic\u00edpio \u00d7 rede", "co_municipio", "text", "ano_ideb",
+                         "2007-2023 (bienal)"),
+    indicadores      = m("escola \u00d7 indicador", "id_escola", "integer", "ano",
+                         "vazia no dev"),
+    scores           = m("escola", "co_entidade", "bigint", "nu_ano_censo", "2025"),
+    censo_escolas    = m("escola", "co_entidade", "bigint", "nu_ano_censo", "2025"),
+    censo_docentes   = m("escola", "co_entidade", "bigint", "nu_ano_censo", "2025"),
+    censo_matriculas = m("escola", "co_entidade", "bigint", "nu_ano_censo", "2025"),
+    censo_gestor     = m("escola", "co_entidade", "bigint", "nu_ano_censo", "2025"),
+    ideb             = m("escola \u00d7 etapa \u00d7 edi\u00e7\u00e3o", "id_escola", "bigint",
+                         "ano", "2005-2023 (bienal)"),
+    inse             = m("escola", "id_escola", "bigint", "nu_ano_saeb", "2023"),
+    escola_features  = m("escola \u00d7 etapa", "co_entidade", "text", NA,
+                         "Censo 2025 + IDEB/INSE"),
+    clusters         = m("execu\u00e7\u00e3o \u00d7 cluster", "run_id", "text", NA, NA),
+    similaridade     = m("par de munic\u00edpios", "municipio_1, municipio_2",
+                         "varchar(8)", NA, "vazia no dev")
+  )
+}
+
 #' Catálogo de relações disponíveis no eduBR
 #'
 #' Lista, em termos de domínio, quais relações físicas do banco de dados
-#' estão disponíveis para as funções de acesso. Útil para inspeção e para
-#' entender a que `schema.tabela` cada nome de domínio corresponde.
+#' estão disponíveis para as funções de acesso, com a granularidade, a chave
+#' de junção (e seu tipo no banco) e o ano de referência de cada uma. Útil
+#' para inspeção e para juntar relações sem adivinhar chaves ou anos.
 #'
-#' @return Um `data.frame` com as colunas `dominio`, `schema` e `tabela`.
+#' Atenção aos tipos: `codigo_inep`/`co_entidade`/`id_escola` são `bigint`
+#' (chegam como `integer64`), enquanto `codigo_ibge` é texto; converta antes
+#' de juntar. Os anos refletem o `edumaps_dev` em 2026-10-07 e mudam com
+#' novas cargas. Relações de [registrar_relacao()] aparecem com metadados
+#' `NA`.
+#'
+#' @return Um `data.frame` com as colunas `dominio`, `schema`, `tabela`,
+#'   `granularidade`, `chave`, `tipo_chave`, `coluna_ano` e `anos`.
 #'
 #' @examples
 #' catalogo()
@@ -39,10 +82,31 @@ eduBR_catalogo <- function() {
 #' @export
 catalogo <- function() {
   cat <- utils::modifyList(eduBR_catalogo(), eduBR_catalogo_extra())
+  meta <- eduBR_catalogo_meta()
+  campo <- function(nome) {
+    vapply(
+      names(cat),
+      function(d) {
+        v <- meta[[d]][[nome]]
+        if (is.null(v) || is.na(v) || d %in% names(eduBR_catalogo_extra())) {
+          NA_character_
+        } else {
+          v
+        }
+      },
+      character(1L),
+      USE.NAMES = FALSE
+    )
+  }
   data.frame(
     dominio = names(cat),
     schema  = vapply(cat, `[[`, character(1), 1L),
     tabela  = vapply(cat, `[[`, character(1), 2L),
+    granularidade = campo("granularidade"),
+    chave = campo("chave"),
+    tipo_chave = campo("tipo_chave"),
+    coluna_ano = campo("coluna_ano"),
+    anos = campo("anos"),
     row.names = NULL
   )
 }
