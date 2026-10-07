@@ -12,7 +12,6 @@ Description: Biblioteca de alto nível para explorar a base pública do
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 8.0.0
 Imports:
     DBI,
     RPostgres,
@@ -31,3 +30,4 @@ Suggests:
     withr,
     yaml
 Config/testthat/edition: 3
+Config/roxygen2/version: 8.1.0

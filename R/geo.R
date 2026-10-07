@@ -34,12 +34,12 @@ as_sf <- function(x, geometry = "geometry", crs = 4674) {
   UseMethod("as_sf")
 }
 
-#' @export
 # Indireção para permitir teste sem banco e sem o pacote `sf`.
 eduBR_tem_sf <- function() {
   requireNamespace("sf", quietly = TRUE)
 }
 
+#' @export
 as_sf.eduBR <- function(x, geometry = "geometry", crs = 4674) {
   if (!eduBR_tem_sf()) {
     stop(
