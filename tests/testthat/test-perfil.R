@@ -11,7 +11,15 @@ fake_perfil_escolas <- tibble::tibble(
   co_municipio = c(1L, 1L, 1L, 2L),
   in_biblioteca = c(1L, 0L, 1L, 1L),
   in_internet = c(1L, 1L, 0L, 0L),
-  in_quadra_esportes = c(0L, 0L, 1L, 1L)
+  in_quadra_esportes = c(0L, 0L, 1L, 1L),
+  in_comum_fund_ai = c(1L, 1L, 0L, 1L),
+  in_comum_fund_af = c(1L, 0L, 1L, 0L)
+)
+
+fake_perfil_matriculas <- tibble::tibble(
+  nu_ano_censo = rep(2025L, 4L),
+  co_entidade = c(11L, 12L, 13L, 21L),
+  qt_mat_bas = c(1200L, 300L, 800L, 150L)
 )
 
 fake_perfil_docentes <- tibble::tibble(
@@ -38,6 +46,7 @@ fake_perfil_tbl <- function(con, nome) {
     nome,
     censo_escolas = fake_perfil_escolas,
     censo_docentes = fake_perfil_docentes,
+    censo_matriculas = fake_perfil_matriculas,
     ideb = fake_perfil_ideb,
     stop(sprintf("fixture inesperada: %s", nome))
   )
@@ -116,4 +125,42 @@ test_that("print.eduBR_perfil_escola resume em PT-BR", {
   expect_output(print(perfil_escola("fake_con", 11L)), "ESC A")
   expect_output(print(perfil_escola("fake_con", 11L)), "Rede Municipal")
   expect_output(print(perfil_escola("fake_con", 11L)), "Biblioteca")
+})
+
+test_that("perfil_escola() guarda etapas, porte e série do IDEB", {
+  local_mocked_bindings(eduBR_tbl = fake_perfil_tbl)
+
+  p <- perfil_escola("fake_con", 11L)
+
+  expect_equal(p$escola$etapas, c("Fund. I", "Fund. II"))
+  expect_equal(p$escola$matriculas, 1200)
+  expect_equal(p$escola$localizacao, "Urbana")
+  expect_equal(p$ideb_serie$ano[p$ideb_serie$etapa == "fundamental_i"],
+               c(2021L, 2023L))
+
+  out <- capture.output(print(p))
+  expect_true(any(grepl("Fund. I, Fund. II", out, fixed = TRUE)))
+  expect_true(any(grepl("1.200 matr", out, fixed = TRUE)))
+  expect_true(any(grepl("em 2021: 3 (+2,0)", out, fixed = TRUE)))
+})
+
+test_that("resumo_escola() devolve uma linha com IDEB e variação", {
+  local_mocked_bindings(eduBR_tbl = fake_perfil_tbl)
+
+  r <- resumo_escola(perfil_escola("fake_con", 11L))
+
+  expect_equal(nrow(r), 1L)
+  expect_equal(r$escola, "ESC A")
+  expect_equal(r$rede, "Municipal")
+  expect_equal(r$etapas, "Fund. I, Fund. II")
+  expect_equal(r$docentes, 20)
+  expect_equal(r$ideb_fund_i, 5.0)
+  expect_equal(r$ano_fund_i, 2023L)
+  expect_equal(r$var_fund_i, 2.0)
+  # fund. II só tem 2023: sem variação
+  expect_equal(r$ideb_fund_ii, 6.0)
+  expect_true(is.na(r$var_fund_ii))
+  expect_true(is.na(r$ideb_medio))
+
+  expect_error(resumo_escola(list()), "eduBR_perfil_escola")
 })

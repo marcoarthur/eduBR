@@ -24,6 +24,20 @@ eduBR_infra_perfil <- function() {
   )
 }
 
+# Etapas ofertadas (flag em clean.censo_escolas -> rótulo curto).
+eduBR_etapas_oferta <- function() {
+  c(
+    in_comum_creche = "Creche",
+    in_comum_pre = "Pr\u00e9-escola",
+    in_comum_fund_ai = "Fund. I",
+    in_comum_fund_af = "Fund. II",
+    in_comum_medio_medio = "M\u00e9dio",
+    in_comum_medio_integrado = "M\u00e9dio",
+    in_comum_eja_fund = "EJA",
+    in_comum_eja_medio = "EJA"
+  )
+}
+
 #' Perfil de uma escola vs município e estado
 #'
 #' Monta a "foto" de uma escola dentro do painel do município e da UF:
@@ -63,7 +77,7 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
   cols_esc <- c(
     "nu_ano_censo", "co_entidade", "no_entidade", "tp_dependencia",
     "tp_localizacao", "sg_uf", "no_municipio", "co_municipio",
-    names(infra)
+    names(infra), names(eduBR_etapas_oferta())
   )
 
   esc <- eduBR_tbl(con, "censo_escolas") |>
@@ -228,6 +242,18 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
           media_etapa(ideb_uf), telef(doc_uf$media), telef(agg_uf$n_escolas))
   )
 
+  mat <- eduBR_tbl(con, "censo_matriculas") |>
+    dplyr::filter(
+      .data$nu_ano_censo == .env$ano,
+      .data$co_entidade == .env$codigo_inep
+    ) |>
+    dplyr::select(dplyr::any_of("qt_mat_bas")) |>
+    dplyr::collect()
+  oferta <- eduBR_etapas_oferta()
+  etapas_of <- unname(oferta[vapply(names(oferta), function(f) {
+    f %in% names(esc) && isTRUE(esc[[f]][[1L]] == 1)
+  }, logical(1L))])
+
   structure(
     list(
       perfil = perfil,
@@ -236,11 +262,21 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
         nome = esc$no_entidade[[1L]],
         rede = rede,
         municipio = esc$no_municipio[[1L]],
-        uf = uf
+        uf = uf,
+        localizacao = unname(
+          lab$localizacao[as.character(esc$tp_localizacao[[1L]])]
+        ),
+        etapas = unique(etapas_of),
+        matriculas = as.numeric(telef(mat$qt_mat_bas))
       ),
       infra_rotulos = infra[flags],
       ano = ano,
-      ano_ideb = ano_ref
+      ano_ideb = ano_ref,
+      ideb_serie = tibble::tibble(
+        etapa = as.character(ideb_escola$etapa),
+        ano = as.integer(ideb_escola$ano),
+        ideb = as.numeric(ideb_escola$ideb_observado)
+      )[order(ideb_escola$etapa, ideb_escola$ano), , drop = FALSE]
     ),
     class = "eduBR_perfil_escola"
   )
@@ -327,6 +363,17 @@ print.eduBR_perfil_escola <- function(x, ...) {
     "Rede %s — %s/%s (Censo %s)\n",
     rede, e$municipio, e$uf, x$ano
   ))
+  porte <- c(
+    if (length(e$etapas)) paste(e$etapas, collapse = ", "),
+    if (!is.null(e$matriculas) && !is.na(e$matriculas)) {
+      sprintf("%s matr\u00edculas", fmt_num(e$matriculas))
+    },
+    if (!is.null(e$localizacao) && !is.na(e$localizacao)) e$localizacao
+  )
+  if (length(porte)) cat(paste(porte, collapse = " \u00b7 "), "\n", sep = "")
+  evo <- eduBR_ideb_evolucao(x)
+  rot_ideb <- c(fundamental_i = "IDEB fund. I", fundamental_ii = "IDEB fund. II",
+                ensino_medio = "IDEB m\u00e9dio")
   cmp <- comparar(x)
   infra <- cmp[cmp$dimensao == "Infraestrutura", , drop = FALSE]
   tem <- infra$item[!is.na(infra$escola) & infra$escola == 1]
@@ -336,9 +383,21 @@ print.eduBR_perfil_escola <- function(x, ...) {
   for (i in seq_len(nrow(cmp))) {
     r <- cmp[i, , drop = FALSE]
     if (r$dimensao != "Infraestrutura" && !is.na(r$escola)) {
+      extra <- ""
+      etapa <- names(rot_ideb)[rot_ideb == sub(" \\(.*$", "", r$item)]
+      if (length(etapa) == 1L) {
+        ev <- evo[evo$etapa == etapa, , drop = FALSE]
+        if (nrow(ev) == 1L && !is.na(ev$ideb_anterior)) {
+          extra <- sprintf(
+            "; em %s: %s (%s)", ev$ano_anterior, fmt_num(ev$ideb_anterior),
+            fmt_var(ev$variacao)
+          )
+        }
+      }
       cat(sprintf(
-        "%s: %s (município %s, estado %s)\n",
-        r$item, fmt_num(r$escola), fmt_num(r$municipio), fmt_num(r$estado)
+        "%s: %s (município %s, estado %s)%s\n",
+        r$item, fmt_num(r$escola), fmt_num(r$municipio), fmt_num(r$estado),
+        extra
       ))
     }
   }
@@ -349,4 +408,79 @@ fmt_num <- function(x) {
   if (is.na(x)) return("—")
   if (abs(x - round(x)) < .Machine$double.eps^0.5) format(round(x), big.mark = ".", decimal.mark = ",")
   else format(round(x, 1L), nsmall = 1L, big.mark = ".", decimal.mark = ",")
+}
+
+fmt_var <- function(x) {
+  sub(".", ",", sprintf("%+.1f", x), fixed = TRUE)
+}
+
+# IDEB da escola na edição de referência vs a edição anterior com nota.
+eduBR_ideb_evolucao <- function(x) {
+  serie <- x$ideb_serie
+  linhas <- lapply(names(x$ano_ideb), function(e) {
+    a <- x$ano_ideb[[e]]
+    s <- serie[serie$etapa == e & !is.na(serie$ideb), , drop = FALSE]
+    atual <- if (is.na(a)) NA_real_ else mean(s$ideb[s$ano == a])
+    ant <- s[!is.na(a) & s$ano < a, , drop = FALSE]
+    ano_ant <- if (nrow(ant)) max(ant$ano) else NA_integer_
+    ideb_ant <- if (nrow(ant)) mean(ant$ideb[ant$ano == ano_ant]) else NA_real_
+    tibble::tibble(
+      etapa = e, ano = as.integer(a), ideb = atual,
+      ano_anterior = as.integer(ano_ant), ideb_anterior = ideb_ant,
+      variacao = atual - ideb_ant
+    )
+  })
+  dplyr::bind_rows(linhas)
+}
+
+#' Resumo de uma linha da escola
+#'
+#' Achata o [perfil_escola()] numa linha: identificação, rede, localização,
+#' etapas ofertadas, porte (matrículas da educação básica), docentes e, por
+#' etapa, o IDEB da edição de referência com a variação em relação à edição
+#' anterior com nota da escola.
+#'
+#' @param x Objeto `eduBR_perfil_escola` (de [perfil_escola()]).
+#'
+#' @return Um `tibble` de uma linha com `codigo_inep`, `escola`, `rede`,
+#'   `municipio`, `uf`, `localizacao`, `etapas`, `matriculas`, `docentes` e,
+#'   para `fund_i`/`fund_ii`/`medio`, `ideb_*`, `ano_*` e `var_*`.
+#'
+#' @examples
+#' \dontrun{
+#' con <- conecta()
+#' resumo_escola(perfil_escola(con, "13078070"))
+#' }
+#'
+#' @export
+resumo_escola <- function(x) {
+  if (!inherits(x, "eduBR_perfil_escola")) {
+    stop("`x` deve ser um eduBR_perfil_escola (ver perfil_escola()).",
+         call. = FALSE)
+  }
+  e <- x$escola
+  nulo <- function(v, na) if (is.null(v) || length(v) == 0L) na else v
+  esc <- x$perfil[x$perfil$nivel == "escola", , drop = FALSE]
+  evo <- eduBR_ideb_evolucao(x)
+  base <- tibble::tibble(
+    codigo_inep = as.character(e$codigo_inep),
+    escola = e$nome,
+    rede = nulo(e$rede, NA_character_),
+    municipio = e$municipio,
+    uf = e$uf,
+    localizacao = nulo(e$localizacao, NA_character_),
+    etapas = paste(nulo(e$etapas, character()), collapse = ", "),
+    matriculas = nulo(e$matriculas, NA_real_),
+    docentes = esc$docentes[[1L]]
+  )
+  sufixo <- c(fundamental_i = "fund_i", fundamental_ii = "fund_ii",
+              ensino_medio = "medio")
+  for (et in names(sufixo)) {
+    ev <- evo[evo$etapa == et, , drop = FALSE]
+    s <- sufixo[[et]]
+    base[[paste0("ideb_", s)]] <- if (nrow(ev)) ev$ideb else NA_real_
+    base[[paste0("ano_", s)]] <- if (nrow(ev)) ev$ano else NA_integer_
+    base[[paste0("var_", s)]] <- if (nrow(ev)) ev$variacao else NA_real_
+  }
+  base
 }
