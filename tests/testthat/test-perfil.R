@@ -20,12 +20,17 @@ fake_perfil_docentes <- tibble::tibble(
   qt_doc_bas = c(20L, 10L, 30L, 15L)
 )
 
+# ESC A tem fund. I em 2021 e 2023; ESC C (Estadual) só entra na rede dela.
 fake_perfil_ideb <- tibble::tibble(
-  id_escola = c(11L, 11L, 12L, 21L),
-  co_municipio = c(1L, 1L, 1L, 2L),
-  sg_uf = c("SP", "SP", "SP", "RJ"),
-  etapa = c("fundamental_i", "fundamental_ii", "fundamental_ii", "fundamental_i"),
-  ideb_observado = c(5.0, 6.0, 4.0, 7.0)
+  id_escola = c(11L, 11L, 11L, 12L, 12L, 13L, 21L),
+  co_municipio = c(1L, 1L, 1L, 1L, 1L, 1L, 2L),
+  sg_uf = c("SP", "SP", "SP", "SP", "SP", "SP", "RJ"),
+  rede = c("Municipal", "Municipal", "Municipal", "Municipal", "Municipal",
+           "Estadual", "Municipal"),
+  ano = c(2023L, 2021L, 2023L, 2023L, 2021L, 2023L, 2023L),
+  etapa = c("fundamental_i", "fundamental_i", "fundamental_ii",
+            "fundamental_ii", "fundamental_i", "fundamental_i", "fundamental_i"),
+  ideb_observado = c(5.0, 3.0, 6.0, 4.0, 9.0, 1.0, 7.0)
 )
 
 fake_perfil_tbl <- function(con, nome) {
@@ -56,6 +61,31 @@ test_that("perfil_escola() monta escola x municipio x estado", {
   # IDEB fund II do município: só ESC A (6.0) e ESC B (4.0)
   expect_equal(mun$ideb_fund_ii[[1L]], 5.0)
   expect_true(is.na(mun$ideb_medio[[1L]]))
+})
+
+test_that("perfil_escola() compara IDEB na mesma edição e rede", {
+  local_mocked_bindings(eduBR_tbl = fake_perfil_tbl)
+
+  p <- perfil_escola("fake_con", 11L)
+  esc <- p$perfil[p$perfil$nivel == "escola", , drop = FALSE]
+  mun <- p$perfil[p$perfil$nivel == "municipio", , drop = FALSE]
+  est <- p$perfil[p$perfil$nivel == "estado", , drop = FALSE]
+
+  # Edição mais recente da escola (2023), sem média com 2021.
+  expect_equal(p$ano_ideb[["fundamental_i"]], 2023L)
+  expect_true(is.na(p$ano_ideb[["ensino_medio"]]))
+  expect_equal(esc$ideb_fund_i[[1L]], 5.0)
+  # Município/UF: só rede Municipal em 2023 (exclui ESC B 2021 e ESC C).
+  expect_equal(mun$ideb_fund_i[[1L]], 5.0)
+  expect_equal(est$ideb_fund_i[[1L]], 5.0)
+
+  p21 <- perfil_escola("fake_con", 11L, ano_ideb = 2021L)
+  mun21 <- p21$perfil[p21$perfil$nivel == "municipio", , drop = FALSE]
+  expect_equal(p21$perfil$ideb_fund_i[[1L]], 3.0)
+  expect_equal(mun21$ideb_fund_i[[1L]], 6.0)
+
+  cmp <- comparar(p)
+  expect_true("IDEB fund. I (2023)" %in% cmp$item)
 })
 
 test_that("perfil_escola() erro em escola inexistente", {

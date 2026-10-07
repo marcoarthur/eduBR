@@ -28,21 +28,25 @@ eduBR_infra_perfil <- function() {
 #'
 #' Monta a "foto" de uma escola dentro do painel do município e da UF:
 #' identificação e rede, infraestrutura (fração das escolas com cada item),
-#' IDEB médio por etapa e docentes por escola. O município é resolvido por
+#' IDEB por etapa e docentes por escola. O município é resolvido por
 #' **código** (`co_municipio` de `clean.censo_escolas`), não pelo nome.
 #'
-#' As médias são **descritivas** (média simples das escolas com dado, IDEB
-#' agregado sobre as avaliações disponíveis) — servem para situar a escola,
-#' não para atribuir causalidade.
+#' O IDEB é comparado **na mesma edição**: para cada etapa usa-se `ano_ideb`
+#' ou, se `NULL`, a edição mais recente com nota da escola; município e
+#' estado são a média das escolas da **mesma rede** nessa edição.
+#'
+#' As médias são **descritivas** (média simples das escolas com dado) —
+#' servem para situar a escola, não para atribuir causalidade.
 #'
 #' @param con Conexão criada por [conecta()].
 #' @param codigo_inep Código INEP da escola (`co_entidade`).
-#' @param ano Ano do Censo para escola/infra/docentes (padrão `2025`). O
-#'   IDEB usa todas as avaliações disponíveis da escola.
+#' @param ano Ano do Censo para escola/infra/docentes (padrão `2025`).
+#' @param ano_ideb Edição do IDEB (ex.: `2023`). `NULL` (padrão) usa, por
+#'   etapa, a edição mais recente da escola.
 #'
 #' @return Objeto S3 de classe `eduBR_perfil_escola` com `$perfil` (tibble
-#'   de 3 linhas: `escola`, `municipio`, `estado`), `$escola` (identificação)
-#'   e `$ano`.
+#'   de 3 linhas: `escola`, `municipio`, `estado`), `$escola` (identificação),
+#'   `$ano` e `$ano_ideb` (edição usada por etapa; `NA` sem nota).
 #'
 #' @examples
 #' \dontrun{
@@ -52,7 +56,7 @@ eduBR_infra_perfil <- function() {
 #' }
 #'
 #' @export
-perfil_escola <- function(con, codigo_inep, ano = 2025L) {
+perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
   infra <- eduBR_infra_perfil()
   lab <- eduBR_rotulos()
 
@@ -108,26 +112,60 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L) {
   agg_mun <- agrega_infra(base_mun)
   agg_uf <- agrega_infra(base_uf)
 
-  # IDEB por etapa: escola, município (por código) e UF.
+  rede <- unname(lab$rede[as.character(esc$tp_dependencia[[1L]])])
+
+  # IDEB por etapa na mesma edição (e rede) para escola, município e UF.
   ideb_etapas <- c("fundamental_i", "fundamental_ii", "ensino_medio")
   ideb_escola <- eduBR_tbl(con, "ideb") |>
     dplyr::filter(.data$id_escola == .env$codigo_inep) |>
-    dplyr::select(dplyr::any_of(c("etapa", "ideb_observado"))) |>
+    dplyr::select(dplyr::any_of(c("ano", "etapa", "ideb_observado"))) |>
     dplyr::collect()
-  ideb_mun <- eduBR_tbl(con, "ideb") |>
-    dplyr::filter(.data$co_municipio == .env$mun_cod) |>
-    dplyr::select(dplyr::any_of(c("etapa", "ideb_observado"))) |>
-    dplyr::collect()
-  ideb_uf <- eduBR_tbl(con, "ideb") |>
-    dplyr::filter(.data$sg_uf == .env$uf) |>
-    dplyr::select(dplyr::any_of(c("etapa", "ideb_observado"))) |>
-    dplyr::collect()
+  ideb_escola <- ideb_escola[!is.na(ideb_escola$ideb_observado), , drop = FALSE]
+
+  ano_ref <- vapply(
+    ideb_etapas,
+    function(e) {
+      anos <- ideb_escola$ano[ideb_escola$etapa == e]
+      if (!is.null(ano_ideb)) {
+        as.integer(ano_ideb)
+      } else if (length(anos) == 0L) {
+        NA_integer_
+      } else {
+        as.integer(max(anos))
+      }
+    },
+    integer(1L)
+  )
+  anos_alvo <- unique(stats::na.omit(ano_ref))
+
+  media_ideb <- function(tb) {
+    if (!is.na(rede)) {
+      tb <- dplyr::filter(tb, .data$rede == .env$rede)
+    }
+    tb |>
+      dplyr::filter(
+        .data$ano %in% .env$anos_alvo,
+        .data$etapa %in% .env$ideb_etapas
+      ) |>
+      dplyr::group_by(.data$ano, .data$etapa) |>
+      dplyr::summarise(
+        ideb_observado = mean(.data$ideb_observado, na.rm = TRUE),
+        .groups = "drop"
+      ) |>
+      dplyr::collect()
+  }
+  ideb_mun <- media_ideb(
+    dplyr::filter(eduBR_tbl(con, "ideb"), .data$co_municipio == .env$mun_cod)
+  )
+  ideb_uf <- media_ideb(
+    dplyr::filter(eduBR_tbl(con, "ideb"), .data$sg_uf == .env$uf)
+  )
 
   media_etapa <- function(df) {
     vapply(
       ideb_etapas,
       function(e) {
-        v <- df$ideb_observado[df$etapa == e]
+        v <- df$ideb_observado[df$etapa == e & df$ano %in% ano_ref[[e]]]
         if (length(v) == 0L || all(is.na(v))) NA_real_ else mean(v, na.rm = TRUE)
       },
       numeric(1L)
@@ -157,7 +195,6 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L) {
   doc_mun <- media_doc(base_mun)
   doc_uf <- media_doc(base_uf)
 
-  rede <- unname(lab$rede[as.character(esc$tp_dependencia[[1L]])])
   telef <- function(x) if (length(x) == 0L || all(is.na(x))) NA_real_ else x[[1L]]
 
   linha <- function(nivel, infra_vals, ideb_vals, doc, n) {
@@ -202,7 +239,8 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L) {
         uf = uf
       ),
       infra_rotulos = infra[flags],
-      ano = ano
+      ano = ano,
+      ano_ideb = ano_ref
     ),
     class = "eduBR_perfil_escola"
   )
@@ -257,6 +295,14 @@ comparar <- function(x) {
 
   nums <- c(ideb_fund_i = "IDEB fund. I", ideb_fund_ii = "IDEB fund. II",
             ideb_medio = "IDEB médio", docentes = "Docentes")
+  edicao <- c(ideb_fund_i = "fundamental_i", ideb_fund_ii = "fundamental_ii",
+              ideb_medio = "ensino_medio")
+  for (col in names(edicao)) {
+    a <- x$ano_ideb[edicao[[col]]]
+    if (length(a) == 1L && !is.na(a)) {
+      nums[[col]] <- sprintf("%s (%s)", nums[[col]], a)
+    }
+  }
   for (col in names(nums)) {
     if (col %in% names(p)) {
       blocos <- c(blocos, list(tibble::tibble(

@@ -4,31 +4,36 @@
 \alias{perfil_escola}
 \title{Perfil de uma escola vs município e estado}
 \usage{
-perfil_escola(con, codigo_inep, ano = 2025L)
+perfil_escola(con, codigo_inep, ano = 2025L, ano_ideb = NULL)
 }
 \arguments{
 \item{con}{Conexão criada por \code{\link[=conecta]{conecta()}}.}
 
 \item{codigo_inep}{Código INEP da escola (\code{co_entidade}).}
 
-\item{ano}{Ano do Censo para escola/infra/docentes (padrão \code{2025}). O
-IDEB usa todas as avaliações disponíveis da escola.}
+\item{ano}{Ano do Censo para escola/infra/docentes (padrão \code{2025}).}
+
+\item{ano_ideb}{Edição do IDEB (ex.: \code{2023}). \code{NULL} (padrão) usa, por
+etapa, a edição mais recente da escola.}
 }
 \value{
 Objeto S3 de classe \code{eduBR_perfil_escola} com \verb{$perfil} (tibble
-de 3 linhas: \code{escola}, \code{municipio}, \code{estado}), \verb{$escola} (identificação)
-e \verb{$ano}.
+de 3 linhas: \code{escola}, \code{municipio}, \code{estado}), \verb{$escola} (identificação),
+\verb{$ano} e \verb{$ano_ideb} (edição usada por etapa; \code{NA} sem nota).
 }
 \description{
 Monta a "foto" de uma escola dentro do painel do município e da UF:
 identificação e rede, infraestrutura (fração das escolas com cada item),
-IDEB médio por etapa e docentes por escola. O município é resolvido por
+IDEB por etapa e docentes por escola. O município é resolvido por
 \strong{código} (\code{co_municipio} de \code{clean.censo_escolas}), não pelo nome.
 }
 \details{
-As médias são \strong{descritivas} (média simples das escolas com dado, IDEB
-agregado sobre as avaliações disponíveis) — servem para situar a escola,
-não para atribuir causalidade.
+O IDEB é comparado \strong{na mesma edição}: para cada etapa usa-se \code{ano_ideb}
+ou, se \code{NULL}, a edição mais recente com nota da escola; município e
+estado são a média das escolas da \strong{mesma rede} nessa edição.
+
+As médias são \strong{descritivas} (média simples das escolas com dado) —
+servem para situar a escola, não para atribuir causalidade.
 }
 \examples{
 \dontrun{
