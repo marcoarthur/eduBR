@@ -24,20 +24,22 @@ escolas_similares(
 \item{publica}{Só escolas públicas? Padrão \code{TRUE}.}
 }
 \value{
-Um \code{tibble} com \code{co_entidade}, \code{etapa} e \code{distancia} (crescente).
+Um \code{tibble} com \code{co_entidade}, \code{escola}, \code{municipio}, \code{uf},
+\code{rede}, \code{etapa} e \code{distancia} (crescente).
 }
 \description{
 Fase 1 da similaridade escolar: k-NN euclidiano sobre as features de
 \code{analytics.escola_features} (infraestrutura, matrículas, docentes,
 gestão e razões — sem medidas de desempenho), padronizadas \strong{dentro de
-cada etapa} (a MV tem uma linha por escola × etapa). O recorte (\code{etapa},
-só públicas por padrão) limita o volume coletado; a distância roda em R
-após o \code{collect} (com aviso de custo).
+cada etapa} (a MV tem uma linha por escola × etapa). Com conexão ao
+banco, a padronização e a distância rodam \strong{no banco} e só as \code{n}
+vizinhas são baixadas; a saída é identificada pelo Censo (nome,
+município, UF, rede).
 }
 \examples{
 \dontrun{
 con <- conecta()
-escolas_similares(con, "35012345")
+escolas_similares(con, "13078070")
 }
 
 }

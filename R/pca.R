@@ -45,6 +45,8 @@ pca_perfil <- function(dados, id = "co_entidade") {
 
   num <- dados[!names(dados) %in% eduBR_exclui_pca()]
   num <- num[vapply(num, is.numeric, logical(1L))]
+  # integer64 (bigint) vira double de verdade; as.matrix() leria os bits.
+  num[] <- lapply(num, as.numeric)
   if (ncol(num) == 0L) {
     stop("sem colunas numéricas para a PCA.", call. = FALSE)
   }
