@@ -77,6 +77,9 @@ eduBR_auc <- function(fit, data, outcome) {
   }
   prob <- prob[[2]]
 
+  ok <- !is.na(y) & !is.na(prob)
+  y <- y[ok]
+  prob <- prob[ok]
   positivo <- y == levels(y)[2]
   n1 <- sum(positivo)
   n0 <- sum(!positivo)
@@ -166,15 +169,16 @@ executar_regressao <- function(con, espec, dados = NULL) {
       ),
       n = purrr::map_int(.data$resultado, "n"),
       modelo = purrr::map(.data$resultado, "modelo"),
+      dados = purrr::map(.data$resultado, "dados"),
       coeficientes = purrr::map(
         .data$modelo, ~ if (is.null(.x)) NULL else broom::tidy(.x)
       ),
       metricas = purrr::map2(
-        .data$modelo, .data$data,
+        .data$modelo, .data$dados,
         ~ if (is.null(.x)) NULL else eduBR_glance(.x, .y, espec)
       ),
       predicoes = purrr::map2(
-        .data$modelo, .data$data,
+        .data$modelo, .data$dados,
         ~ if (is.null(.x)) {
           tibble::tibble()
         } else {
@@ -182,7 +186,7 @@ executar_regressao <- function(con, espec, dados = NULL) {
         }
       )
     ) |>
-    dplyr::select(-dplyr::all_of(c("resultado", "data")))
+    dplyr::select(-dplyr::all_of(c("resultado", "data", "dados")))
 
   structure(ajustado, class = c("eduBR_regressoes", class(ajustado)))
 }

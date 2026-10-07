@@ -101,6 +101,22 @@ test_that("metricas() de logistica traz AUC e McFadden", {
   expect_false("modelo" %in% names(m))
 })
 
+test_that("logistica com NA no desfecho e nos preditores nao quebra", {
+  skip_sem_parsnip()
+
+  d <- tibble::tibble(
+    y = c(0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 0, 1, NA, 1),
+    x = c(1, 2, 2, 3, 4, 3, 5, 4, 2, 5, 1, 5, 3, NA)
+  )
+  espec <- especificar_regressao("y", "x", modelo = "logistico")
+  x <- suppressWarnings(executar_regressao("fake_con", espec, dados = d))
+
+  m <- metricas(x)
+  expect_equal(m$nobs, 12L)
+  expect_true(is.finite(m$auc) && m$auc >= 0 && m$auc <= 1)
+  expect_equal(nrow(x$predicoes[[1L]]), 12L)
+})
+
 test_that("coeficientes() devolve tabela limpa", {
   skip_sem_parsnip()
   local_mocked_bindings(eduBR_tbl = fixture_regressao)
