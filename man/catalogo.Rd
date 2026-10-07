@@ -7,12 +7,21 @@
 catalogo()
 }
 \value{
-Um \code{data.frame} com as colunas \code{dominio}, \code{schema} e \code{tabela}.
+Um \code{data.frame} com as colunas \code{dominio}, \code{schema}, \code{tabela},
+\code{granularidade}, \code{chave}, \code{tipo_chave}, \code{coluna_ano} e \code{anos}.
 }
 \description{
 Lista, em termos de domínio, quais relações físicas do banco de dados
-estão disponíveis para as funções de acesso. Útil para inspeção e para
-entender a que \code{schema.tabela} cada nome de domínio corresponde.
+estão disponíveis para as funções de acesso, com a granularidade, a chave
+de junção (e seu tipo no banco) e o ano de referência de cada uma. Útil
+para inspeção e para juntar relações sem adivinhar chaves ou anos.
+}
+\details{
+Atenção aos tipos: \code{codigo_inep}/\code{co_entidade}/\code{id_escola} são \code{bigint}
+(chegam como \code{integer64}), enquanto \code{codigo_ibge} é texto; converta antes
+de juntar. Os anos refletem o \code{edumaps_dev} em 2026-10-07 e mudam com
+novas cargas. Relações de \code{\link[=registrar_relacao]{registrar_relacao()}} aparecem com metadados
+\code{NA}.
 }
 \examples{
 catalogo()
