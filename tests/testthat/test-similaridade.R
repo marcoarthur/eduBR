@@ -66,10 +66,60 @@ test_that("escolas_similares() valida n e usa features_escola()", {
                             publica = TRUE) {
     new_eduBR(vizinhas, "eduBR_features", con, list())
   }
-  local_mocked_bindings(features_escola = fake_features)
+  fake_censo <- function(con, nome) {
+    tibble::tibble(
+      nu_ano_censo = c(2024L, 2025L, 2025L),
+      co_entidade = c(2, 2, 3),
+      no_entidade = c("ESC B ANTIGA", "ESC B", "ESC C"),
+      no_municipio = c("Ubatuba", "Ubatuba", "Paraty"),
+      sg_uf = c("SP", "SP", "RJ"),
+      tp_dependencia = c(3L, 3L, 2L)
+    )
+  }
+  local_mocked_bindings(features_escola = fake_features, eduBR_tbl = fake_censo)
 
   v <- escolas_similares("fake_con", "1", n = 1L)
   expect_equal(v$co_entidade, "2")
+  expect_named(v, c("co_entidade", "escola", "municipio", "uf", "rede",
+                    "etapa", "distancia"))
+  expect_equal(v$escola, "ESC B")
+  expect_equal(v$rede, "Municipal")
+
+  v2 <- escolas_similares("fake_con", "1", n = 3L)
+  expect_equal(nrow(v2), 3L)
+  expect_true(is.na(v2$escola[v2$co_entidade == "4"]))
 
   expect_error(escolas_similares("fake_con", "1", n = 0), "inteiro positivo")
+})
+
+test_that("eduBR_vizinhos() trata integer64 como número", {
+  testthat::skip_if_not_installed("bit64")
+  v64 <- vizinhas
+  v64$score <- bit64::as.integer64(c(10, 10, 1, 1))
+  vnum <- vizinhas
+  vnum$score <- c(10, 10, 1, 1)
+
+  expect_equal(
+    eduBR_vizinhos(v64, "1", n = 3L),
+    eduBR_vizinhos(vnum, "1", n = 3L)
+  )
+})
+
+test_that("eduBR_vizinhos_query() roda o k-NN no SQL", {
+  testthat::skip_if_not_installed("dbplyr")
+  lf <- dbplyr::lazy_frame(
+    co_entidade = "1", etapa = "fundamental_i", in_internet = 1L,
+    qt_doc_bas = 2L, con = dbplyr::simulate_postgres()
+  )
+  sql <- as.character(dbplyr::sql_render(
+    eduBR_vizinhos_query(lf, "1", 3L, c("in_internet", "qt_doc_bas"),
+                         "fundamental_i")
+  ))
+
+  expect_match(sql, "STDDEV_SAMP", fixed = TRUE)
+  expect_match(sql, "GROUP BY", fixed = TRUE)
+  expect_match(sql, "DOUBLE PRECISION", fixed = TRUE)
+  expect_match(sql, "LIMIT 3", fixed = TRUE)
+  expect_match(sql, "ORDER BY", fixed = TRUE)
+  expect_no_match(sql, "OVER", fixed = TRUE)
 })
