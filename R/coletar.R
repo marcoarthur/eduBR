@@ -4,7 +4,7 @@
 # ao permitir limitar as linhas antes de coletar.
 
 # Um tbl remoto (dbplyr)? Fatorado para permitir teste sem banco.
-eduBR_lazy <- function(x) inherits(x, "tbl_sql")
+eduBR_lazy <- function(x) inherits(x, "tbl_lazy")
 
 #' Coleta um objeto eduBR ou uma consulta lazy
 #'

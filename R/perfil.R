@@ -101,7 +101,7 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
     tb |>
       dplyr::select(dplyr::any_of(c("co_entidade", flags))) |>
       dplyr::summarise(
-        n_escolas = dplyr::n_distinct(.data$co_entidade),
+        n_escolas = dplyr::n_distinct(.data$co_entidade, na.rm = TRUE),
         dplyr::across(
           dplyr::any_of(flags),
           ~ mean(as.numeric(.x), na.rm = TRUE)
