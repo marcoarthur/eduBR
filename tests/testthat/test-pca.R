@@ -50,3 +50,15 @@ test_that("pca_perfil() descarta incompletas e valida entradas", {
   dup$co_entidade[[2L]] <- "1"
   expect_error(suppressWarnings(pca_perfil(dup)), "duplicados")
 })
+
+test_that("pca_perfil() trata integer64 como número", {
+  testthat::skip_if_not_installed("bit64")
+  base <- df_pca[c("co_entidade", "x1", "x3")]
+  base$score <- round(df_pca$x2 * 10)
+  b64 <- base
+  b64$score <- bit64::as.integer64(base$score)
+
+  p_num <- pca_perfil(base)
+  p_64 <- pca_perfil(b64)
+  expect_equal(p_64$variancia, p_num$variancia)
+})
