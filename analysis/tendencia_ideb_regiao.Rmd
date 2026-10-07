@@ -3,6 +3,7 @@ title: "Tendência do IDEB por região do Brasil"
 subtitle: "Regressões lineares do IDEB médio sobre o ano da avaliação"
 author: "eduBR — curadoria (especialista em ML)"
 date: "`r Sys.Date()`"
+lang: pt-BR
 output:
   html_document:
     toc: true
@@ -11,6 +12,11 @@ output:
     theme: cosmo
     code_folding: hide
     df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    latex_engine: xelatex
+    df_print: tibble
 params:
   service: edumaps
   etapa: null
@@ -19,7 +25,10 @@ params:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE, message = FALSE, warning = FALSE,
+  echo = !knitr::is_latex_output(),
+  out.width = if (knitr::is_latex_output()) "100%" else NULL,
+  dev = if (knitr::is_latex_output()) "cairo_pdf" else "png",
+  message = FALSE, warning = FALSE,
   fig.width = 11, fig.height = 7, dpi = 120
 )
 

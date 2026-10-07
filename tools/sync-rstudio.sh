@@ -27,6 +27,7 @@ rsync -rlptz --no-owner --no-group \
   --exclude='.Rhistory' \
   --exclude='.RData' \
   --exclude='analysis/*.html' \
+  --exclude='analysis/*.pdf' \
   --exclude='analysis/*_files/' \
   "$SRC" "${HOST}:${DEST}/"
 

@@ -213,7 +213,7 @@ R/
 
 ## Relatórios
 
-R Markdowns (→ HTML) em `analysis/`:
+R Markdowns em `analysis/` (HTML por padrão; PDF opcional):
 
 ```r
 rmarkdown::render("analysis/tendencia_ideb_regiao.Rmd")  # tendência (2005–2023)
@@ -221,6 +221,17 @@ rmarkdown::render("analysis/regressao_inse_regiao.Rmd")   # IDEB ~ INSE (2023)
 rmarkdown::render("analysis/regressoes_censo.Rmd")        # camada declarativa
 rmarkdown::render("analysis/classificacao_desempenho_rf.Rmd")  # RF alto/médio/baixo
 rmarkdown::render("analysis/perfil_gestor.Rmd")                # perfil modal de diretores
+```
+
+Cada report também sai em **PDF** (xelatex; o código fica oculto) e aceita
+recortes via `params` (veja o cabeçalho YAML de cada `.Rmd`):
+
+```r
+rmarkdown::render(
+  "analysis/rede_professor.Rmd",
+  output_format = "pdf_document",
+  params = list(uf = "AC")          # ou regiao = "Nordeste", rede = "Municipal"
+)
 ```
 
 ## Testes
