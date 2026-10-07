@@ -34,6 +34,39 @@
 
 ## Entradas
 
+### 2026-10-07 — 2ª rodada (verificação de `perfil_escola`, `comparar`, `escolas_similares`)
+
+Foco: revisitar G2–G4 após as entregas #6/#9/#13 e abrir a pergunta "melhoramos
+no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
+
+**G2 (revisita) — comparar com município/estado.**
+- Resposta: `perfil_escola(con, 13078070)` (14 s) imprime nome, rede,
+  município, infraestrutura (tem/não tem) e IDEB/docentes vs município e
+  estado; `comparar()` devolve tabela com 14 itens e `dif_municipio`.
+- Problema: o IDEB mistura edições — "fund. I: 3,9" é a média de
+  2015/2019/2021/2023 (último valor: 3,6); município/estado agregam
+  2005–2023 e todas as redes. A leitura "acima da média" pode estar
+  invertida.
+- Status: **✓ parcial** — bug aberto em **#21**.
+
+**G3 (revisita) — escolas parecidas.**
+- Resposta: `escolas_similares(con, 13078070, n = 3)` funciona, mas levou
+  **3,8 min**, vazou o aviso "Materializando a consulta sem limite" e
+  devolve só `co_entidade/etapa/distancia` (sem nome/município).
+- Status: **✓ parcial** — **#25**.
+
+**G4 (revisita) — saída legível.**
+- Resposta: `print(escola(...))` ainda mostra `# A query: ?? x 20` e
+  `# Database: postgres [devel@ubatexu.lan:5432/edumaps_dev]`; o
+  `print` de `perfil_escola()` é amigável, mas vem precedido do aviso do
+  dbplyr sobre NA em agregação.
+- Status: **lacuna** — **#23**.
+
+**G5 — "Melhoramos no IDEB?"**
+- Resposta: `ideb(con, escola_id = 13078070)` traz a série (fund. I: 4,5 →
+  4,1 → 3,5 → 3,6), mas não há resumo de evolução pronto.
+- Status: **sugestão** — **#26**.
+
 ### 2026-09-15 — 1ª rodada (perguntas canônicas)
 
 **G1 — minha escola numa linha.**
@@ -73,20 +106,27 @@
 
 ## Pendências
 
-- [ ] `perfil_escola()` / `comparar()` (escola vs município/estado).
-- [ ] `escolas_similares(escola_id)` (benchmark escolar).
-- [ ] `print`/`resumo` legível para não-técnico, com rótulos PT-BR.
+- [x] `perfil_escola()` / `comparar()` (entregue; ver #21 sobre o ano do IDEB).
+- [x] `escolas_similares(escola_id)` (entregue; desempenho/saída em #25).
+- [ ] IDEB comparado na mesma edição (#21).
+- [ ] `print`/`resumo` legível para não-técnico, sem host/SQL (#23).
+- [ ] Evolução do IDEB da escola e resumo de uma linha (#26).
+- [ ] `escolas_similares()` < 30 s, sem aviso interno e com nome/município (#25).
 
 ## Sugestões priorizadas
 
-- **[alta]** `perfil_escola()` com comparação pronta (município/estado).
-- **[alta]** `print` amigável (esconder SQL/host; rótulos em PT-BR).
-- **[média]** `escolas_similares()` para benchmark entre escolas.
-- **[média]** Resumo de uma linha por escola (rede, etapa, porte, IDEB).
-- **[baixa]** Exemplos prontos com uma escola real no README.
+- **[alta]** Corrigir a mistura de edições do IDEB no `perfil_escola()` (#21).
+- **[alta]** `print` amigável (esconder SQL/host; rótulos em PT-BR) (#23).
+- **[média]** `escolas_similares()` mais rápido e legível (#25).
+- **[média]** Evolução do IDEB + resumo de uma linha por escola (#26).
+- **[baixa]** Exemplos prontos com uma escola real no README (#27).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-07, 2ª rodada): a comparação com
+  município/estado e o benchmark agora existem e o `print` do perfil é
+  legível. Ressalvas: o IDEB do perfil mistura edições (#21), o `print`
+  genérico ainda expõe SQL/host (#23) e o benchmark é lento e cru (#25).
 - **Aprova com ressalvas** (2026-09-15): dá para "ver a minha escola", mas
   sem comparação com o painel da cidade/estado nem benchmark, e a saída
   ainda não é amigável para quem não programa.

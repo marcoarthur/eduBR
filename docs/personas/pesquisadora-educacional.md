@@ -38,6 +38,29 @@
 
 ## Entradas
 
+### 2026-10-07 — 4ª rodada (verificação de `as_sf()` e tipos/ano)
+
+Foco: revisitar P1/P2/P4 após as entregas #7 e #13.
+
+**R8 — `as_sf()` para mapas (P4).**
+- Resposta: `as_sf(escolas(con, uf = "AC"))` e `as_sf(municipios(con))`
+  falham com "método não aplicável para 'as_sf'": o NAMESPACE não registra
+  `S3method(as_sf, eduBR)` (o `@export` está no lugar errado em `geo.R`).
+  Os testes passam porque rodam dentro do namespace.
+- Status: **lacuna (bug)** — **#20**.
+
+**R9 — tipos/ano das relações (P2).**
+- Resposta: `catalogo()` continua com só `dominio/schema/tabela`; a #13
+  entregou `rotular()` (rotula `rede`/`categoria_privada`/`localizacao`),
+  mas não o tipo/ano. Além disso, `perfil_escola()` compara IDEB de
+  edições diferentes (#21) — exatamente o risco de ano inconsistente.
+- Status: **lacuna** — **#24** (e #21).
+
+**R10 — join escola→município por código (P1).**
+- Resposta: `escolas()` segue sem `co_municipio` (só `municipio` texto);
+  `ideb()`, `docentes_rede()` e `gestores()` expõem o código.
+- Status: **bloqueado** (carga de `clean.escolas` no EduMaps).
+
 ### 2026-09-29 — 3ª rodada (verificação: rótulo `rede`, dicionário, EDA)
 
 Foco: verificar as correções da rodada anterior (`rede` normalizada,
@@ -166,21 +189,25 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - [x] Projeção de colunas antes do `collect` (`colunas=` em `docentes_rede()`).
 - [x] Normalizar o rótulo `rede` (derivado de `codigo_rede` no SQL).
 - [x] Cobertura/NA do IDEB por município × rede (subseção na EDA).
-- [ ] Join escola→município **por código** em `escolas()` (parcial: já flui
-  por código via `docentes_rede()`/`gestores()`, que expõem `co_municipio`;
-  `clean.escolas` não tem a coluna — inviável sem mudança de carga).
-- [ ] `as_sf()` / suporte PostGIS para mapas regionais.
-- [ ] Dicionário de tipos/ano das relações (`dicionario()` cobre rótulos).
+- [ ] Join escola→município **por código** em `escolas()` (bloqueado:
+  `clean.escolas` não tem a coluna; flui via `ideb()`/`docentes_rede()`/
+  `gestores()`).
+- [ ] `as_sf()` utilizável fora do namespace (#20).
+- [ ] Tipo/ano de referência no `catalogo()` (#24).
+- [ ] Mesma edição do IDEB nas comparações (#21).
 
 ## Sugestões priorizadas
 
-- **[alta]** Suporte `sf`/PostGIS (`as_sf()`) para a geometria.
-- **[média]** Documentar tipo e ano de referência das chaves/relações
-  (rótulos prontos em `dicionario()`).
+- **[alta]** Registrar `S3method(as_sf, eduBR)` (#20).
+- **[média]** Tipo/chave/ano por domínio no `catalogo()` (#24).
+- **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-07, 4ª rodada): bases por rede/docente
+  seguem sólidas, mas o suporte a mapas está quebrado para o usuário (#20)
+  e o ano de referência das relações ainda não é explícito (#24, #21).
 - **Aprova com ressalvas** (2026-09-29): redes, perfil docente, projeção,
   rótulo `rede`, cobertura do IDEB e dicionário de rótulos verificados
   contra o banco. Ressalvas restantes: `as_sf()` e dicionário de tipos/ano;
