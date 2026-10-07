@@ -31,6 +31,69 @@ DBI::dbListTables(con)
 DBI::dbDisconnect(con)
 ```
 
+## Minha escola (passo a passo)
+
+Para quem quer só ver **a sua escola** no painel do município e do estado,
+sem escrever SQL. Basta o código INEP da escola (8 dígitos, o mesmo do
+Censo Escolar). Exemplo com uma escola real de Boa Vista do Ramos/AM:
+
+```r
+library(eduBR)
+con <- conecta()
+
+# 1. A foto da escola: infraestrutura, IDEB e docentes vs município/estado
+p <- perfil_escola(con, "13078070")
+p
+#> ESC MUNICIPAL PROF NORMA SILVA DE OLIVEIRA
+#> Rede Municipal — Boa Vista do Ramos/AM (Censo 2025)
+#> Fund. I, Fund. II, EJA · 962 matrículas · Urbana
+#> Tem: Água de rede pública, Energia de rede pública, Esgoto de rede pública, Quadra de esportes, Refeitório, Internet, Banda larga, Sala dos professores
+#> Não tem: Biblioteca, Laboratório de informática
+#> IDEB fund. I (2023): 3,6 (município 4,1, estado 5,0); em 2021: 3,5 (+0,1)
+#> IDEB fund. II (2023): 3,7 (município 3,9, estado 4,1)
+#> Docentes: 75 (município 11,2, estado 11,9)
+```
+
+Como ler: o IDEB é comparado **na mesma edição** (2023) e com escolas da
+**mesma rede** (aqui, municipais). Na infraestrutura, "município 0,07" em
+`comparar()` quer dizer que 7% das escolas do município têm o item.
+
+```r
+# 2. A mesma comparação em tabela (para planilha: write.csv(..., "minha_escola.csv"))
+comparar(p)
+#>    dimensao       item                    escola municipio estado dif_municipio
+#>  4 Infraestrutura Biblioteca                  0     0.0682  0.244       -0.0682
+#> 11 IDEB           IDEB fund. I (2023)       3.6     4.07    4.98        -0.467
+#> ...
+
+# 3. Uma linha só (útil para juntar várias escolas)
+resumo_escola(p)
+#>   escola                rede      etapas                 matriculas ideb_fund_i ano_fund_i var_fund_i
+#>   ESC MUNICIPAL PROF …  Municipal Fund. I, Fund. II, EJA        962         3.6       2023        0.1
+
+# 4. Evolução do IDEB da escola (todas as edições)
+ideb(con, escola_id = "13078070") |> coletar(n = 50)
+#>   etapa            ano ideb_observado
+#>   fundamental_i   2015            4.5
+#>   fundamental_i   2019            4.1
+#>   fundamental_i   2021            3.5
+#>   fundamental_i   2023            3.6
+#>   fundamental_ii  2023            3.7
+
+# 5. Escolas parecidas para trocar experiências (infraestrutura, porte,
+#    docentes e gestão — sem usar a nota)
+escolas_similares(con, "13078070", n = 3)
+#>   co_entidade escola                         municipio uf rede      distancia
+#>   27054128    ESCOLA MUNICIPAL DE ENSINO …   Rio Largo AL Municipal      5.23
+#>   31015474    EM DEPUTADO ABELARD PEREIRA    Carandaí  MG Municipal      5.59
+#>   22141588    ESCOLA MUNICIPAL POETA DA C…   Teresina  PI Municipal      5.70
+
+DBI::dbDisconnect(con)
+```
+
+Troque `"13078070"` pelo código da sua escola. Os números acima são do
+banco de desenvolvimento em 2026-10-07 e mudam com novas cargas.
+
 ## Uso
 
 As funções de acesso devolvem objetos com consulta **preguiçosa** (lazy):
@@ -108,10 +171,13 @@ escolas(con, uf = "SP") |> consulta() |> count(municipio)
 
 ## Catálogo
 
-Para ver a que `schema.tabela` cada nome de domínio corresponde:
+Para ver a que `schema.tabela` cada nome de domínio corresponde — com a
+granularidade, a chave de junção (e o tipo no banco) e os anos
+disponíveis:
 
 ```r
 catalogo()
+catalogo()[, c("dominio", "chave", "tipo_chave", "coluna_ano", "anos")]
 ```
 
 ## Estrutura
