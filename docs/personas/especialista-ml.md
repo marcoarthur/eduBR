@@ -35,6 +35,41 @@
 
 ## Entradas
 
+### 2026-10-07 — 6ª rodada (verificação das entregas #8–#16)
+
+Foco: baixar as pendências entregues em lote em 2026-09-29.
+
+**M20 — `coeficientes()`/`metricas()` em tabela limpa.**
+- Resposta: regressão `ideb_observado ~ nota_media` por etapa (AC, 2023)
+  em 1,2 s; `coeficientes()` (6×6) e `metricas()` (3×13) sem list-cols.
+- Status: **✓ atendido**.
+
+**M21 — métricas do modo logístico (AUC/McFadden).**
+- Resposta: `in_internet ~ in_biblioteca + in_laboratorio_informatica`
+  em `censo_escolas` (2025, AC e SP) **aborta** em `eduBR_auc()` com
+  "valor ausente onde TRUE/FALSE necessário" — NA no outcome/predição
+  não é tratado. Os testes só cobrem dados completos.
+- Status: **lacuna (bug)** — **#22**.
+
+**M22 — `ler_especs()`.**
+- Resposta: YAML com `analises:` (2 specs) → nomes `a1`, `analise_2`; a
+  segunda executa. YAML sem a lista dá erro claro.
+- Status: **✓ atendido**.
+
+**M23 — extensão do catálogo.**
+- Resposta: `registrar_relacao("teste_x", "clean", "inse")` aparece em
+  `catalogo()` e resolve em `eduBR_tbl()` (22 colunas); desfaz com
+  `desregistrar_relacao()`.
+- Status: **✓ atendido**.
+
+**M24 — reprodutibilidade dos `scores()`.**
+- Resposta: Rd documenta origem (pipeline EduMaps), escala e bases; sem
+  recálculo no pacote (decisão registrada).
+- Status: **✓ atendido (documentado)**.
+
+**Observação.** Os comentários de fechamento das issues #8–#13 estão
+deslocados (cada um descreve a entrega da issue vizinha); o código existe.
+
 ### 2026-09-29 — 5ª rodada (`docentes_rede`, `coletar`, `dicionario`, `integer64`)
 
 Foco: confrontar as funções novas com as pendências de fronteira
@@ -240,37 +275,31 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 - [x] Amostragem/limite na materialização (`coletar(n=)` + aviso existem).
 - [x] Dicionário/rótulos para categóricas do Censo (`dicionario()`).
-- [x] `integer64` documentado (normalização segue [baixa]).
-- [ ] Reprodutibilidade dos `scores()` (documentar ou recalcular).
-- [ ] Ponto de extensão do catálogo.
-- [ ] Normalizar/avisar `integer64` em agregações (`count()`).
-- [ ] Report: export em PDF + parâmetros de recorte (UF/região).
-- [ ] Série histórica de INSE (hoje só 2023) para permitir painel temporal.
-- [ ] Documentar/avisar contemporaneidade e o 1:n de `ideb_inse()` (por etapa).
-- [ ] Métricas de classificação (AUC / pseudo-R²) no modo logístico.
-- [ ] `ler_especs()` para YAML com lista `analises:` (várias specs por arquivo).
-- [ ] `coeficientes()`/`metricas()` devolverem tabela limpa (sem list-cols extras).
+- [x] `integer64` documentado; decisão: sem coerção silenciosa (#16).
+- [x] Reprodutibilidade dos `scores()` (documentada no Rd).
+- [x] Ponto de extensão do catálogo (`registrar_relacao()`).
+- [x] Avisos de contemporaneidade/1:n em `ideb_inse()` (#15).
+- [x] `ler_especs()` (YAML com `analises:`).
+- [x] `coeficientes()`/`metricas()` em tabela limpa.
+- [ ] AUC no modo logístico robusta a NA (#22).
+- [ ] Report: export em PDF + parâmetros de recorte (#28).
+- [ ] Série histórica de INSE (bloqueada por dados no pipeline EduMaps).
 
 ## Sugestões priorizadas
 
-- **[média]** Documentar origem/fórmula dos `scores()`.
-- **[média]** `registrar_relacao()` para estender o catálogo.
-- **[média]** Expor covariáveis (via `perfil_escola()`) para ampliar a
-  tendência além do modelo bivariado.
-- **[média]** Carregar SAEBs anteriores (INSE histórico) → painel para
-  previsão (`inse_{t-1}` → `ideb_t`).
-- **[média]** Métricas de classificação (AUC / R² de McFadden) no modo
-  logístico.
-- **[média]** `ler_especs()` (YAML com `analises:` → lista de specs).
-- **[baixa]** `coeficientes()`/`metricas()` retornarem tabela limpa.
-- **[baixa]** Normalizar `integer64` em agregações (ou avisar).
-- **[baixa]** Report: `pdf_document` + params de recorte (UF/região).
-- **[baixa]** Avisar associação contemporânea / 1:n por etapa em
-  `ideb_inse()`.
-- **[baixa]** Aviso amigável quando `escola_id` for string em coluna numérica.
+- **[alta]** Corrigir `eduBR_auc()` com NA (#22).
+- **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
+  `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
+- **[média]** Expor covariáveis do `perfil_escola()` para modelos além do
+  bivariado.
+- **[baixa]** Report: `pdf_document` + params de recorte (#28).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-07, 6ª rodada): extensão do catálogo,
+  `ler_especs()`, saídas limpas e origem dos `scores()` verificadas contra o
+  banco. Ressalva bloqueante para classificação: o modo logístico quebra
+  com NA (#22). Demais: PDF dos reports (#28) e INSE histórico (dados).
 - **Aprova com ressalvas** (2026-09-29, 5ª rodada): fronteira lazy→collect
   sob controle (`coletar(n=)` + aviso + pushdown/agregação no banco),
   dicionário de rótulos pronto e `integer64` documentado. Ressalvas:

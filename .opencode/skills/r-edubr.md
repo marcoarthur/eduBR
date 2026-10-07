@@ -274,37 +274,22 @@ EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
 
 ## Roadmap de melhorias (backlog das personas)
 
-Pendências abertas na curadoria (`docs/personas/` deste repo):
+Pendências abertas na curadoria (`docs/personas/` deste repo; rodada de
+2026-10-07). Cada item tem issue no GitHub:
 
-> Feito nesta rodada: **redes × perfil docente** — `rede_municipio()`
-> (filtros UF/região/rede, `rede` normalizada via `codigo_rede`) e
-> `docentes_rede()` (join por código, agregação no banco, projeção via
-> `colunas=`), `dicionario()` das categóricas, `integer64` documentado e
-> report `analysis/rede_professor.Rmd` (cobertura do IDEB + apêndice).
->
-> Feito nesta rodada: **perfil modal de diretores** (Censo Escolar 2025) —
-> `censo_gestor()` + `gestores()` (join com `censo_escolas`, rótulos no SQL) e
-> `perfil_gestor()` (9 dimensões, unidade gestor/escola, Herfindahl; report
-> `analysis/perfil_gestor.Rmd` com snapshot).
->
-> Feito na rodada anterior: **Random Forest de desempenho escolar** (alto/médio/baixo
-> por terços de `nota_media` do SAEB/IDEB, escolas públicas fund. I/II) com
-> `features_escola()`/`classificar_desempenho()`, floresta com importância por
-> permutação (`desempenho.R`/`floresta.R`) e report
-> `analysis/classificacao_desempenho_rf.Rmd`.
->
-> Feito na rodada anterior: agrupamento por **macrorregião**
-> (`ideb_regiao()`), a modelagem de **tendência** (`tendencia_regiao()`) e a
-> **transversal com INSE** (`inse()`/`ideb_inse()`/`regressao_inse()`), com
-> reports em `analysis/`. Isso **não** resolve o join escola→município por
-> código — a região é derivada da UF.
+> Entregue até 2026-09-30: `as_sf()` (#7), `perfil_escola()`/`comparar()`
+> (#6), `escolas_similares()` fase 1 (#9), origem dos `scores()` (#8),
+> `ler_especs()` (#10), AUC/McFadden (#11), `registrar_relacao()` (#12),
+> `rotular()` (#13), `ideb_inse()` com anos/avisos (#14/#15), decisão
+> `integer64` (#16) e PCA do perfil escolar (#18).
 
-- `[alta]` join escola→município **por código** em `escolas()`
-  (`clean.escolas` não tem a coluna — inviável sem mudança de carga;
-  documentado no Rd; `docentes_rede()`/`gestores()` já expõem `co_municipio`).
-- `[alta]` `as_sf()` / suporte PostGIS para a geometria.
-- `[alta]` `perfil_escola()`/`comparar()` (escola vs média município/estado).
-- `[média]` `rotular()` pós-`collect` (rótulos prontos em `dicionario()`);
-  dicionário de tipos/ano; `escolas_similares()`; documentar origem dos
-  `scores()`; `print` amigável em PT-BR.
-- `[baixa]` normalizar `integer64` em agregações (documentado no Rd).
+- `[alta]` **bug** `as_sf()` sem `S3method(as_sf, eduBR)` no NAMESPACE (#20).
+- `[alta]` **bug** `perfil_escola()` mistura edições do IDEB (#21).
+- `[alta]` **bug** `eduBR_auc()` quebra com NA no modo logístico (#22).
+- `[alta]` `print` amigável (sem host/SQL; rótulos PT-BR) (#23).
+- `[média]` tipo/chave/ano de referência no `catalogo()` (resto da #13) (#24).
+- `[média]` `escolas_similares()` lento (~4 min) e saída crua (#25).
+- `[média]` evolução do IDEB + resumo de uma linha da escola (#26).
+- `[baixa]` README com escola real (#27); reports em PDF (#28).
+- Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
+  (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

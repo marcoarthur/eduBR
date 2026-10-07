@@ -45,3 +45,8 @@ test_that("as_sf() erro amigavel sem o pacote sf", {
 
   expect_error(as_sf(escolas("fake_con")), "exige o pacote")
 })
+
+test_that("as_sf.eduBR registrado como método S3 (despacho fora do namespace)", {
+  metodos <- asNamespace("eduBR")[[".__S3MethodsTable__."]]
+  expect_true(exists("as_sf.eduBR", envir = metodos, inherits = FALSE))
+})
