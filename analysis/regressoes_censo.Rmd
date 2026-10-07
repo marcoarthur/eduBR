@@ -3,6 +3,7 @@ title: "Regressões do censo/IDEB por recortes (camada declarativa)"
 subtitle: "A mesma especificação rodada para muitos cortes (UF, região, etapa)"
 author: "eduBR — curadoria (especialista em ML)"
 date: "`r Sys.Date()`"
+lang: pt-BR
 output:
   html_document:
     toc: true
@@ -11,13 +12,21 @@ output:
     theme: cosmo
     code_folding: hide
     df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    latex_engine: xelatex
+    df_print: tibble
 params:
   service: edumaps
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE, message = FALSE, warning = FALSE,
+  echo = !knitr::is_latex_output(),
+  out.width = if (knitr::is_latex_output()) "100%" else NULL,
+  dev = if (knitr::is_latex_output()) "cairo_pdf" else "png",
+  message = FALSE, warning = FALSE,
   fig.width = 11, fig.height = 7, dpi = 120
 )
 

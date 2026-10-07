@@ -3,6 +3,7 @@ title: "Redes de ensino e perfil docente por município"
 subtitle: "Cruzamento de analytics.mv_rede_escolas com clean.censo_docentes — formação, vínculo, especialização e demografia por rede"
 author: "eduBR — curadoria (pesquisadora educacional)"
 date: "`r Sys.Date()`"
+lang: pt-BR
 output:
   html_document:
     toc: true
@@ -11,6 +12,11 @@ output:
     theme: cosmo
     code_folding: hide
     df_print: paged
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    latex_engine: xelatex
+    df_print: tibble
 params:
   service: edumaps
   ano: 2025
@@ -21,7 +27,10 @@ params:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE, message = FALSE, warning = FALSE,
+  echo = !knitr::is_latex_output(),
+  out.width = if (knitr::is_latex_output()) "100%" else NULL,
+  dev = if (knitr::is_latex_output()) "cairo_pdf" else "png",
+  message = FALSE, warning = FALSE,
   fig.width = 11, fig.height = 6, dpi = 120
 )
 

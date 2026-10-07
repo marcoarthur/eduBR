@@ -274,22 +274,21 @@ EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
 
 ## Roadmap de melhorias (backlog das personas)
 
-Pendências abertas na curadoria (`docs/personas/` deste repo; rodada de
-2026-10-07). Cada item tem issue no GitHub:
+Pendências abertas na curadoria (`docs/personas/` deste repo). A rodada
+de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
 
-> Entregue até 2026-09-30: `as_sf()` (#7), `perfil_escola()`/`comparar()`
-> (#6), `escolas_similares()` fase 1 (#9), origem dos `scores()` (#8),
-> `ler_especs()` (#10), AUC/McFadden (#11), `registrar_relacao()` (#12),
-> `rotular()` (#13), `ideb_inse()` com anos/avisos (#14/#15), decisão
-> `integer64` (#16) e PCA do perfil escolar (#18).
+> - Bugs: `as_sf()` registrado como S3 (#20); IDEB do `perfil_escola()` na
+>   mesma edição e rede (#21); AUC/métricas da logística com NA (#22);
+>   `integer64` como número no k-NN e na PCA (junto da #25).
+> - `print` amigável sem SQL/host (#23); chave/tipo/ano no `catalogo()`
+>   (#24); `escolas_similares()` com k-NN no banco (~4 min → ~10 s) e saída
+>   identificada (#25); evolução do IDEB + `resumo_escola()` (#26); README
+>   "Minha escola" (#27); reports em PDF com `params` (#28).
+>
+> Entregue até 2026-09-30: #6–#18 (perfil/comparar, similares fase 1,
+> scores, ler_especs, AUC/McFadden, registrar_relacao, rotular, INSE,
+> integer64, PCA).
 
-- `[alta]` **bug** `as_sf()` sem `S3method(as_sf, eduBR)` no NAMESPACE (#20).
-- `[alta]` **bug** `perfil_escola()` mistura edições do IDEB (#21).
-- `[alta]` **bug** `eduBR_auc()` quebra com NA no modo logístico (#22).
-- `[alta]` `print` amigável (sem host/SQL; rótulos PT-BR) (#23).
-- `[média]` tipo/chave/ano de referência no `catalogo()` (resto da #13) (#24).
-- `[média]` `escolas_similares()` lento (~4 min) e saída crua (#25).
-- `[média]` evolução do IDEB + resumo de uma linha da escola (#26).
-- `[baixa]` README com escola real (#27); reports em PDF (#28).
+- Próximo passo: nova rodada das personas para verificar #20–#28.
 - Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

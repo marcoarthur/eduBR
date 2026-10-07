@@ -5,6 +5,8 @@
 .DS_Store
 .quarto
 analysis/*.html
+analysis/*.pdf
+analysis/*.tex
 analysis/*_files/
 analysis/*.rds
 tests/testthat/_problems/
