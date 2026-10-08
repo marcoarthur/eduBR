@@ -33,7 +33,8 @@ institucionais identificáveis (endereço, telefone, CEP, CNPJ);
 \code{integer64} vira texto, datas viram ISO-8601 e \code{NA}/\code{NaN}/\code{Inf} viram
 \code{null};
 \item \code{metadados}: \code{grao}, \code{filtros}, \code{n}, \code{n_total}, \code{truncado}, \code{aviso},
-\code{handle} e \code{colunas_omitidas};
+\code{handle}, \code{colunas_omitidas} e, em algumas ferramentas, \code{contexto}
+(identificação do objeto consultado, ex.: a escola em \code{perfil_escola});
 \item \code{erro}: \code{null}, ou \verb{\{tipo, mensagem\}} com \code{tipo} em
 \code{parametro_invalido}, \code{sem_dados}, \code{limite_excedido} ou \code{conexao}.
 }
@@ -42,6 +43,28 @@ Nenhum retorno expõe nomes físicos de \code{schema.tabela}, SQL ou mensagens
 do Postgres. Cada chamada fica registrada no ledger da sessão (ver
 \code{\link[=ledger]{ledger()}}).
 }
+\section{Ferramentas}{
+
+\itemize{
+\item \code{catalogo} (todas as personas): domínios, granularidade e anos;
+\item \code{perfil_escola} (gestora, pesquisadora): escola × município × estado
+(\code{\link[=perfil_escola]{perfil_escola()}} + \code{\link[=comparar]{comparar()}}), com a identificação da escola em
+\code{metadados$contexto};
+\item \code{resumo_escola} (gestora): a escola numa linha (\code{\link[=resumo_escola]{resumo_escola()}});
+\item \code{serie_ideb_escola} (gestora): série do IDEB da escola (\code{\link[=ideb]{ideb()}});
+\item \code{escolas_similares} (gestora): benchmark sem usar a nota
+(\code{\link[=escolas_similares]{escolas_similares()}}, \code{n} até 20);
+\item \code{scores_escola} (gestora, especialista-ml): scores compostos
+(\code{\link[=scores]{scores()}});
+\item \code{indicadores_escola} (especialista-ml): ranking por indicador
+(\code{\link[=indicadores]{indicadores()}}).
+}
+
+Os argumentos (código INEP de 8 dígitos, etapa, edição bienal do IDEB,
+\code{n}) são validados antes de consultar o banco; valores inválidos
+devolvem \code{parametro_invalido} com a correção esperada.
+}
+
 \section{Limites}{
 
 \code{limites} é uma lista nomeada; chaves omitidas usam o padrão:
