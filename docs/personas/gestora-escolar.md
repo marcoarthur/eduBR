@@ -34,6 +34,43 @@
 
 ## Entradas
 
+### 2026-10-08 — 3ª rodada (verificação de #21, #23, #25, #26, #27)
+
+Foco: conferir as entregas contra o `edumaps_dev` com a escola 13078070 e
+uma segunda escola (EMEF Eurico Leite de Morais, Adamantina/SP).
+
+**G4 (revisita) — saída legível.**
+- Resposta: `print(escola(con, "13078070"))` mostra
+  `<eduBR_escola> Escola INEP 13078070`, "20 colunas", prévia de 1 linha e a
+  dica de `coletar()`; **sem SQL, usuário ou host**. Ainda aparecem tipos
+  técnicos na prévia (`<chr>`, `<int64>`, `geometry <pq_gmtry>`).
+- Status: **✓ atendido** (#23).
+
+**G2 (revisita) — comparação na mesma edição.**
+- Resposta: "IDEB fund. I (2023): 3,6 (município 4,1, estado 5,0)" — mesma
+  edição e mesma rede; a escola agora aparece **abaixo** do município (antes
+  o 3,9 misturado sugeria o contrário). Perfil em 10 s.
+- Status: **✓ atendido** (#21).
+
+**G5 (revisita) — "melhoramos no IDEB?" e resumo de uma linha.**
+- Resposta: o `print` traz "em 2021: 3,5 (+0,1)" e a linha
+  "Fund. I, Fund. II, EJA · 962 matrículas · Urbana"; `resumo_escola(p)`
+  devolve uma linha com rede, etapas, matrículas, docentes e
+  `ideb_*`/`ano_*`/`var_*`. Na escola de Adamantina: 6,6 em 2023,
+  "em 2021: 5,8 (+0,8)".
+- Status: **✓ atendido** (#26).
+
+**G3 (revisita) — benchmark.**
+- Resposta: `escolas_similares(con, "13078070", n = 5)` em **11 s** (antes
+  3,8 min), sem aviso, com nome, município, UF e rede das vizinhas.
+- Status: **✓ atendido** (#25).
+
+**G7 — dá para seguir o README sozinha?**
+- Resposta: a seção "Minha escola (passo a passo)" tem as mesmas chamadas
+  usadas nesta rodada, com a saída esperada e a dica de exportar para
+  planilha (`write.csv`).
+- Status: **✓ atendido** (#27).
+
 ### 2026-10-07 — 2ª rodada (verificação de `perfil_escola`, `comparar`, `escolas_similares`)
 
 Foco: revisitar G2–G4 após as entregas #6/#9/#13 e abrir a pergunta "melhoramos
@@ -106,23 +143,25 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 
 ## Pendências
 
-- [x] `perfil_escola()` / `comparar()` (entregue; ver #21 sobre o ano do IDEB).
-- [x] `escolas_similares(escola_id)` (entregue; desempenho/saída em #25).
-- [ ] IDEB comparado na mesma edição (#21).
-- [ ] `print`/`resumo` legível para não-técnico, sem host/SQL (#23).
-- [ ] Evolução do IDEB da escola e resumo de uma linha (#26).
-- [ ] `escolas_similares()` < 30 s, sem aviso interno e com nome/município (#25).
+- [x] `perfil_escola()` / `comparar()` na mesma edição e rede (#21).
+- [x] `escolas_similares()` rápido e identificado (#25).
+- [x] `print` legível, sem host/SQL (#23).
+- [x] Evolução do IDEB e resumo de uma linha (#26).
+- [x] Exemplo com escola real no README (#27).
 
 ## Sugestões priorizadas
 
-- **[alta]** Corrigir a mistura de edições do IDEB no `perfil_escola()` (#21).
-- **[alta]** `print` amigável (esconder SQL/host; rótulos em PT-BR) (#23).
-- **[média]** `escolas_similares()` mais rápido e legível (#25).
-- **[média]** Evolução do IDEB + resumo de uma linha por escola (#26).
-- **[baixa]** Exemplos prontos com uma escola real no README (#27).
+- **[baixa]** Na prévia do `print`, esconder tipos técnicos (`<int64>`,
+  `<pq_gmtry>`) e a coluna `geometry`.
+- **[baixa]** Exportação pronta para planilha (ex.: `exportar(p, "x.csv")`)
+  em vez de `write.csv()`.
 
 ## Veredito
 
+- **Aprova** (2026-10-08, 3ª rodada): vê a escola numa linha, compara com
+  município/estado na mesma edição, acompanha a evolução do IDEB, encontra
+  escolas parecidas em segundos e segue o README sem programar. Restam só
+  ajustes cosméticos ([baixa]).
 - **Aprova com ressalvas** (2026-10-07, 2ª rodada): a comparação com
   município/estado e o benchmark agora existem e o `print` do perfil é
   legível. Ressalvas: o IDEB do perfil mistura edições (#21), o `print`

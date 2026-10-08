@@ -289,6 +289,12 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
 > scores, ler_especs, AUC/McFadden, registrar_relacao, rotular, INSE,
 > integer64, PCA).
 
-- Próximo passo: nova rodada das personas para verificar #20–#28.
+- Rodada de 2026-10-08 verificou #20–#28: gestora e ML **aprovam**;
+  pesquisadora aprova com ressalvas. Sugestões abertas (sem issue):
+  - `[média]` `as_sf()`: hex → `sf::st_as_sfc(<WKB>, EWKB = TRUE)`
+    vetorizado (~15× mais rápido em polígonos) e sem aviso de materialização.
+  - `[média]` covariáveis do `perfil_escola()` para modelos multivariados.
+  - `[baixa]` prévia do `print` sem tipos técnicos/`geometry`; exportar o
+    perfil para planilha; re-renderizar `perfil_escola_pca.Rmd`.
 - Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

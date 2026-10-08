@@ -35,6 +35,36 @@
 
 ## Entradas
 
+### 2026-10-08 — 7ª rodada (verificação de #22, #25, #28 e do `integer64`)
+
+**M21 (revisita) — logística com NA.**
+- Resposta: `in_internet ~ in_biblioteca + in_laboratorio_informatica`
+  (`censo_escolas`, 2025) roda em AC (n=1.524, McFadden 0,104, AUC 0,612)
+  e SP (n=30.817, McFadden 0,051, AUC 0,670); métricas calculadas sobre os
+  dados limpos do ajuste.
+- Status: **✓ atendido** (#22).
+
+**M25 — `integer64` na PCA.**
+- Resposta: amostra de 3.000 linhas de `features_escola(etapa =
+  "fundamental_ii")`: os 4 `*_score` chegam como `integer64` e agora
+  **entram** nos loadings de `pca_perfil()` (antes caíam como "sem
+  variância"). 2.856 escolas × 67 componentes (24,4% em PC1–PC2).
+- Status: **✓ atendido** (junto da #25). Atenção: o report
+  `perfil_escola_pca.Rmd` muda ao re-renderizar.
+
+**M26 — k-NN no banco é o mesmo k-NN?**
+- Resposta: SQL vs caminho em R sobre a coleta total (72 mil linhas, 116 s)
+  em 4 escolas (3 sorteadas): mesmos ids, |Δdistância| ≤ 4,4e-15; desempate
+  determinístico por `co_entidade`.
+- Status: **✓ atendido** (#25).
+
+**M27 — reports em PDF com recorte.**
+- Resposta: os 7 `.Rmd` têm `pdf_document` (xelatex, `df_print: tibble`,
+  código oculto); README documenta `params`. Renderizações verificadas na
+  entrega (PR #35): `rede_professor` (AC e Norte), `tendencia_ideb_regiao`
+  e `perfil_gestor`.
+- Status: **✓ atendido** (#28).
+
 ### 2026-10-07 — 6ª rodada (verificação das entregas #8–#16)
 
 Foco: baixar as pendências entregues em lote em 2026-09-29.
@@ -276,26 +306,30 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - [x] Amostragem/limite na materialização (`coletar(n=)` + aviso existem).
 - [x] Dicionário/rótulos para categóricas do Censo (`dicionario()`).
 - [x] `integer64` documentado; decisão: sem coerção silenciosa (#16).
+- [x] `integer64` tratado como número no k-NN e na PCA.
 - [x] Reprodutibilidade dos `scores()` (documentada no Rd).
 - [x] Ponto de extensão do catálogo (`registrar_relacao()`).
 - [x] Avisos de contemporaneidade/1:n em `ideb_inse()` (#15).
 - [x] `ler_especs()` (YAML com `analises:`).
 - [x] `coeficientes()`/`metricas()` em tabela limpa.
-- [ ] AUC no modo logístico robusta a NA (#22).
-- [ ] Report: export em PDF + parâmetros de recorte (#28).
+- [x] AUC no modo logístico robusta a NA (#22).
+- [x] Report: export em PDF + parâmetros de recorte (#28).
 - [ ] Série histórica de INSE (bloqueada por dados no pipeline EduMaps).
 
 ## Sugestões priorizadas
 
-- **[alta]** Corrigir `eduBR_auc()` com NA (#22).
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 - **[média]** Expor covariáveis do `perfil_escola()` para modelos além do
   bivariado.
-- **[baixa]** Report: `pdf_document` + params de recorte (#28).
+- **[baixa]** Re-renderizar `perfil_escola_pca.Rmd` com os `*_score` na PCA.
 
 ## Veredito
 
+- **Aprova** (2026-10-08, 7ª rodada): fronteira lazy→collect controlada,
+  k-NN empurrado ao banco e equivalente ao de referência, métricas da
+  logística robustas a NA, `integer64` tratado e reports reprodutíveis em
+  PDF. A única pendência (INSE histórico) é de dados, fora do pacote.
 - **Aprova com ressalvas** (2026-10-07, 6ª rodada): extensão do catálogo,
   `ler_especs()`, saídas limpas e origem dos `scores()` verificadas contra o
   banco. Ressalva bloqueante para classificação: o modo logístico quebra
