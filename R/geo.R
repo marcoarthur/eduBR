@@ -2,23 +2,20 @@
 #
 # Suporte geoespacial: converte a coluna `geometry` (hex EWKB, SRID 4674)
 # em geometria `sf`. A materialização respeita os filtros lazy do objeto;
-# a conversão roda em R após o `collect`.
-
-# Hex EWKB -> raw (sf::st_as_sfc não lê hexadecimal direto).
-eduBR_hex2raw <- function(h) {
-  as.raw(strtoi(substring(h, seq(1L, nchar(h), 2L), seq(2L, nchar(h), 2L)), 16L))
-}
+# a conversão (vetorizada, pelo próprio `sf`) roda em R após o `collect`.
 
 #' Objeto eduBR como `sf`
 #'
 #' Materializa um objeto [eduBR] e converte a coluna de geometria (hex EWKB,
 #' SRID 4674 — SIRGAS 2000) em geometria `sf`, permitindo mapas com
 #' `ggplot2::geom_sf()` e companhia. Linhas sem geometria (`NA`) viram
-#' geometrias vazias (as linhas são mantidas).
+#' geometrias vazias (as linhas são mantidas). Pedir o `sf` já é pedir a
+#' materialização, então não há aviso de custo; use `n` para limitar.
 #'
 #' @param x Um objeto `eduBR` com coluna de geometria.
 #' @param geometry Nome da coluna de geometria (padrão `"geometry"`).
 #' @param crs CRS aplicado (padrão `4674`, lido do EWKB quando presente).
+#' @param n Opcional: número máximo de linhas a materializar (`LIMIT`).
 #'
 #' @return Um `sf` (`data.frame` com coluna `sfc` ativa).
 #'
@@ -30,7 +27,7 @@ eduBR_hex2raw <- function(h) {
 #' }
 #'
 #' @export
-as_sf <- function(x, geometry = "geometry", crs = 4674) {
+as_sf <- function(x, geometry = "geometry", crs = 4674, n = NULL) {
   UseMethod("as_sf")
 }
 
@@ -40,14 +37,14 @@ eduBR_tem_sf <- function() {
 }
 
 #' @export
-as_sf.eduBR <- function(x, geometry = "geometry", crs = 4674) {
+as_sf.eduBR <- function(x, geometry = "geometry", crs = 4674, n = NULL) {
   if (!eduBR_tem_sf()) {
     stop(
       "as_sf() exige o pacote `sf` (instale com install.packages(\"sf\")).",
       call. = FALSE
     )
   }
-  df <- tibble::as_tibble(coletar(x, avisar = TRUE))
+  df <- tibble::as_tibble(coletar(x, n = n, avisar = FALSE))
   if (!geometry %in% names(df)) {
     stop(
       sprintf("coluna de geometria inexistente: '%s'.", geometry),
@@ -55,13 +52,13 @@ as_sf.eduBR <- function(x, geometry = "geometry", crs = 4674) {
     )
   }
   hex <- as.character(df[[geometry]])
-  geoms <- lapply(hex, function(h) {
-    if (is.na(h) || !nzchar(h)) {
-      sf::st_point()
-    } else {
-      sf::st_as_sfc(list(eduBR_hex2raw(h)), EWKB = TRUE)[[1L]]
-    }
-  })
+  ok <- !is.na(hex) & nzchar(hex)
+  geoms <- rep(list(sf::st_point()), length(hex))
+  if (any(ok)) {
+    geoms[ok] <- as.list(
+      sf::st_as_sfc(structure(hex[ok], class = "WKB"), EWKB = TRUE)
+    )
+  }
   df[[geometry]] <- sf::st_sfc(geoms, crs = crs)
   sf::st_sf(df)
 }

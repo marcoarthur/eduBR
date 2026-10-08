@@ -4,7 +4,7 @@
 \alias{as_sf}
 \title{Objeto eduBR como \code{sf}}
 \usage{
-as_sf(x, geometry = "geometry", crs = 4674)
+as_sf(x, geometry = "geometry", crs = 4674, n = NULL)
 }
 \arguments{
 \item{x}{Um objeto \code{eduBR} com coluna de geometria.}
@@ -12,6 +12,8 @@ as_sf(x, geometry = "geometry", crs = 4674)
 \item{geometry}{Nome da coluna de geometria (padrão \code{"geometry"}).}
 
 \item{crs}{CRS aplicado (padrão \code{4674}, lido do EWKB quando presente).}
+
+\item{n}{Opcional: número máximo de linhas a materializar (\code{LIMIT}).}
 }
 \value{
 Um \code{sf} (\code{data.frame} com coluna \code{sfc} ativa).
@@ -20,7 +22,8 @@ Um \code{sf} (\code{data.frame} com coluna \code{sfc} ativa).
 Materializa um objeto \link{eduBR} e converte a coluna de geometria (hex EWKB,
 SRID 4674 — SIRGAS 2000) em geometria \code{sf}, permitindo mapas com
 \code{ggplot2::geom_sf()} e companhia. Linhas sem geometria (\code{NA}) viram
-geometrias vazias (as linhas são mantidas).
+geometrias vazias (as linhas são mantidas). Pedir o \code{sf} já é pedir a
+materialização, então não há aviso de custo; use \code{n} para limitar.
 }
 \examples{
 \dontrun{
