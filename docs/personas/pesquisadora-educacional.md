@@ -38,6 +38,15 @@
 
 ## Entradas
 
+### 2026-10-08 — 7ª rodada (pendências externas)
+
+**R17 — houve mudança na carga?**
+- Resposta: `clean.escolas` continua sem coluna de código do município e
+  `clean.inse` continua só com `nu_ano_saeb` 2023 (consultado no banco).
+  Nenhuma entrega do pacote mudou isso; o contorno segue sendo
+  `covariaveis_escola()`/`ideb()`/`docentes_rede()`/`gestores()`.
+- Status: **bloqueado** (pipeline EduMaps).
+
 ### 2026-10-08 — 6ª rodada (verificação de #36 e #37)
 
 **R15 — `as_sf()` com limite e sem aviso.**
@@ -249,6 +258,8 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-08, 7ª rodada): sem mudança — a única
+  ressalva segue externa ao pacote (`co_municipio` em `clean.escolas`).
 - **Aprova com ressalvas** (2026-10-08, 6ª rodada): mapas rápidos e sem
   ruído, base escola × covariáveis com código do município. Única ressalva
   é externa: `escolas()` sem `co_municipio` até a carga do EduMaps mudar.

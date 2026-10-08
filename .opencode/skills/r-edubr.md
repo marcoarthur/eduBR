@@ -301,5 +301,13 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   `clean.escolas`). A sugestão `[baixa]` dela foi entregue: `pca_perfil()`
   descarta componentes de variância nula e aponta colunas redundantes (#48)
   — os `*_score` são combinação exata dos `in_*`.
+- Rodada de 2026-10-08 (3ª): gestora e ML **aprovam**; pesquisadora
+  aprova com ressalva externa. Sugestões abertas (sem issue):
+  - `[média]` `escolas_similares()`: etapas padrão a partir da escola (escola
+    só de ensino médio falha com "escola fora do recorte").
+  - `[baixa]` `perfil_escola()`: sinalizar IDEB de etapa não ofertada no
+    Censo de referência.
+  - `[baixa]` `pca_perfil()`: opção para excluir colunas redundantes
+    (`*_score`) e o report de PCA explicitar a escolha.
 - Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).
