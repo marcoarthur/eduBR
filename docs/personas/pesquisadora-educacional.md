@@ -228,7 +228,7 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 
 - **[média]** `as_sf()`: converter o hex com `sf::st_as_sfc(<WKB>, EWKB =
   TRUE)` vetorizado (~6 s → 0,4 s em 22 municípios) e não emitir o aviso
-  de materialização (ou aceitar `n =`).
+  de materialização (ou aceitar `n =`) (#36).
 - **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 

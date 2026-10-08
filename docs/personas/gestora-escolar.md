@@ -152,9 +152,9 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 ## Sugestões priorizadas
 
 - **[baixa]** Na prévia do `print`, esconder tipos técnicos (`<int64>`,
-  `<pq_gmtry>`) e a coluna `geometry`.
+  `<pq_gmtry>`) e a coluna `geometry` (#38).
 - **[baixa]** Exportação pronta para planilha (ex.: `exportar(p, "x.csv")`)
-  em vez de `write.csv()`.
+  em vez de `write.csv()` (#39).
 
 ## Veredito
 

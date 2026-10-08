@@ -321,8 +321,8 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 - **[média]** Expor covariáveis do `perfil_escola()` para modelos além do
-  bivariado.
-- **[baixa]** Re-renderizar `perfil_escola_pca.Rmd` com os `*_score` na PCA.
+  bivariado (#37).
+- **[baixa]** Re-renderizar `perfil_escola_pca.Rmd` com os `*_score` na PCA (#40).
 
 ## Veredito
 
