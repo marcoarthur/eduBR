@@ -34,6 +34,35 @@
 
 ## Entradas
 
+### 2026-10-08 — 5ª rodada (escola estadual com ensino médio)
+
+Foco: repetir as perguntas canônicas fora do caso "municipal de anos
+iniciais" — escola estadual 26106582 (Abreu e Lima/PE), com IDEB de ensino
+médio em 2021 e 2023.
+
+**G11/G12 — minha escola e comparação.**
+- Resposta: prévia limpa; perfil em 8 s com "IDEB médio (2023): 3,8
+  (município 4,3, estado 4,5); em 2021: 3,3 (+0,5)" — primeira vez que o
+  caminho do ensino médio é exercitado, e funciona. `resumo_escola()` traz
+  `ideb_medio` 3,8, `ano_medio` 2023, `var_medio` +0,5.
+- Observação: no Censo 2025 a escola oferta só "Fund. II, EJA", mas o
+  perfil mostra o IDEB do ensino médio de 2023 sem avisar que a etapa não
+  é mais ofertada.
+- Status: **✓ atendido** — sugestão [baixa].
+
+**G14 — escolas parecidas para escola de ensino médio.**
+- Resposta: com o padrão (`etapa` fund. I/II), a 26106582 encontra
+  vizinhas pelo fund. II; com `etapa = "ensino_medio"`, vizinhas estaduais
+  de ensino médio (RN, PA). Mas para uma escola que **só** tem ensino médio
+  nas features (15535762), o padrão falha com "escola fora do recorte" —
+  a gestora não saberia que precisa passar `etapa =`.
+- Status: **lacuna**.
+
+**G15 — exportar.**
+- Resposta: CSV com as linhas "IDEB fund. II (2023)" e "IDEB médio
+  (2023)"; a etapa sem nota sai em branco.
+- Status: **✓ atendido**.
+
 ### 2026-10-08 — 4ª rodada (verificação de #38 e #39)
 
 **G8 — prévia do `print` sem jargão.**
@@ -172,14 +201,22 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 - [x] Exemplo com escola real no README (#27).
 - [x] Prévia do `print` sem tipos técnicos/geometria (#38).
 - [x] Exportar o perfil para planilha (#39).
+- [ ] `escolas_similares()` funcionar sem `etapa =` para escola só de ensino médio (#52).
 
 ## Sugestões priorizadas
 
-- Nenhuma pendente. (Ideia futura: `exportar()` para vários perfis de uma
-  vez, ex.: todas as escolas da rede municipal.)
+- **[média]** `escolas_similares()`: usar por padrão as etapas em que a
+  escola aparece nas features (ou todas), em vez de só fund. I/II; escola
+  só de ensino médio hoje falha com "escola fora do recorte" (#52).
+- **[baixa]** `perfil_escola()`: sinalizar IDEB de etapa que a escola não
+  oferta mais no Censo de referência (ex.: médio em 2023, sem médio em 2025)
+  (#53).
 
 ## Veredito
 
+- **Aprova** (2026-10-08, 5ª rodada): o caminho de ensino médio (perfil,
+  resumo, exportação) funciona. Lacuna nova em `escolas_similares()` para
+  escolas só de ensino médio — não bloqueia o uso, mas exige `etapa =`.
 - **Aprova** (2026-10-08, 4ª rodada): prévia sem jargão técnico e
   exportação direta para planilha; nada pendente para o uso da gestora.
 - **Aprova** (2026-10-08, 3ª rodada): vê a escola numa linha, compara com

@@ -35,6 +35,21 @@
 
 ## Entradas
 
+### 2026-10-08 — 9ª rodada (verificação de #48 e efeito dos `*_score`)
+
+**M31 — componentes nulos e scores redundantes.**
+- Resposta: amostra de 4.000 escolas (fund. II): `pca_perfil()` descarta 4
+  componentes de variância nula e avisa que `infra_essencial_score`,
+  `espacos_pedagogicos_score`, `tecnologia_score` e `acessibilidade_score`
+  são combinação linear de outras colunas (dos `in_*`).
+- Efeito de manter vs tirar os scores: 61 componentes nos dois casos; PC1
+  17,1% vs 16,2% (correlação dos scores de PC1 = 0,989) e PC2 6,7% vs 6,4%
+  (correlação 0,944). Sem os scores, PC2 passa a ser puxado por
+  `equipamentos_por_aluno`, `prop_mat_medio` e laboratório de ciências em
+  vez de `espacos_pedagogicos_score`. O reforço muda pouco o PC1 e
+  moderadamente o PC2.
+- Status: **✓ atendido** (#48) — sugestão [baixa] sobre os scores.
+
 ### 2026-10-08 — 8ª rodada (verificação de #37, #40 e da PCA)
 
 **M28 — covariáveis para modelo multivariado.**
@@ -349,12 +364,16 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
-- **[baixa]** `pca_perfil()`: descartar componentes de variância nula
-  (colinearidade exata; PC63–PC65 com ~1e-31) e avisar quais colunas são
-  combinação linear das outras (#48).
+- **[baixa]** `pca_perfil()`: opção para excluir colunas redundantes (ex.:
+  `*_score`) e o report de PCA dizer explicitamente se elas entram — hoje a
+  infraestrutura pesa duas vezes (efeito pequeno em PC1, moderado em PC2)
+  (#54).
 
 ## Veredito
 
+- **Aprova** (2026-10-08, 9ª rodada): saída da PCA sem componentes
+  degenerados e com diagnóstico de colinearidade; o efeito dos scores
+  redundantes é mensurável e pequeno no eixo principal.
 - **Aprova** (2026-10-08, 8ª rodada): covariáveis prontas para modelos
   multivariados, PCA metodologicamente limpa (sem códigos categóricos,
   sinal fixo) e report coerente. Pendência só de dados (INSE histórico).
