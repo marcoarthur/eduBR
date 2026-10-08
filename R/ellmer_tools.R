@@ -405,21 +405,23 @@ eduBR_filtros_json <- function(filtros) {
 eduBR_envelope <- function(dados = list(), grao = NULL, filtros = NULL,
                            n = length(dados), n_total = NULL,
                            truncado = FALSE, aviso = NULL, handle = NULL,
-                           colunas_omitidas = character(0), erro = NULL) {
-  list(
-    dados = dados,
-    metadados = list(
-      grao = grao,
-      filtros = eduBR_filtros_json(filtros),
-      n = as.integer(n),
-      n_total = n_total,
-      truncado = truncado,
-      aviso = aviso,
-      handle = handle,
-      colunas_omitidas = I(as.character(colunas_omitidas))
-    ),
-    erro = erro
+                           colunas_omitidas = character(0), erro = NULL,
+                           contexto = NULL) {
+  metadados <- list(
+    grao = grao,
+    filtros = eduBR_filtros_json(filtros),
+    n = as.integer(n),
+    n_total = n_total,
+    truncado = truncado,
+    aviso = aviso,
+    handle = handle,
+    colunas_omitidas = I(as.character(colunas_omitidas))
   )
+  # Campo opcional: identificação do objeto consultado (ex.: a escola).
+  if (!is.null(contexto)) {
+    metadados$contexto <- contexto
+  }
+  list(dados = dados, metadados = metadados, erro = erro)
 }
 
 eduBR_envelope_erro <- function(tipo, mensagem, grao = NULL, filtros = NULL) {
@@ -430,12 +432,13 @@ eduBR_envelope_erro <- function(tipo, mensagem, grao = NULL, filtros = NULL) {
 }
 
 # Resultado de uma função de tool, antes do envelope: `dados` é um objeto
-# eduBR, tbl lazy, data frame ou NULL.
+# eduBR, tbl lazy, data frame ou NULL. `contexto` (opcional) é uma lista
+# serializável que vai para `metadados$contexto`.
 eduBR_resultado <- function(dados = NULL, grao = NULL, filtros = NULL,
-                            handle = NULL, aviso = NULL) {
+                            handle = NULL, aviso = NULL, contexto = NULL) {
   structure(
     list(dados = dados, grao = grao, filtros = filtros, handle = handle,
-         aviso = aviso),
+         aviso = aviso, contexto = contexto),
     class = "eduBR_resultado_tool"
   )
 }
@@ -528,7 +531,7 @@ eduBR_montar_envelope <- function(sessao, res, n = NULL) {
   if (is.null(x)) {
     return(eduBR_envelope(
       dados = list(), grao = res$grao, filtros = res$filtros, n = 0L,
-      aviso = res$aviso, handle = res$handle
+      aviso = res$aviso, handle = res$handle, contexto = res$contexto
     ))
   }
   if (!(is.data.frame(x) || inherits(x, "eduBR") || eduBR_lazy(x))) {
@@ -574,7 +577,7 @@ eduBR_montar_envelope <- function(sessao, res, n = NULL) {
     env <- eduBR_envelope(
       dados = list(), grao = res$grao, filtros = res$filtros, n = 0L,
       n_total = 0L, aviso = aviso, handle = res$handle,
-      colunas_omitidas = ser$omitidas,
+      colunas_omitidas = ser$omitidas, contexto = res$contexto,
       erro = list(
         tipo = "sem_dados",
         mensagem = paste0(
@@ -590,7 +593,8 @@ eduBR_montar_envelope <- function(sessao, res, n = NULL) {
   eduBR_envelope(
     dados = ser$dados, grao = res$grao, filtros = res$filtros,
     n = length(ser$dados), n_total = n_total, truncado = truncado,
-    aviso = aviso, handle = res$handle, colunas_omitidas = ser$omitidas
+    aviso = aviso, handle = res$handle, colunas_omitidas = ser$omitidas,
+    contexto = res$contexto
   )
 }
 
@@ -723,6 +727,30 @@ eduBR_tools_registro <- function() {
     catalogo = list(
       criar = eduBR_tool_catalogo,
       personas = eduBR_personas()
+    ),
+    perfil_escola = list(
+      criar = eduBR_tool_perfil_escola,
+      personas = c("gestora-escolar", "pesquisadora-educacional")
+    ),
+    resumo_escola = list(
+      criar = eduBR_tool_resumo_escola,
+      personas = "gestora-escolar"
+    ),
+    serie_ideb_escola = list(
+      criar = eduBR_tool_serie_ideb_escola,
+      personas = "gestora-escolar"
+    ),
+    escolas_similares = list(
+      criar = eduBR_tool_escolas_similares,
+      personas = "gestora-escolar"
+    ),
+    scores_escola = list(
+      criar = eduBR_tool_scores_escola,
+      personas = c("gestora-escolar", "especialista-ml")
+    ),
+    indicadores_escola = list(
+      criar = eduBR_tool_indicadores_escola,
+      personas = "especialista-ml"
     )
   )
 }
@@ -739,13 +767,32 @@ eduBR_tools_registro <- function() {
 #'   `integer64` vira texto, datas viram ISO-8601 e `NA`/`NaN`/`Inf` viram
 #'   `null`;
 #' - `metadados`: `grao`, `filtros`, `n`, `n_total`, `truncado`, `aviso`,
-#'   `handle` e `colunas_omitidas`;
+#'   `handle`, `colunas_omitidas` e, em algumas ferramentas, `contexto`
+#'   (identificação do objeto consultado, ex.: a escola em `perfil_escola`);
 #' - `erro`: `null`, ou `{tipo, mensagem}` com `tipo` em
 #'   `parametro_invalido`, `sem_dados`, `limite_excedido` ou `conexao`.
 #'
 #' Nenhum retorno expõe nomes físicos de `schema.tabela`, SQL ou mensagens
 #' do Postgres. Cada chamada fica registrada no ledger da sessão (ver
 #' [ledger()]).
+#'
+#' @section Ferramentas:
+#' - `catalogo` (todas as personas): domínios, granularidade e anos;
+#' - `perfil_escola` (gestora, pesquisadora): escola × município × estado
+#'   ([perfil_escola()] + [comparar()]), com a identificação da escola em
+#'   `metadados$contexto`;
+#' - `resumo_escola` (gestora): a escola numa linha ([resumo_escola()]);
+#' - `serie_ideb_escola` (gestora): série do IDEB da escola ([ideb()]);
+#' - `escolas_similares` (gestora): benchmark sem usar a nota
+#'   ([escolas_similares()], `n` até 20);
+#' - `scores_escola` (gestora, especialista-ml): scores compostos
+#'   ([scores()]);
+#' - `indicadores_escola` (especialista-ml): ranking por indicador
+#'   ([indicadores()]).
+#'
+#' Os argumentos (código INEP de 8 dígitos, etapa, edição bienal do IDEB,
+#' `n`) são validados antes de consultar o banco; valores inválidos
+#' devolvem `parametro_invalido` com a correção esperada.
 #'
 #' @section Limites:
 #' `limites` é uma lista nomeada; chaves omitidas usam o padrão:

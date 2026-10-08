@@ -81,3 +81,13 @@ implementação ficam no código; memória de curadoria fica em
 - Tools devolvem `integer64` como **string** (fronteira JSON), sem mudar o
   tipo nas funções do pacote; `etapa` usa os valores do pacote
   (`ensino_medio`, não `medio`).
+
+## 2026-10-08 — versões divergentes entre máquina local e container
+
+- O container `rstudio.dev` tem **dbplyr 2.5.0**; a máquina local, 2.6.0.
+  `n_distinct(x, na.rm = TRUE)` traduz no 2.6 e **quebra** no 2.5
+  (`unused argument`): `perfil_escola()` ficou quebrada no container de
+  #30 até o chunk 2 da camada ellmer, sem ninguém ver, porque a validação
+  era local.
+- **Lição**: validar sempre no container (`tools/test-container.sh`, com
+  `--smoke` quando a mudança toca SQL); não confiar em execução local.
