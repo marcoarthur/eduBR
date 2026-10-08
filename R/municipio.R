@@ -1,9 +1,9 @@
 # R/municipio.R
 
-#' Municípios (malha de São Paulo)
+#' Municípios do Brasil
 #'
-#' Acessa a relação de municípios com identificação IBGE, região e
-#' geometria. A consulta é preguiçosa; materialize com [as_tibble()].
+#' Acessa a relação dos municípios do Brasil (27 UFs) com identificação IBGE,
+#' região e geometria. A consulta é preguiçosa; materialize com [as_tibble()].
 #'
 #' @param con Conexão criada por [conecta()].
 #' @param uf Filtro opcional pela sigla da UF (ex.: `"SP"`).

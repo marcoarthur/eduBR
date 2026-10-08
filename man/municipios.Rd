@@ -2,7 +2,7 @@
 % Please edit documentation in R/municipio.R
 \name{municipios}
 \alias{municipios}
-\title{Municípios (malha de São Paulo)}
+\title{Municípios do Brasil}
 \usage{
 municipios(con, uf = NULL)
 }
@@ -15,8 +15,8 @@ municipios(con, uf = NULL)
 Objeto S3 de classe \code{eduBR_municipio}.
 }
 \description{
-Acessa a relação de municípios com identificação IBGE, região e
-geometria. A consulta é preguiçosa; materialize com \code{\link[tibble:as_tibble]{as_tibble()}}.
+Acessa a relação dos municípios do Brasil (27 UFs) com identificação IBGE,
+região e geometria. A consulta é preguiçosa; materialize com \code{\link[tibble:as_tibble]{as_tibble()}}.
 }
 \examples{
 \dontrun{
