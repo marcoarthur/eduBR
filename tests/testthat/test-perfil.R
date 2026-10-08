@@ -180,3 +180,37 @@ test_that("perfil_escola() conta só escolas em atividade no município", {
   expect_equal(mun$n_escolas[[1L]], 2L)
   expect_equal(mun$infra_in_biblioteca[[1L]], 1 / 2)
 })
+
+test_that("exportar() grava CSV em PT-BR (;, vírgula decimal, BOM)", {
+  local_mocked_bindings(eduBR_tbl = fake_perfil_tbl)
+  p <- perfil_escola("fake_con", 11L)
+  arq <- withr::local_tempfile(fileext = ".csv")
+
+  expect_equal(exportar(p, arq), arq)
+
+  bytes <- readBin(arq, "raw", 3L)
+  expect_equal(bytes, as.raw(c(0xef, 0xbb, 0xbf)))
+  linhas <- readLines(arq, encoding = "UTF-8")
+  expect_match(linhas[[1L]], "\"Escola\";", fixed = TRUE)
+  expect_match(linhas[[1L]], "Munic\u00edpio", fixed = TRUE)
+  lido <- utils::read.csv2(arq, fileEncoding = "UTF-8-BOM", check.names = FALSE)
+  expect_equal(nrow(lido), nrow(comparar(p)))
+  bib <- lido[lido$Item == "Biblioteca", , drop = FALSE]
+  expect_equal(bib[["M\u00e9dia do munic\u00edpio"]], 0.667)
+  expect_true(any(grepl("0,6", linhas, fixed = TRUE)))
+})
+
+test_that("exportar() grava xlsx com duas abas e valida entradas", {
+  local_mocked_bindings(eduBR_tbl = fake_perfil_tbl)
+  p <- perfil_escola("fake_con", 11L)
+
+  expect_error(exportar(p, "x.txt"), ".csv ou .xlsx")
+  expect_error(exportar(list(), "x.csv"), "eduBR_perfil_escola")
+
+  skip_if_not_installed("writexl")
+  arq <- withr::local_tempfile(fileext = ".xlsx")
+  exportar(p, arq)
+  expect_equal(readBin(arq, "raw", 2L), charToRaw("PK"))
+  abas <- utils::unzip(arq, list = TRUE)$Name
+  expect_equal(sum(grepl("^xl/worksheets/sheet", abas)), 2L)
+})

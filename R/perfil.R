@@ -498,3 +498,90 @@ resumo_escola <- function(x) {
   }
   base
 }
+
+#' Exportar para planilha
+#'
+#' Grava o resultado num arquivo que abre direto no Excel/LibreOffice em
+#' PT-BR. Para um [perfil_escola()], grava a comparação escola × município ×
+#' estado ([comparar()]) com a identificação da escola, valores com 3 casas
+#' decimais:
+#'
+#' - `.csv`: separador `;`, vírgula decimal e UTF-8 com BOM;
+#' - `.xlsx`: abas "Comparação" e "Resumo" ([resumo_escola()]); exige o
+#'   pacote `writexl`.
+#'
+#' @param x Objeto a exportar (hoje: `eduBR_perfil_escola`).
+#' @param arquivo Caminho do arquivo (`.csv` ou `.xlsx`).
+#' @param ... Não utilizado.
+#'
+#' @return O caminho do arquivo, invisível.
+#'
+#' @examples
+#' \dontrun{
+#' con <- conecta()
+#' p <- perfil_escola(con, "13078070")
+#' exportar(p, "minha_escola.csv")
+#' }
+#'
+#' @export
+exportar <- function(x, arquivo, ...) {
+  UseMethod("exportar")
+}
+
+#' @export
+exportar.default <- function(x, arquivo, ...) {
+  stop(
+    "exportar() aceita um eduBR_perfil_escola (ver perfil_escola()).",
+    call. = FALSE
+  )
+}
+
+#' @export
+exportar.eduBR_perfil_escola <- function(x, arquivo, ...) {
+  if (!is.character(arquivo) || length(arquivo) != 1L || !nzchar(arquivo)) {
+    stop("`arquivo` deve ser um caminho.", call. = FALSE)
+  }
+  ext <- tolower(tools::file_ext(arquivo))
+  if (!ext %in% c("csv", "xlsx")) {
+    stop("`arquivo` deve terminar em .csv ou .xlsx.", call. = FALSE)
+  }
+
+  e <- x$escola
+  cmp <- comparar(x)
+  tabela <- data.frame(
+    "C\u00f3digo INEP" = as.character(e$codigo_inep),
+    "Escola" = e$nome,
+    "Munic\u00edpio" = e$municipio,
+    "UF" = e$uf,
+    "Dimens\u00e3o" = cmp$dimensao,
+    "Item" = cmp$item,
+    "Escola (valor)" = cmp$escola,
+    "M\u00e9dia do munic\u00edpio" = cmp$municipio,
+    "M\u00e9dia do estado" = cmp$estado,
+    "Diferen\u00e7a (escola \u2212 munic\u00edpio)" = cmp$dif_municipio,
+    check.names = FALSE,
+    stringsAsFactors = FALSE
+  )
+  num <- vapply(tabela, is.numeric, logical(1L))
+  tabela[num] <- lapply(tabela[num], round, digits = 3L)
+
+  if (ext == "csv") {
+    con <- file(arquivo, open = "w", encoding = "UTF-8")
+    on.exit(close(con), add = TRUE)
+    cat("\ufeff", file = con)
+    utils::write.table(
+      tabela, con, sep = ";", dec = ",", row.names = FALSE,
+      na = "", qmethod = "double"
+    )
+  } else {
+    rlang::check_installed("writexl", reason = "para gravar .xlsx")
+    writexl::write_xlsx(
+      list(
+        "Compara\u00e7\u00e3o" = tabela,
+        "Resumo" = as.data.frame(resumo_escola(x))
+      ),
+      arquivo
+    )
+  }
+  invisible(arquivo)
+}
