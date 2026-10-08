@@ -201,15 +201,16 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 - [x] Exemplo com escola real no README (#27).
 - [x] Prévia do `print` sem tipos técnicos/geometria (#38).
 - [x] Exportar o perfil para planilha (#39).
-- [ ] `escolas_similares()` funcionar sem `etapa =` para escola só de ensino médio.
+- [ ] `escolas_similares()` funcionar sem `etapa =` para escola só de ensino médio (#52).
 
 ## Sugestões priorizadas
 
 - **[média]** `escolas_similares()`: usar por padrão as etapas em que a
   escola aparece nas features (ou todas), em vez de só fund. I/II; escola
-  só de ensino médio hoje falha com "escola fora do recorte".
+  só de ensino médio hoje falha com "escola fora do recorte" (#52).
 - **[baixa]** `perfil_escola()`: sinalizar IDEB de etapa que a escola não
-  oferta mais no Censo de referência (ex.: médio em 2023, sem médio em 2025).
+  oferta mais no Censo de referência (ex.: médio em 2023, sem médio em 2025)
+  (#53).
 
 ## Veredito
 

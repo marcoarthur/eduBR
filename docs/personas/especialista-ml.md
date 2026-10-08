@@ -366,7 +366,8 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 - **[baixa]** `pca_perfil()`: opção para excluir colunas redundantes (ex.:
   `*_score`) e o report de PCA dizer explicitamente se elas entram — hoje a
-  infraestrutura pesa duas vezes (efeito pequeno em PC1, moderado em PC2).
+  infraestrutura pesa duas vezes (efeito pequeno em PC1, moderado em PC2)
+  (#54).
 
 ## Veredito
 
