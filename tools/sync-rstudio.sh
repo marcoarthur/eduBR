@@ -11,12 +11,15 @@
 #
 # Uso manual:  tools/sync-rstudio.sh
 # Automatico:  chamado por .git/hooks/post-commit
+#
+# Destino: tools/rstudio-dest.sh (worktree principal -> projetos/eduBR;
+# cada git worktree -> projetos/eduBR-wt-<nome>; EDUBR_SYNC_DEST sobrepoe).
 
 set -euo pipefail
 
 HOST="rstudio.dev"
-DEST="/home/rsuser/projetos/eduBR"
 SRC="$(git rev-parse --show-toplevel)/"
+DEST="$("${SRC}tools/rstudio-dest.sh")"
 
 echo "==> rsync ${SRC} -> ${HOST}:${DEST}"
 ssh "$HOST" "mkdir -p '$DEST'"
