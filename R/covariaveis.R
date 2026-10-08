@@ -100,7 +100,7 @@ covariaveis_escola <- function(con, ano = 2025L, ano_ideb = 2023L,
     tb, "eduBR_covariaveis", con,
     list(
       descricao = sprintf(
-        "Covariáveis por escola (Censo %s, IDEB %s)", ano, ano_ideb
+        "Covari\u00e1veis por escola (Censo %s, IDEB %s)", ano, ano_ideb
       ),
       ano = ano, ano_ideb = ano_ideb
     )
