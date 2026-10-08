@@ -38,6 +38,34 @@
 
 ## Entradas
 
+### 2026-10-08 — 5ª rodada (verificação de #20, #21, #24)
+
+**R11 (revisita) — `as_sf()` para mapas.**
+- Resposta: `as_sf(escolas(con, uf = "AC"))` devolve `sf` (EPSG 4674),
+  539 pontos, nenhum vazio, em 0,7 s; `as_sf(municipios(con, uf = "AC"))`
+  devolve 22 `MULTIPOLYGON`. Na 1ª medição levou 113 s (rede instável); na
+  2ª, 6,6 s — dos quais ~6 s são a conversão do hex em R, que o `sf` faz
+  em 0,4 s com resultado idêntico. Ambos emitem o aviso "Materializando a
+  consulta sem limite", embora a materialização seja o objetivo.
+- Status: **✓ atendido** (#20) — com sugestões de desempenho/aviso.
+
+**R12 (revisita) — tipos/ano das relações.**
+- Resposta: `catalogo()` traz `granularidade`, `chave`, `tipo_chave`,
+  `coluna_ano` e `anos` (ex.: `ideb` → `id_escola` bigint, `ano` 2005–2023;
+  `inse` → `nu_ano_saeb` 2023; `censo_*` → 2025; `ibge`/`indicadores` vazias
+  no dev).
+- Status: **✓ atendido** (#24).
+
+**R13 (revisita) — ano consistente nas comparações.**
+- Resposta: `perfil_escola(..., ano_ideb = 2019)` compara escola,
+  município e estado em 2019 ("IDEB fund. I (2019)"), com a edição no
+  rótulo.
+- Status: **✓ atendido** (#21).
+
+**R14 (revisita) — join escola→município por código.**
+- Resposta: `escolas()` segue só com `codigo_inep` (sem `co_municipio`).
+- Status: **bloqueado** (carga de `clean.escolas` no EduMaps).
+
 ### 2026-10-07 — 4ª rodada (verificação de `as_sf()` e tipos/ano)
 
 Foco: revisitar P1/P2/P4 após as entregas #7 e #13.
@@ -189,22 +217,27 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - [x] Projeção de colunas antes do `collect` (`colunas=` em `docentes_rede()`).
 - [x] Normalizar o rótulo `rede` (derivado de `codigo_rede` no SQL).
 - [x] Cobertura/NA do IDEB por município × rede (subseção na EDA).
+- [x] `as_sf()` utilizável fora do namespace (#20).
+- [x] Tipo/ano de referência no `catalogo()` (#24).
+- [x] Mesma edição do IDEB nas comparações (#21).
 - [ ] Join escola→município **por código** em `escolas()` (bloqueado:
   `clean.escolas` não tem a coluna; flui via `ideb()`/`docentes_rede()`/
   `gestores()`).
-- [ ] `as_sf()` utilizável fora do namespace (#20).
-- [ ] Tipo/ano de referência no `catalogo()` (#24).
-- [ ] Mesma edição do IDEB nas comparações (#21).
 
 ## Sugestões priorizadas
 
-- **[alta]** Registrar `S3method(as_sf, eduBR)` (#20).
-- **[média]** Tipo/chave/ano por domínio no `catalogo()` (#24).
+- **[média]** `as_sf()`: converter o hex com `sf::st_as_sfc(<WKB>, EWKB =
+  TRUE)` vetorizado (~6 s → 0,4 s em 22 municípios) e não emitir o aviso
+  de materialização (ou aceitar `n =`) (#36).
 - **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-08, 5ª rodada): mapas, catálogo com
+  chave/tipo/ano e comparações na mesma edição verificados contra o banco.
+  Ressalvas: `escolas()` sem código do município (bloqueado na carga) e
+  desempenho/aviso do `as_sf()` em polígonos grandes.
 - **Aprova com ressalvas** (2026-10-07, 4ª rodada): bases por rede/docente
   seguem sólidas, mas o suporte a mapas está quebrado para o usuário (#20)
   e o ano de referência das relações ainda não é explícito (#24, #21).
