@@ -20,7 +20,8 @@ eduBR_exclui_pca <- function() {
 #' e medidas de desempenho (nota/INSE/percentuais por nível). Colunas sem variância ou só-NA caem
 #' com aviso; linhas incompletas nas colunas usadas são descartadas. O sinal
 #' de cada componente é fixado para que o maior peso (em módulo) seja
-#' positivo.
+#' positivo. Componentes de variância numericamente nula (colunas que são
+#' combinação linear exata de outras) são descartados com aviso.
 #'
 #' @param dados Um `data.frame` com as features (ex.: [features_escola()]
 #'   materializado).
@@ -100,6 +101,25 @@ pca_perfil <- function(dados, id = "co_entidade") {
   sinal[sinal == 0] <- 1
   fit$rotation <- sweep(fit$rotation, 2L, sinal, `*`)
   fit$x <- sweep(fit$x, 2L, sinal, `*`)
+
+  # Colinearidade exata (ex.: total = soma das partes) gera componentes de
+  # variância numericamente nula, sem informação e instáveis: saem da saída.
+  nulos <- fit$sdev <= 1e-8 * fit$sdev[[1L]]
+  if (any(nulos)) {
+    q <- qr(scale(as.matrix(mat)))
+    redundantes <- colnames(mat)[q$pivot[-seq_len(q$rank)]]
+    warning(
+      sprintf(
+        "%d componente(s) de vari\u00e2ncia nula descartado(s); colunas combina\u00e7\u00e3o linear de outras: %s.",
+        sum(nulos),
+        if (length(redundantes)) paste(redundantes, collapse = ", ") else "\u2014"
+      ),
+      call. = FALSE
+    )
+    fit$sdev <- fit$sdev[!nulos]
+    fit$rotation <- fit$rotation[, !nulos, drop = FALSE]
+    fit$x <- fit$x[, !nulos, drop = FALSE]
+  }
   prop <- fit$sdev^2 / sum(fit$sdev^2)
   pcs <- paste0("PC", seq_along(prop))
 

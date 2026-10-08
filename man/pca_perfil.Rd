@@ -25,7 +25,8 @@ Censo (\code{tp_dependencia}, \code{tp_localizacao}, \code{tp_categoria_escola_p
 e medidas de desempenho (nota/INSE/percentuais por nível). Colunas sem variância ou só-NA caem
 com aviso; linhas incompletas nas colunas usadas são descartadas. O sinal
 de cada componente é fixado para que o maior peso (em módulo) seja
-positivo.
+positivo. Componentes de variância numericamente nula (colunas que são
+combinação linear exata de outras) são descartados com aviso.
 }
 \examples{
 \dontrun{

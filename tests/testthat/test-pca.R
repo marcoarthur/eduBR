@@ -85,3 +85,16 @@ test_that("pca_perfil() fixa o sinal: maior peso de cada PC é positivo", {
     tapply(p_inv$loadings$peso, p_inv$loadings$pc, function(v) v[which.max(abs(v))]) > 0
   ))
 })
+
+test_that("pca_perfil() descarta componentes de variância nula com aviso", {
+  d <- df_pca[c("co_entidade", "x1", "x2", "x3")]
+  d$soma <- d$x1 + d$x3
+
+  expect_warning(p <- pca_perfil(d), "vari\u00e2ncia nula.*soma")
+  expect_equal(nrow(p$variancia), 3L)
+  expect_equal(ncol(p$scores), 4L)
+  expect_true(all(p$variancia$prop > 1e-10))
+  expect_equal(sum(p$variancia$prop), 1, tolerance = 1e-8)
+
+  expect_no_warning(pca_perfil(df_pca[c("co_entidade", "x1", "x2", "x3")]))
+})
