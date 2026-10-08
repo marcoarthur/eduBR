@@ -33,6 +33,15 @@ eduBR_so_ativas <- function(tb) {
   tb
 }
 
+# Etapa do IDEB -> flags de oferta em clean.censo_escolas.
+eduBR_ideb_oferta <- function() {
+  list(
+    fundamental_i = "in_comum_fund_ai",
+    fundamental_ii = "in_comum_fund_af",
+    ensino_medio = c("in_comum_medio_medio", "in_comum_medio_integrado")
+  )
+}
+
 # Etapas ofertadas (flag em clean.censo_escolas -> rótulo curto).
 eduBR_etapas_oferta <- function() {
   c(
@@ -267,6 +276,18 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
   etapas_of <- unname(oferta[vapply(names(oferta), function(f) {
     f %in% names(esc) && isTRUE(esc[[f]][[1L]] == 1)
   }, logical(1L))])
+  # Etapa do IDEB ofertada no Censo de referência? NA sem as flags.
+  ideb_ofertada <- vapply(
+    eduBR_ideb_oferta(),
+    function(fs) {
+      fs <- intersect(fs, names(esc))
+      if (length(fs) == 0L) {
+        return(NA)
+      }
+      any(vapply(fs, function(f) isTRUE(esc[[f]][[1L]] == 1), logical(1L)))
+    },
+    logical(1L)
+  )
 
   structure(
     list(
@@ -286,6 +307,7 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
       infra_rotulos = infra[flags],
       ano = ano,
       ano_ideb = ano_ref,
+      ideb_ofertada = ideb_ofertada,
       ideb_serie = tibble::tibble(
         etapa = as.character(ideb_escola$etapa),
         ano = as.integer(ideb_escola$ano),
@@ -306,7 +328,8 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
 #' @param x Objeto `eduBR_perfil_escola` (de [perfil_escola()]).
 #'
 #' @return Um `tibble` com `dimensao`, `item`, `escola`, `municipio`,
-#'   `estado` e `dif_municipio`.
+#'   `estado`, `dif_municipio` e `ofertada` (nas linhas de IDEB: a etapa é
+#'   ofertada no Censo de referência? `NA` nas demais).
 #'
 #' @examples
 #' \dontrun{
@@ -355,14 +378,19 @@ comparar <- function(x) {
   }
   for (col in names(nums)) {
     if (col %in% names(p)) {
-      blocos <- c(blocos, list(tibble::tibble(
+      bloco <- tibble::tibble(
         dimensao = if (startsWith(col, "ideb")) "IDEB" else "Docentes",
         item = unname(nums[col]),
         escola = g(esc, col),
         municipio = g(mun, col),
         estado = g(est, col),
         dif_municipio = g(esc, col) - g(mun, col)
-      )))
+      )
+      if (col %in% names(edicao)) {
+        of <- x$ideb_ofertada[edicao[[col]]]
+        bloco$ofertada <- if (length(of) == 1L) unname(of) else NA
+      }
+      blocos <- c(blocos, list(bloco))
     }
   }
   dplyr::bind_rows(blocos)
@@ -405,6 +433,13 @@ print.eduBR_perfil_escola <- function(x, ...) {
           extra <- sprintf(
             "; em %s: %s (%s)", ev$ano_anterior, fmt_num(ev$ideb_anterior),
             fmt_var(ev$variacao)
+          )
+        }
+        of <- x$ideb_ofertada[etapa]
+        if (length(of) == 1L && isFALSE(unname(of))) {
+          extra <- paste0(
+            extra,
+            sprintf(" [etapa n\u00e3o ofertada no Censo %s]", x$ano)
           )
         }
       }
@@ -458,7 +493,8 @@ eduBR_ideb_evolucao <- function(x) {
 #'
 #' @return Um `tibble` de uma linha com `codigo_inep`, `escola`, `rede`,
 #'   `municipio`, `uf`, `localizacao`, `etapas`, `matriculas`, `docentes` e,
-#'   para `fund_i`/`fund_ii`/`medio`, `ideb_*`, `ano_*` e `var_*`.
+#'   para `fund_i`/`fund_ii`/`medio`, `ideb_*`, `ano_*`, `var_*` e `oferta_*`
+#'   (a etapa é ofertada no Censo de referência?).
 #'
 #' @examples
 #' \dontrun{
@@ -495,6 +531,8 @@ resumo_escola <- function(x) {
     base[[paste0("ideb_", s)]] <- if (nrow(ev)) ev$ideb else NA_real_
     base[[paste0("ano_", s)]] <- if (nrow(ev)) ev$ano else NA_integer_
     base[[paste0("var_", s)]] <- if (nrow(ev)) ev$variacao else NA_real_
+    of <- x$ideb_ofertada[et]
+    base[[paste0("oferta_", s)]] <- if (length(of) == 1L) unname(of) else NA
   }
   base
 }
@@ -559,6 +597,9 @@ exportar.eduBR_perfil_escola <- function(x, arquivo, ...) {
     "M\u00e9dia do munic\u00edpio" = cmp$municipio,
     "M\u00e9dia do estado" = cmp$estado,
     "Diferen\u00e7a (escola \u2212 munic\u00edpio)" = cmp$dif_municipio,
+    "Etapa ofertada no Censo" = ifelse(
+      is.na(cmp$ofertada), "", ifelse(cmp$ofertada, "Sim", "N\u00e3o")
+    ),
     check.names = FALSE,
     stringsAsFactors = FALSE
   )

@@ -12,7 +12,8 @@ resumo_escola(x)
 \value{
 Um \code{tibble} de uma linha com \code{codigo_inep}, \code{escola}, \code{rede},
 \code{municipio}, \code{uf}, \code{localizacao}, \code{etapas}, \code{matriculas}, \code{docentes} e,
-para \code{fund_i}/\code{fund_ii}/\code{medio}, \verb{ideb_*}, \verb{ano_*} e \verb{var_*}.
+para \code{fund_i}/\code{fund_ii}/\code{medio}, \verb{ideb_*}, \verb{ano_*}, \verb{var_*} e \verb{oferta_*}
+(a etapa é ofertada no Censo de referência?).
 }
 \description{
 Achata o \code{\link[=perfil_escola]{perfil_escola()}} numa linha: identificação, rede, localização,

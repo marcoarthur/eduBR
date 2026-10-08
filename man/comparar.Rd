@@ -11,7 +11,8 @@ comparar(x)
 }
 \value{
 Um \code{tibble} com \code{dimensao}, \code{item}, \code{escola}, \code{municipio},
-\code{estado} e \code{dif_municipio}.
+\code{estado}, \code{dif_municipio} e \code{ofertada} (nas linhas de IDEB: a etapa é
+ofertada no Censo de referência? \code{NA} nas demais).
 }
 \description{
 Achata o \code{\link[=perfil_escola]{perfil_escola()}} numa tabela tidy de comparações: para cada
