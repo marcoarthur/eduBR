@@ -289,12 +289,13 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
 > scores, ler_especs, AUC/McFadden, registrar_relacao, rotular, INSE,
 > integer64, PCA).
 
-- Rodada de 2026-10-08 verificou #20–#28: gestora e ML **aprovam**;
-  pesquisadora aprova com ressalvas. Sugestões abertas:
-  - `[média]` `as_sf()`: hex → `sf::st_as_sfc(<WKB>, EWKB = TRUE)`
-    vetorizado (~15× mais rápido em polígonos) e sem aviso de materialização (#36).
-  - `[média]` covariáveis do `perfil_escola()` para modelos multivariados (#37).
-  - `[baixa]` prévia do `print` sem tipos técnicos/`geometry` (#38); exportar
-    o perfil para planilha (#39); re-renderizar `perfil_escola_pca.Rmd` (#40).
+- Rodada de 2026-10-08 verificou #20–#28 (gestora e ML aprovam;
+  pesquisadora aprova com ressalvas) e abriu #36–#40, **todas entregues**
+  em 2026-10-08: `as_sf()` vetorizado com `n` e sem aviso (#36);
+  `covariaveis_escola()` (#37); prévia do `print` sem tipos/geometria (#38);
+  `exportar()` CSV/xlsx (#39); report de PCA re-renderizado e revisado
+  (#40). Correções no caminho: só escolas ativas no perfil/covariáveis;
+  PCA sem códigos `tp_*` e com sinal fixo.
+- Próximo passo: rodada das personas para verificar #36–#40.
 - Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).
