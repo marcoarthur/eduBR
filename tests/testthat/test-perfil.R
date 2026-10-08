@@ -214,3 +214,36 @@ test_that("exportar() grava xlsx com duas abas e valida entradas", {
   abas <- utils::unzip(arq, list = TRUE)$Name
   expect_equal(sum(grepl("^xl/worksheets/sheet", abas)), 2L)
 })
+
+test_that("perfil sinaliza IDEB de etapa não ofertada no Censo", {
+  local_mocked_bindings(eduBR_tbl = fake_perfil_tbl)
+
+  # ESC B: IDEB fund. II 2023, mas sem oferta de fund. II no Censo 2025
+  pb <- perfil_escola("fake_con", 12L)
+  expect_false(pb$ideb_ofertada[["fundamental_ii"]])
+  expect_true(pb$ideb_ofertada[["fundamental_i"]])
+  expect_true(is.na(pb$ideb_ofertada[["ensino_medio"]]))
+
+  out <- capture.output(print(pb))
+  expect_true(any(grepl("IDEB fund. II.*n\u00e3o ofertada no Censo 2025", out)))
+  expect_false(any(grepl("IDEB fund. I \\(.*n\u00e3o ofertada", out)))
+
+  cmp <- comparar(pb)
+  expect_false(cmp$ofertada[startsWith(cmp$item, "IDEB fund. II")])
+  expect_true(is.na(cmp$ofertada[cmp$item == "Biblioteca"]))
+
+  r <- resumo_escola(pb)
+  expect_false(r$oferta_fund_ii)
+  expect_true(r$oferta_fund_i)
+
+  # ESC A oferta as duas: nada a sinalizar
+  expect_false(any(grepl("n\u00e3o ofertada", capture.output(print(perfil_escola("fake_con", 11L))))))
+
+  arq <- withr::local_tempfile(fileext = ".csv")
+  exportar(pb, arq)
+  lido <- utils::read.csv2(arq, fileEncoding = "UTF-8-BOM", check.names = FALSE)
+  expect_equal(
+    lido[["Etapa ofertada no Censo"]][startsWith(lido$Item, "IDEB fund. II")],
+    "N\u00e3o"
+  )
+})
