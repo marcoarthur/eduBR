@@ -95,13 +95,66 @@ print.eduBR <- function(x, n = 5L, ...) {
         "Pr\u00e9via (%d %s):\n", nrow(previa),
         if (nrow(previa) == 1L) "linha" else "linhas"
       ))
-      print(eduBR_previa(previa), n = n)
+      eduBR_imprimir_previa(eduBR_previa(previa))
     }
   }
   if (eduBR_lazy(x$tbl) && !vazio) {
     cat("Dados ainda no banco: use coletar(x, n = ...) para baixar.\n")
   }
   invisible(x)
+}
+
+# Imprime a prévia sem tipos técnicos: omite a geometria, mostra
+# integer64 como número, trunca textos longos e lista as colunas que não
+# cabem na largura do console.
+eduBR_imprimir_previa <- function(df, largura = getOption("width", 80L),
+                                  max_texto = 30L) {
+  eh_geo <- vapply(
+    names(df),
+    function(nm) {
+      nm == "geometry" ||
+        inherits(df[[nm]], c("pq_geometry", "sfc", "geometry"))
+    },
+    logical(1L)
+  )
+  geo <- names(df)[eh_geo]
+  df <- df[!eh_geo]
+
+  txt <- lapply(df, function(v) {
+    s <- if (inherits(v, "integer64")) as.character(v) else format(v, trim = TRUE)
+    s[is.na(v)] <- "\u2014"
+    longo <- nchar(s) > max_texto
+    s[longo] <- paste0(substr(s[longo], 1L, max_texto - 1L), "\u2026")
+    s
+  })
+  larg <- vapply(
+    names(txt),
+    function(nm) max(nchar(nm), nchar(txt[[nm]]), na.rm = TRUE),
+    numeric(1L)
+  )
+  cabe <- cumsum(larg + 1L) <= largura
+  if (!any(cabe) && length(cabe)) {
+    cabe[[1L]] <- TRUE
+  }
+  if (any(cabe)) {
+    print(
+      as.data.frame(txt[cabe], check.names = FALSE, stringsAsFactors = FALSE),
+      row.names = FALSE, right = FALSE
+    )
+  }
+  resto <- names(txt)[!cabe]
+  if (length(resto)) {
+    linha <- sprintf(
+      "\u2026 e mais %d colunas: %s%s", length(resto),
+      paste(utils::head(resto, 8L), collapse = ", "),
+      if (length(resto) > 8L) ", \u2026" else ""
+    )
+    cat(strwrap(linha, width = largura, exdent = 2L), sep = "\n")
+  }
+  if (length(geo)) {
+    cat("(geometria omitida; use as_sf(x) para mapas)\n")
+  }
+  invisible(df)
 }
 
 # Prévia legível: troca as colunas de código do Censo pelos rótulos, na

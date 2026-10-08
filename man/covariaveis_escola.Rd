@@ -4,7 +4,14 @@
 \alias{covariaveis_escola}
 \title{Covariáveis escolares para modelagem}
 \usage{
-covariaveis_escola(con, ano = 2025L, ano_ideb = 2023L, uf = NULL, rede = NULL)
+covariaveis_escola(
+  con,
+  ano = 2025L,
+  ano_ideb = 2023L,
+  uf = NULL,
+  rede = NULL,
+  ativas = TRUE
+)
 }
 \arguments{
 \item{con}{Conexão criada por \code{\link[=conecta]{conecta()}}.}
@@ -18,6 +25,9 @@ escolas — corte transversal consistente.}
 
 \item{rede}{Filtro opcional pela rede: códigos (1–4) ou nomes
 (\code{"Municipal"}, \code{"Estadual"}, \code{"Federal"}, \code{"Privada"}, \code{"publica"}).}
+
+\item{ativas}{Só escolas em atividade (\code{tp_situacao_funcionamento == 1})?
+Padrão \code{TRUE}: paralisadas/extintas vêm sem infraestrutura no Censo.}
 }
 \value{
 Objeto S3 de classe \code{eduBR_covariaveis} (consulta lazy).

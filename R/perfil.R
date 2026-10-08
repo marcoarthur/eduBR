@@ -24,6 +24,15 @@ eduBR_infra_perfil <- function() {
   )
 }
 
+# Só escolas em atividade (1); paralisadas (2) e extintas (3) vêm sem
+# infraestrutura. Sem a coluna (fixtures antigas), não filtra.
+eduBR_so_ativas <- function(tb) {
+  if ("tp_situacao_funcionamento" %in% colnames(tb)) {
+    tb <- dplyr::filter(tb, .data$tp_situacao_funcionamento == 1L)
+  }
+  tb
+}
+
 # Etapas ofertadas (flag em clean.censo_escolas -> rótulo curto).
 eduBR_etapas_oferta <- function() {
   c(
@@ -49,7 +58,10 @@ eduBR_etapas_oferta <- function() {
 #' ou, se `NULL`, a edição mais recente com nota da escola; município e
 #' estado são a média das escolas da **mesma rede** nessa edição.
 #'
-#' As médias são **descritivas** (média simples das escolas com dado) —
+#' Município e estado consideram só escolas **em atividade**
+#' (`tp_situacao_funcionamento == 1`; paralisadas/extintas não têm
+#' infraestrutura no Censo). As médias são **descritivas** (média simples
+#' das escolas com dado) —
 #' servem para situar a escola, não para atribuir causalidade.
 #'
 #' @param con Conexão criada por [conecta()].
@@ -104,12 +116,14 @@ perfil_escola <- function(con, codigo_inep, ano = 2025L, ano_ideb = NULL) {
     dplyr::filter(
       .data$nu_ano_censo == .env$ano,
       .data$co_municipio == .env$mun_cod
-    )
+    ) |>
+    eduBR_so_ativas()
   base_uf <- eduBR_tbl(con, "censo_escolas") |>
     dplyr::filter(
       .data$nu_ano_censo == .env$ano,
       .data$sg_uf == .env$uf
-    )
+    ) |>
+    eduBR_so_ativas()
 
   agrega_infra <- function(tb) {
     tb |>

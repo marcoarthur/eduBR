@@ -10,6 +10,7 @@ fake_cov_tbl <- function(con, nome) {
       co_municipio = c(1L, 1L, 2L, 1L),
       tp_dependencia = c(3L, 2L, 3L, 3L),
       tp_localizacao = c(1L, 2L, 1L, 1L),
+      tp_situacao_funcionamento = c(1L, 1L, 1L, 1L),
       in_biblioteca = c(1L, 0L, 1L, 0L),
       in_internet = c(1L, 1L, 0L, 0L),
       in_comum_fund_ai = c(1L, 0L, 1L, 1L)
@@ -76,4 +77,18 @@ test_that("covariaveis_escola() serve de dados para executar_regressao()", {
   espec <- especificar_regressao("docentes", "in_biblioteca")
   x <- executar_regressao("fake_con", espec, dados = covariaveis_escola("fake_con"))
   expect_true("in_biblioteca" %in% coeficientes(x)$term)
+})
+
+test_that("covariaveis_escola() exclui escolas fora de atividade por padrão", {
+  com_inativa <- function(con, nome) {
+    d <- fake_cov_tbl(con, nome)
+    if (nome == "censo_escolas") {
+      d$tp_situacao_funcionamento[d$co_entidade == 13] <- 2L
+    }
+    d
+  }
+  local_mocked_bindings(eduBR_tbl = com_inativa)
+
+  expect_equal(sort(as_tibble(covariaveis_escola("fake_con"))$co_entidade), c(11, 12))
+  expect_equal(nrow(as_tibble(covariaveis_escola("fake_con", ativas = FALSE))), 3L)
 })

@@ -53,3 +53,36 @@ test_that("print usa singular com uma linha", {
   x <- new_eduBR(fake_print_tbl[1, ], "eduBR_escola")
   expect_output(print(x), "(1 linha)", fixed = TRUE)
 })
+
+test_that("prévia sem tipos técnicos, sem geometria e com integer64 legível", {
+  df <- fake_print_tbl
+  df$geometry <- c("0101", "0101", NA)
+  if (requireNamespace("bit64", quietly = TRUE)) {
+    df$co_entidade <- bit64::as.integer64(c(13078070, 2, 3))
+  }
+  x <- new_eduBR(df, "eduBR_escola")
+
+  out <- capture.output(print(x))
+
+  expect_false(any(grepl("<chr>|<int>|<int64>|<dbl>|pq_gmtry", out)))
+  expect_false(any(grepl("0101", out, fixed = TRUE)))
+  expect_true(any(grepl("geometria omitida", out, fixed = TRUE)))
+  if (requireNamespace("bit64", quietly = TRUE)) {
+    expect_true(any(grepl("13078070", out, fixed = TRUE)))
+  }
+})
+
+test_that("prévia lista as colunas que não cabem e trunca textos", {
+  largo <- as.data.frame(
+    stats::setNames(as.list(rep("valor", 30L)), sprintf("coluna_%02d", 1:30))
+  )
+  largo$texto <- strrep("x", 80L)
+  x <- new_eduBR(tibble::as_tibble(largo), "eduBR_escola")
+
+  out <- withr::with_options(list(width = 60L), capture.output(print(x)))
+
+  expect_true(any(grepl("e mais \\d+ colunas: ", out)))
+  resto <- out[grepl("e mais", out) | startsWith(out, "  ")]
+  expect_true(all(nchar(resto) <= 60L))
+  expect_false(any(grepl(strrep("x", 40L), out, fixed = TRUE)))
+})

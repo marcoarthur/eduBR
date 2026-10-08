@@ -23,6 +23,8 @@
 #' @param uf Filtro opcional por UF (sigla).
 #' @param rede Filtro opcional pela rede: códigos (1–4) ou nomes
 #'   (`"Municipal"`, `"Estadual"`, `"Federal"`, `"Privada"`, `"publica"`).
+#' @param ativas Só escolas em atividade (`tp_situacao_funcionamento == 1`)?
+#'   Padrão `TRUE`: paralisadas/extintas vêm sem infraestrutura no Censo.
 #'
 #' @return Objeto S3 de classe `eduBR_covariaveis` (consulta lazy).
 #'
@@ -40,12 +42,15 @@
 #'
 #' @export
 covariaveis_escola <- function(con, ano = 2025L, ano_ideb = 2023L,
-                               uf = NULL, rede = NULL) {
+                               uf = NULL, rede = NULL, ativas = TRUE) {
   lab <- eduBR_rotulos()
   flags <- c(names(eduBR_infra_perfil()), unique(names(eduBR_etapas_oferta())))
 
   esc <- eduBR_tbl(con, "censo_escolas") |>
     dplyr::filter(.data$nu_ano_censo == .env$ano)
+  if (isTRUE(ativas)) {
+    esc <- eduBR_so_ativas(esc)
+  }
   if (!is.null(uf)) {
     esc <- dplyr::filter(esc, .data$sg_uf %in% .env$uf)
   }
