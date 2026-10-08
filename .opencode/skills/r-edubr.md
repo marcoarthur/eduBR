@@ -298,7 +298,7 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   PCA sem códigos `tp_*` e com sinal fixo.
 - Rodada de 2026-10-08 (2ª) verificou #36–#40: gestora e ML **aprovam**;
   pesquisadora aprova com ressalva externa (`co_municipio` em
-  `clean.escolas`). Sugestão aberta (sem issue): `[baixa]` `pca_perfil()`
-  descartar componentes de variância nula (colinearidade exata).
+  `clean.escolas`). Sugestão aberta: `[baixa]` `pca_perfil()`
+  descartar componentes de variância nula (colinearidade exata) (#48).
 - Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

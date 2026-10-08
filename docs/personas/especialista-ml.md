@@ -351,7 +351,7 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 - **[baixa]** `pca_perfil()`: descartar componentes de variância nula
   (colinearidade exata; PC63–PC65 com ~1e-31) e avisar quais colunas são
-  combinação linear das outras.
+  combinação linear das outras (#48).
 
 ## Veredito
 
