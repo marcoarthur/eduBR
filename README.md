@@ -59,8 +59,10 @@ Como ler: o IDEB é comparado **na mesma edição** (2023) e com escolas da
 `comparar()` quer dizer que 7% das escolas do município têm o item.
 
 ```r
-# 2. A mesma comparação em tabela (para planilha: write.csv(..., "minha_escola.csv"))
+# 2. A mesma comparação em tabela
 comparar(p)
+exportar(p, "minha_escola.csv")    # abre direto no Excel/LibreOffice
+# exportar(p, "minha_escola.xlsx") # abas Comparação e Resumo (pacote writexl)
 #>    dimensao       item                    escola municipio estado dif_municipio
 #>  4 Infraestrutura Biblioteca                  0     0.0682  0.244       -0.0682
 #> 11 IDEB           IDEB fund. I (2023)       3.6     4.07    4.98        -0.467
