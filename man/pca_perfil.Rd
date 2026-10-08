@@ -4,13 +4,25 @@
 \alias{pca_perfil}
 \title{PCA do perfil escolar}
 \usage{
-pca_perfil(dados, id = "co_entidade")
+pca_perfil(
+  dados,
+  id = "co_entidade",
+  excluir = NULL,
+  redundantes = c("manter", "remover")
+)
 }
 \arguments{
 \item{dados}{Um \code{data.frame} com as features (ex.: \code{\link[=features_escola]{features_escola()}}
 materializado).}
 
 \item{id}{Nome da coluna identificadora da escola (padrão \code{"co_entidade"}).}
+
+\item{excluir}{Colunas a deixar fora da PCA, além das excluídas por padrão.}
+
+\item{redundantes}{\code{"manter"} (padrão) ou \code{"remover"}: com \code{"remover"},
+colunas que são combinação linear exata das demais (ex.: os \verb{*_score} de
+\code{analytics.escola_features}, somas dos \verb{in_*}) saem antes do ajuste, para
+a mesma informação não pesar duas vezes.}
 }
 \value{
 Lista de classe \code{eduBR_pca} com \code{fit} (o \code{prcomp}), \code{variancia}

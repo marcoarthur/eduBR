@@ -26,6 +26,11 @@ eduBR_exclui_pca <- function() {
 #' @param dados Um `data.frame` com as features (ex.: [features_escola()]
 #'   materializado).
 #' @param id Nome da coluna identificadora da escola (padrão `"co_entidade"`).
+#' @param excluir Colunas a deixar fora da PCA, além das excluídas por padrão.
+#' @param redundantes `"manter"` (padrão) ou `"remover"`: com `"remover"`,
+#'   colunas que são combinação linear exata das demais (ex.: os `*_score` de
+#'   `analytics.escola_features`, somas dos `in_*`) saem antes do ajuste, para
+#'   a mesma informação não pesar duas vezes.
 #'
 #' @return Lista de classe `eduBR_pca` com `fit` (o `prcomp`), `variancia`
 #'   (tibble `pc`/`prop`/`acumulada`), `loadings` (tibble longo
@@ -40,7 +45,9 @@ eduBR_exclui_pca <- function() {
 #' }
 #'
 #' @export
-pca_perfil <- function(dados, id = "co_entidade") {
+pca_perfil <- function(dados, id = "co_entidade", excluir = NULL,
+                       redundantes = c("manter", "remover")) {
+  redundantes <- match.arg(redundantes)
   if (!is.data.frame(dados)) {
     stop("`dados` deve ser um data.frame.", call. = FALSE)
   }
@@ -48,7 +55,10 @@ pca_perfil <- function(dados, id = "co_entidade") {
     stop(sprintf("coluna identificadora inexistente: '%s'.", id), call. = FALSE)
   }
 
-  num <- dados[!names(dados) %in% eduBR_exclui_pca()]
+  if (!is.null(excluir) && !is.character(excluir)) {
+    stop("`excluir` deve ser um vetor de nomes de coluna.", call. = FALSE)
+  }
+  num <- dados[!names(dados) %in% c(eduBR_exclui_pca(), excluir)]
   num <- num[vapply(num, is.numeric, logical(1L))]
   # integer64 (bigint) vira double de verdade; as.matrix() leria os bits.
   num[] <- lapply(num, as.numeric)
@@ -88,6 +98,18 @@ pca_perfil <- function(dados, id = "co_entidade") {
   }
   if (ncol(mat) == 0L) {
     stop("sem colunas numéricas para a PCA.", call. = FALSE)
+  }
+  if (redundantes == "remover" && ncol(mat) > 1L) {
+    q <- qr(scale(as.matrix(mat)))
+    if (q$rank < ncol(mat)) {
+      fora <- colnames(mat)[q$pivot[-seq_len(q$rank)]]
+      message(sprintf(
+        "colunas redundantes (combina\u00e7\u00e3o linear de outras) fora da PCA: %s.",
+        paste(fora, collapse = ", ")
+      ))
+      mat <- mat[!names(mat) %in% fora]
+      descartadas <- c(descartadas, fora)
+    }
   }
   ids <- as.character(dados[[id]][ok])
   if (anyDuplicated(ids)) {
