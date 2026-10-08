@@ -51,3 +51,33 @@ implementação ficam no código; memória de curadoria fica em
   (feito em `docentes_rede()`/`rede_municipio()`/`redes()`); sem coerção
   silenciosa para `numeric` — esconderia a precisão real e quebraria a
   simetria com o Postgres.
+
+## 2026-10-07/08 — rodadas de curadoria #20–#58 (resumo)
+
+- Comparações do perfil usam **mesma edição e mesma rede** do IDEB (#21);
+  município/estado contam só escolas **em atividade**
+  (`tp_situacao_funcionamento == 1`) em `perfil_escola()` e
+  `covariaveis_escola()`.
+- PCA: códigos `tp_*` fora, sinal fixo, componentes de variância nula
+  descartados; os `*_score` são soma exata dos `in_*` (report usa
+  `redundantes = "remover"`).
+- `integer64` vira número **só** onde o cálculo exige (k-NN, PCA); a saída
+  das funções de acesso mantém o tipo do banco (#16 segue valendo).
+- **Testes rodam só no container `rstudio.dev` como `rsuser`** (regra do
+  README); o `AGENTS.md` ainda diz o contrário e será corrigido.
+
+## 2026-10-08 — camada `ellmer` (plano em `plans/ellmer-tools.md`)
+
+- **Runtime**: `chat_anthropic()` no container; a chave
+  (`ANTHROPIC_API_KEY`) é configurada pelo dono do repo no ambiente do
+  `rsuser`, nunca no código. `ellmer` 0.5.0 existe só no container.
+- **Handles na sessão** para encadear objetos R (dados, espec, regressão,
+  floresta): o LLM recebe ids, não objetos; somem ao fim da sessão.
+- **Ledger** persistido (quando pedido) em
+  `tools::R_user_dir("eduBR", "data")`, não em `inst/`.
+- **PII**: gestor/docentes são só contagens (sem nome/CPF); endereço,
+  telefone, CEP e CNPJ de `censo_escolas`/`escolas` ficam **ocultos** nas
+  tools por padrão.
+- Tools devolvem `integer64` como **string** (fronteira JSON), sem mudar o
+  tipo nas funções do pacote; `etapa` usa os valores do pacote
+  (`ensino_medio`, não `medio`).
