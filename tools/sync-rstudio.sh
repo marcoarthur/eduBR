@@ -25,7 +25,7 @@ echo "==> rsync ${SRC} -> ${HOST}:${DEST}"
 ssh "$HOST" "mkdir -p '$DEST'"
 
 rsync -rlptz --no-owner --no-group \
-  --exclude='.git/' \
+  --exclude='.git' \
   --exclude='.Rproj.user/' \
   --exclude='.Rhistory' \
   --exclude='.RData' \
