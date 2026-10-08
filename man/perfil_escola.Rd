@@ -32,7 +32,10 @@ O IDEB é comparado \strong{na mesma edição}: para cada etapa usa-se \code{ano
 ou, se \code{NULL}, a edição mais recente com nota da escola; município e
 estado são a média das escolas da \strong{mesma rede} nessa edição.
 
-As médias são \strong{descritivas} (média simples das escolas com dado) —
+Município e estado consideram só escolas \strong{em atividade}
+(\code{tp_situacao_funcionamento == 1}; paralisadas/extintas não têm
+infraestrutura no Censo). As médias são \strong{descritivas} (média simples
+das escolas com dado) —
 servem para situar a escola, não para atribuir causalidade.
 }
 \examples{

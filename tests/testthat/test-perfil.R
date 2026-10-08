@@ -164,3 +164,19 @@ test_that("resumo_escola() devolve uma linha com IDEB e variação", {
 
   expect_error(resumo_escola(list()), "eduBR_perfil_escola")
 })
+
+test_that("perfil_escola() conta só escolas em atividade no município", {
+  com_inativa <- function(con, nome) {
+    d <- fake_perfil_tbl(con, nome)
+    if (nome == "censo_escolas") {
+      d$tp_situacao_funcionamento <- c(1L, 1L, 2L, 1L)
+    }
+    d
+  }
+  local_mocked_bindings(eduBR_tbl = com_inativa)
+
+  mun <- perfil_escola("fake_con", 11L)$perfil
+  mun <- mun[mun$nivel == "municipio", , drop = FALSE]
+  expect_equal(mun$n_escolas[[1L]], 2L)
+  expect_equal(mun$infra_in_biblioteca[[1L]], 1 / 2)
+})
