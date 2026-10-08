@@ -153,3 +153,92 @@ test_that("tools da pesquisadora respondem no banco real (recorte AC)", {
   message(paste(sprintf("%s: %.1f s", led$tool, led$duracao_ms / 1000),
                 collapse = "; "))
 })
+
+test_that("regressão declarativa no banco real (aceite da pesquisadora)", {
+  skip_if_not_installed("parsnip")
+  con <- conecta(service = "edumaps")
+  withr::defer(DBI::dbDisconnect(con))
+  tools <- ferramentas_edubr(con, limites = list(timeout_s = 120))
+
+  # (a) covariaveis_escola -> especificar -> executar -> coeficientes/metricas
+  env <- smoke_checar(tools$covariaveis_escola(uf = "AC", rede = "Municipal",
+                                               n = 2L))
+  expect_null(env$erro)
+  dados_id <- env$metadados$handle
+  env <- smoke_checar(tools$especificar_regressao(
+    outcome = "ideb_fund_i", predictors = c("in_biblioteca", "docentes"),
+    cuts = "localizacao", dados_id = dados_id
+  ))
+  expect_null(env$erro)
+  espec_id <- env$metadados$handle
+  expect_match(espec_id, "^espec_[0-9]+$")
+  env <- smoke_checar(tools$executar_regressao(espec_id = espec_id))
+  expect_null(env$erro)
+  reg_id <- env$metadados$handle
+  expect_match(reg_id, "^regressao_[0-9]+$")
+  expect_gt(length(env$dados), 0L)
+  message("executar_regressao (a): ", jsonlite::toJSON(
+    list(dados = env$dados, contexto = env$metadados$contexto,
+         aviso = env$metadados$aviso),
+    auto_unbox = TRUE, null = "null"
+  ))
+  env <- smoke_checar(tools$coeficientes(regressao_id = reg_id))
+  expect_null(env$erro)
+  expect_true(all(c("termo", "estimativa", "erro_padrao", "p_valor") %in%
+                    names(env$dados[[1]])))
+  message("coeficientes (a): ", jsonlite::toJSON(env$dados, auto_unbox = TRUE,
+                                                 null = "null", digits = 4))
+  env <- smoke_checar(tools$metricas(regressao_id = reg_id))
+  expect_null(env$erro)
+  expect_true("r2" %in% names(env$dados[[1]]))
+  message("metricas (a): ", jsonlite::toJSON(
+    lapply(env$dados, `[`, c("localizacao", "r2", "r2_ajustado", "nobs")),
+    auto_unbox = TRUE, null = "null", digits = 4
+  ))
+
+  # (b) fonte do catálogo com filtro (ano 2023, AC)
+  env <- smoke_checar(tools$especificar_regressao(
+    outcome = "ideb_observado", predictors = "nota_media", cuts = "etapa",
+    fonte = "ideb",
+    filtro = data.frame(coluna = c("ano", "sg_uf"), valor = c("2023", "AC"))
+  ))
+  expect_null(env$erro)
+  env <- smoke_checar(tools$executar_regressao(
+    espec_id = env$metadados$handle
+  ))
+  expect_null(env$erro)
+  expect_gt(length(env$dados), 0L)
+  message("executar_regressao (b): ", jsonlite::toJSON(
+    list(dados = env$dados, n_recorte = env$metadados$contexto$n_recorte),
+    auto_unbox = TRUE, null = "null"
+  ))
+  env <- smoke_checar(tools$metricas(regressao_id = env$metadados$handle))
+  expect_null(env$erro)
+
+  # (c) recorte grande (Brasil, 2023): limite_excedido sem coletar
+  chamou <- FALSE
+  local_mocked_bindings(executar_regressao = function(...) {
+    chamou <<- TRUE
+    stop("não deveria executar")
+  })
+  env <- smoke_checar(tools$especificar_regressao(
+    outcome = "ideb_observado", predictors = "nota_media", cuts = "etapa",
+    fonte = "ideb", filtro = list(list(coluna = "ano", valor = "2023"))
+  ))
+  expect_null(env$erro)
+  env <- smoke_checar(tools$executar_regressao(
+    espec_id = env$metadados$handle
+  ))
+  expect_equal(env$erro$tipo, "limite_excedido")
+  expect_false(chamou)
+  message("executar_regressao (c): ", env$erro$mensagem)
+
+  env <- smoke_checar(tools$listar_handles())
+  expect_null(env$erro)
+  message("listar_handles: ", jsonlite::toJSON(env$dados, auto_unbox = TRUE))
+
+  led <- ledger(tools)
+  expect_equal(sum(!is.na(led$erro)), 1L)
+  message(paste(sprintf("%s: %.1f s", led$tool, led$duracao_ms / 1000),
+                collapse = "; "))
+})
