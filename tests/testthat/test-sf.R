@@ -50,3 +50,21 @@ test_that("as_sf.eduBR registrado como método S3 (despacho fora do namespace)",
   metodos <- asNamespace("eduBR")[[".__S3MethodsTable__."]]
   expect_true(exists("as_sf.eduBR", envir = metodos, inherits = FALSE))
 })
+
+test_that("as_sf() converte varias geometrias, respeita n e nao avisa", {
+  testthat::skip_if_not_installed("sf")
+  tres <- function(con, nome) {
+    tibble::tibble(
+      codigo_inep = c("1", "2", "3"),
+      geometry = c(PT_SP, NA_character_, PT_SP)
+    )
+  }
+  local_mocked_bindings(eduBR_tbl = tres)
+
+  s <- expect_no_warning(as_sf(escolas("fake_con")))
+  expect_equal(nrow(s), 3L)
+  expect_equal(as.logical(sf::st_is_empty(s$geometry)), c(FALSE, TRUE, FALSE))
+  expect_equal(s$geometry[[1L]], s$geometry[[3L]])
+
+  expect_equal(nrow(as_sf(escolas("fake_con"), n = 1L)), 1L)
+})
