@@ -38,6 +38,23 @@
 
 ## Entradas
 
+### 2026-10-08 — 6ª rodada (verificação de #36 e #37)
+
+**R15 — `as_sf()` com limite e sem aviso.**
+- Resposta: `as_sf(municipios(con, uf = "SE"), n = 5)` → 5
+  `MULTIPOLYGON` em 1,7 s; `as_sf(escolas(con, uf = "AC"))` → 539 pontos
+  em 5,5 s; nenhum aviso de materialização.
+- Status: **✓ atendido** (#36).
+
+**R16 — base regional por escola, com chave de município.**
+- Resposta: `covariaveis_escola(con, uf = "AC")` traz `co_municipio`
+  (22 municípios), `rede`/`localizacao` rotuladas e só escolas ativas
+  (1.524; com `ativas = FALSE`, 1.678). Na prática resolve o join
+  escola→município por código para análise — mas `escolas()` continua sem
+  a coluna.
+- Status: **✓ parcial** (P1 contornado via `covariaveis_escola()`;
+  `escolas()` segue bloqueada na carga).
+
 ### 2026-10-08 — 5ª rodada (verificação de #20, #21, #24)
 
 **R11 (revisita) — `as_sf()` para mapas.**
@@ -220,20 +237,21 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - [x] `as_sf()` utilizável fora do namespace (#20).
 - [x] Tipo/ano de referência no `catalogo()` (#24).
 - [x] Mesma edição do IDEB nas comparações (#21).
+- [x] `as_sf()` com `n` e sem aviso (#36).
 - [ ] Join escola→município **por código** em `escolas()` (bloqueado:
-  `clean.escolas` não tem a coluna; flui via `ideb()`/`docentes_rede()`/
-  `gestores()`).
+  `clean.escolas` não tem a coluna; contornado por `covariaveis_escola()`,
+  `ideb()`, `docentes_rede()` e `gestores()`, que trazem `co_municipio`).
 
 ## Sugestões priorizadas
 
-- **[média]** `as_sf()`: converter o hex com `sf::st_as_sfc(<WKB>, EWKB =
-  TRUE)` vetorizado (~6 s → 0,4 s em 22 municípios) e não emitir o aviso
-  de materialização (ou aceitar `n =`) (#36).
 - **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-08, 6ª rodada): mapas rápidos e sem
+  ruído, base escola × covariáveis com código do município. Única ressalva
+  é externa: `escolas()` sem `co_municipio` até a carga do EduMaps mudar.
 - **Aprova com ressalvas** (2026-10-08, 5ª rodada): mapas, catálogo com
   chave/tipo/ano e comparações na mesma edição verificados contra o banco.
   Ressalvas: `escolas()` sem código do município (bloqueado na carga) e

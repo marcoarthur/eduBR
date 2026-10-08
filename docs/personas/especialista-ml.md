@@ -35,6 +35,33 @@
 
 ## Entradas
 
+### 2026-10-08 — 8ª rodada (verificação de #37, #40 e da PCA)
+
+**M28 — covariáveis para modelo multivariado.**
+- Resposta: `covariaveis_escola(con, uf = "SP", rede = "Municipal")` é
+  lazy (prévia em 1,9 s) e alimenta `executar_regressao()`:
+  `ideb_fund_i ~ in_biblioteca + in_internet + docentes + matriculas` por
+  `localizacao` → Urbana n=4.228 (R² 0,041), Rural n=293 (R² 0,024). O
+  tempo variou com a rede (16 s → 66 s); só as colunas do modelo são
+  coletadas. Por padrão só escolas ativas (AC: 1.524 ativas de 1.678; 0
+  NA em `in_internet` entre as ativas).
+- Status: **✓ atendido** (#37).
+
+**M29 — PCA sem códigos categóricos e com sinal estável.**
+- Resposta: amostra de 4.000 linhas (fund. II) após `rotular()`: nenhum
+  `tp_*` nem `rede`/`localizacao` nos loadings. Reordenar as linhas dá os
+  mesmos loadings em PC1–PC10 (|Δ| ≤ 5e-14). Só PC63–PC65 mudam — têm
+  variância ~1e-31 (dependências lineares exatas entre features, ex.:
+  totais = soma das partes), ou seja, não carregam informação.
+- Status: **✓ atendido** — sugestão [baixa] de descartar componentes de
+  variância nula.
+
+**M30 — report de PCA.**
+- Resposta: `perfil_escola_pca.Rmd` re-renderizado; o texto descreve PC1
+  como porte e PC2 como lotação × oferta por aluno, com snapshot datado e
+  nota sobre as correções.
+- Status: **✓ atendido** (#40).
+
 ### 2026-10-08 — 7ª rodada (verificação de #22, #25, #28 e do `integer64`)
 
 **M21 (revisita) — logística com NA.**
@@ -314,18 +341,23 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - [x] `coeficientes()`/`metricas()` em tabela limpa.
 - [x] AUC no modo logístico robusta a NA (#22).
 - [x] Report: export em PDF + parâmetros de recorte (#28).
+- [x] Covariáveis do perfil para modelos (#37).
+- [x] PCA sem códigos `tp_*`, sinal fixo e report revisado (#40).
 - [ ] Série histórica de INSE (bloqueada por dados no pipeline EduMaps).
 
 ## Sugestões priorizadas
 
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
-- **[média]** Expor covariáveis do `perfil_escola()` para modelos além do
-  bivariado (#37).
-- **[baixa]** Re-renderizar `perfil_escola_pca.Rmd` com os `*_score` na PCA (#40).
+- **[baixa]** `pca_perfil()`: descartar componentes de variância nula
+  (colinearidade exata; PC63–PC65 com ~1e-31) e avisar quais colunas são
+  combinação linear das outras.
 
 ## Veredito
 
+- **Aprova** (2026-10-08, 8ª rodada): covariáveis prontas para modelos
+  multivariados, PCA metodologicamente limpa (sem códigos categóricos,
+  sinal fixo) e report coerente. Pendência só de dados (INSE histórico).
 - **Aprova** (2026-10-08, 7ª rodada): fronteira lazy→collect controlada,
   k-NN empurrado ao banco e equivalente ao de referência, métricas da
   logística robustas a NA, `integer64` tratado e reports reprodutíveis em

@@ -296,6 +296,9 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   `exportar()` CSV/xlsx (#39); report de PCA re-renderizado e revisado
   (#40). Correções no caminho: só escolas ativas no perfil/covariáveis;
   PCA sem códigos `tp_*` e com sinal fixo.
-- Próximo passo: rodada das personas para verificar #36–#40.
+- Rodada de 2026-10-08 (2ª) verificou #36–#40: gestora e ML **aprovam**;
+  pesquisadora aprova com ressalva externa (`co_municipio` em
+  `clean.escolas`). Sugestão aberta (sem issue): `[baixa]` `pca_perfil()`
+  descartar componentes de variância nula (colinearidade exata).
 - Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

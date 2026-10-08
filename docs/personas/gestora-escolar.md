@@ -34,6 +34,28 @@
 
 ## Entradas
 
+### 2026-10-08 — 4ª rodada (verificação de #38 e #39)
+
+**G8 — prévia do `print` sem jargão.**
+- Resposta: `print(escola(con, "13078070"))` mostra só nomes de coluna e
+  valores (sem `<chr>`/`<int64>`/`<pq_gmtry>`), o código INEP como número,
+  textos longos cortados com "…", a lista "… e mais 14 colunas" e
+  "(geometria omitida; use as_sf(x) para mapas)".
+- Status: **✓ atendido** (#38).
+
+**G9 — o município conta as escolas certas?**
+- Resposta: o perfil agora conta **44** escolas em Boa Vista do Ramos (só
+  as em atividade; antes 59, com 15 paralisadas).
+- Status: **✓ atendido** (correção junto da #38).
+
+**G10 — levar para a planilha.**
+- Resposta: `exportar(p, "minha_escola.csv")` gera CSV que abre no Excel
+  em PT-BR: cabeçalho em português ("Média do município", "Diferença
+  (escola − município)"), `;` e vírgula decimal com 3 casas
+  (`0,386`); `exportar(p, "minha_escola.xlsx")` gera as abas Comparação e
+  Resumo. O README já usa `exportar()`.
+- Status: **✓ atendido** (#39).
+
 ### 2026-10-08 — 3ª rodada (verificação de #21, #23, #25, #26, #27)
 
 Foco: conferir as entregas contra o `edumaps_dev` com a escola 13078070 e
@@ -148,16 +170,18 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 - [x] `print` legível, sem host/SQL (#23).
 - [x] Evolução do IDEB e resumo de uma linha (#26).
 - [x] Exemplo com escola real no README (#27).
+- [x] Prévia do `print` sem tipos técnicos/geometria (#38).
+- [x] Exportar o perfil para planilha (#39).
 
 ## Sugestões priorizadas
 
-- **[baixa]** Na prévia do `print`, esconder tipos técnicos (`<int64>`,
-  `<pq_gmtry>`) e a coluna `geometry` (#38).
-- **[baixa]** Exportação pronta para planilha (ex.: `exportar(p, "x.csv")`)
-  em vez de `write.csv()` (#39).
+- Nenhuma pendente. (Ideia futura: `exportar()` para vários perfis de uma
+  vez, ex.: todas as escolas da rede municipal.)
 
 ## Veredito
 
+- **Aprova** (2026-10-08, 4ª rodada): prévia sem jargão técnico e
+  exportação direta para planilha; nada pendente para o uso da gestora.
 - **Aprova** (2026-10-08, 3ª rodada): vê a escola numa linha, compara com
   município/estado na mesma edição, acompanha a evolução do IDEB, encontra
   escolas parecidas em segundos e segue o README sem programar. Restam só
