@@ -4,13 +4,7 @@
 \alias{escolas_similares}
 \title{Escolas mais parecidas (benchmark escolar)}
 \usage{
-escolas_similares(
-  con,
-  codigo_inep,
-  n = 5L,
-  etapa = c("fundamental_i", "fundamental_ii"),
-  publica = TRUE
-)
+escolas_similares(con, codigo_inep, n = 5L, etapa = NULL, publica = TRUE)
 }
 \arguments{
 \item{con}{Conexão criada por \code{\link[=conecta]{conecta()}}.}
@@ -19,7 +13,9 @@ escolas_similares(
 
 \item{n}{Número de vizinhas (padrão \code{5}).}
 
-\item{etapa}{Etapas do recorte (padrão as de \code{\link[=features_escola]{features_escola()}}).}
+\item{etapa}{Etapas do recorte. \code{NULL} (padrão) usa as etapas em que a
+escola de referência aparece nas features (ex.: só \code{"ensino_medio"}
+para uma escola só de ensino médio).}
 
 \item{publica}{Só escolas públicas? Padrão \code{TRUE}.}
 }

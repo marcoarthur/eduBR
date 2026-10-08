@@ -200,6 +200,49 @@ eduBR_identifica_escolas <- function(con, viz) {
   )
 }
 
+# Etapas em que a escola de referência aparece nas features (respeitando o
+# filtro de rede). Sem `etapa`, usa todas elas; com `etapa`, exige
+# interseção e explica o motivo quando não há.
+eduBR_etapas_similares <- function(con, codigo_inep, etapa, publica) {
+  id <- as.character(codigo_inep)
+  etapas_da <- function(pub) {
+    consulta(features_escola(con, etapa = NULL, publica = pub)) |>
+      dplyr::filter(as.character(.data$co_entidade) == .env$id) |>
+      dplyr::distinct(.data$etapa) |>
+      dplyr::collect() |>
+      dplyr::pull("etapa") |>
+      as.character()
+  }
+  disponiveis <- etapas_da(publica)
+  if (length(disponiveis) == 0L) {
+    if (isTRUE(publica) && length(etapas_da(FALSE)) > 0L) {
+      stop(
+        sprintf(
+          "escola '%s' n\u00e3o \u00e9 p\u00fablica; use publica = FALSE.", id
+        ),
+        call. = FALSE
+      )
+    }
+    stop(
+      sprintf("escola '%s' sem features para compara\u00e7\u00e3o.", id),
+      call. = FALSE
+    )
+  }
+  if (is.null(etapa)) {
+    return(sort(disponiveis))
+  }
+  if (!any(etapa %in% disponiveis)) {
+    stop(
+      sprintf(
+        "escola '%s' fora das etapas pedidas; dispon\u00edvel em: %s.",
+        id, paste(sort(disponiveis), collapse = ", ")
+      ),
+      call. = FALSE
+    )
+  }
+  etapa
+}
+
 #' Escolas mais parecidas (benchmark escolar)
 #'
 #' Fase 1 da similaridade escolar: k-NN euclidiano sobre as features de
@@ -213,7 +256,9 @@ eduBR_identifica_escolas <- function(con, viz) {
 #' @param con Conexão criada por [conecta()].
 #' @param codigo_inep Código INEP da escola de referência (`co_entidade`).
 #' @param n Número de vizinhas (padrão `5`).
-#' @param etapa Etapas do recorte (padrão as de [features_escola()]).
+#' @param etapa Etapas do recorte. `NULL` (padrão) usa as etapas em que a
+#'   escola de referência aparece nas features (ex.: só `"ensino_medio"`
+#'   para uma escola só de ensino médio).
 #' @param publica Só escolas públicas? Padrão `TRUE`.
 #'
 #' @return Um `tibble` com `co_entidade`, `escola`, `municipio`, `uf`,
@@ -226,12 +271,12 @@ eduBR_identifica_escolas <- function(con, viz) {
 #' }
 #'
 #' @export
-escolas_similares <- function(con, codigo_inep, n = 5L,
-                              etapa = c("fundamental_i", "fundamental_ii"),
+escolas_similares <- function(con, codigo_inep, n = 5L, etapa = NULL,
                               publica = TRUE) {
   if (!is.numeric(n) || length(n) != 1L || is.na(n) || n < 1) {
     stop("`n` deve ser um inteiro positivo.", call. = FALSE)
   }
+  etapa <- eduBR_etapas_similares(con, codigo_inep, etapa, publica)
   tb <- consulta(features_escola(con, etapa = etapa, publica = publica))
   viz <- if (eduBR_lazy(tb)) {
     eduBR_vizinhos_sql(tb, codigo_inep, n)
