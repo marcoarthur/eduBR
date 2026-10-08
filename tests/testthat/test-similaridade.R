@@ -123,3 +123,42 @@ test_that("eduBR_vizinhos_query() roda o k-NN no SQL", {
   expect_match(sql, "ORDER BY", fixed = TRUE)
   expect_no_match(sql, "OVER", fixed = TRUE)
 })
+
+test_that("escolas_similares() usa as etapas da escola por padrão", {
+  feats <- tibble::tibble(
+    co_entidade = c("1", "2", "3", "4", "5", "6", "7"),
+    etapa = c(rep("fundamental_i", 3L), rep("ensino_medio", 3L), "ensino_medio"),
+    tp_dependencia = c(3L, 3L, 3L, 2L, 2L, 2L, 4L),
+    in_internet = c(1, 1, 0, 1, 0, 0, 1),
+    qt_doc_bas = c(20, 21, 5, 40, 41, 10, 40)
+  )
+  fake_features <- function(con, etapa = NULL, publica = TRUE) {
+    d <- feats
+    if (!is.null(etapa)) d <- d[d$etapa %in% etapa, , drop = FALSE]
+    if (publica) d <- d[d$tp_dependencia %in% 1:3, , drop = FALSE]
+    new_eduBR(d, "eduBR_features", con, list())
+  }
+  fake_censo <- function(con, nome) {
+    tibble::tibble(
+      nu_ano_censo = 2025L, co_entidade = c(1, 2, 3, 4, 5, 6, 7),
+      no_entidade = paste("ESC", 1:7), no_municipio = "X", sg_uf = "SP",
+      tp_dependencia = c(3L, 3L, 3L, 2L, 2L, 2L, 4L)
+    )
+  }
+  local_mocked_bindings(features_escola = fake_features, eduBR_tbl = fake_censo)
+
+  # escola só de ensino médio: sem `etapa =`
+  v <- escolas_similares("fake_con", "4", n = 1L)
+  expect_equal(v$co_entidade, "5")
+  expect_equal(v$etapa, "ensino_medio")
+
+  # escola de fund. I: resultado como antes
+  expect_equal(escolas_similares("fake_con", "1", n = 1L)$co_entidade, "2")
+
+  expect_error(
+    escolas_similares("fake_con", "4", etapa = "fundamental_i"),
+    "disponível em: ensino_medio"
+  )
+  expect_error(escolas_similares("fake_con", "7"), "publica = FALSE")
+  expect_error(escolas_similares("fake_con", "999"), "sem features")
+})
