@@ -5,18 +5,22 @@
 # lista out): o recorte e o `collect` ficam com o chamador
 # (ex.: features_escola() + coletar()).
 
-# Colunas fora da PCA: identificadores e medidas de desempenho.
+# Colunas fora da PCA: identificadores, códigos categóricos do Censo (não
+# são grandezas) e medidas de desempenho.
 eduBR_exclui_pca <- function() {
-  c("co_entidade", "etapa", "nota_media", "media_inse",
-    paste0("pc_nivel_", 1L:8L))
+  c("co_entidade", "etapa", names(eduBR_colunas_rotulo()),
+    "nota_media", "media_inse", paste0("pc_nivel_", 1L:8L))
 }
 
 #' PCA do perfil escolar
 #'
 #' Ajusta uma PCA (`stats::prcomp`, com centro e escala) sobre as colunas
-#' numéricas de `dados`, excluindo identificadores e medidas de desempenho
-#' (nota/INSE/percentuais por nível). Colunas sem variância ou só-NA caem
-#' com aviso; linhas incompletas nas colunas usadas são descartadas.
+#' numéricas de `dados`, excluindo identificadores, códigos categóricos do
+#' Censo (`tp_dependencia`, `tp_localizacao`, `tp_categoria_escola_privada`)
+#' e medidas de desempenho (nota/INSE/percentuais por nível). Colunas sem variância ou só-NA caem
+#' com aviso; linhas incompletas nas colunas usadas são descartadas. O sinal
+#' de cada componente é fixado para que o maior peso (em módulo) seja
+#' positivo.
 #'
 #' @param dados Um `data.frame` com as features (ex.: [features_escola()]
 #'   materializado).
@@ -90,6 +94,12 @@ pca_perfil <- function(dados, id = "co_entidade") {
   }
 
   fit <- stats::prcomp(as.matrix(mat), center = TRUE, scale. = TRUE)
+  # Sinal do componente é arbitrário: fixa o maior peso (em módulo) positivo
+  # para a leitura dos eixos não mudar entre execuções.
+  sinal <- apply(fit$rotation, 2L, function(v) sign(v[which.max(abs(v))]))
+  sinal[sinal == 0] <- 1
+  fit$rotation <- sweep(fit$rotation, 2L, sinal, `*`)
+  fit$x <- sweep(fit$x, 2L, sinal, `*`)
   prop <- fit$sdev^2 / sum(fit$sdev^2)
   pcs <- paste0("PC", seq_along(prop))
 
