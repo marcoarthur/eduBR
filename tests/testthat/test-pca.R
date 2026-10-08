@@ -98,3 +98,23 @@ test_that("pca_perfil() descarta componentes de variância nula com aviso", {
 
   expect_no_warning(pca_perfil(df_pca[c("co_entidade", "x1", "x2", "x3")]))
 })
+
+test_that("pca_perfil() remove redundantes e respeita excluir", {
+  d <- df_pca[c("co_entidade", "x1", "x2", "x3")]
+  d$soma <- d$x1 + d$x3
+
+  expect_message(
+    p <- expect_no_warning(pca_perfil(d, redundantes = "remover")),
+    "redundantes.*soma"
+  )
+  expect_false("soma" %in% p$loadings$variavel)
+  expect_true("soma" %in% attr(p, "removidas"))
+  expect_equal(nrow(p$variancia), 3L)
+
+  p2 <- suppressWarnings(pca_perfil(d, excluir = "soma"))
+  expect_false("soma" %in% p2$loadings$variavel)
+  expect_equal(p2$variancia$prop, p$variancia$prop)
+
+  expect_error(pca_perfil(d, redundantes = "talvez"), "should be one of|deve ser")
+  expect_error(pca_perfil(d, excluir = 1), "excluir")
+})
