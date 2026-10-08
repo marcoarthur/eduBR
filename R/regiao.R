@@ -41,3 +41,21 @@ eduBR_filtrar_regiao <- function(tb, regiao) {
     toupper(.data$nome_regiao) == .env$alvo | .data$sigla_regiao == .env$alvo
   )
 }
+
+# Siglas das 27 UFs, na ordem do IBGE (Norte, Nordeste, Sudeste, Sul,
+# Centro-oeste).
+eduBR_ufs <- function() {
+  c("RO", "AC", "AM", "RR", "PA", "AP", "TO",
+    "MA", "PI", "CE", "RN", "PB", "PE", "AL", "SE", "BA",
+    "MG", "ES", "RJ", "SP",
+    "PR", "SC", "RS",
+    "MS", "MT", "GO", "DF")
+}
+
+# Nomes e siglas das macrorregiões, derivados de eduBR_mutate_regiao() (o
+# único mapa UF -> região do pacote).
+eduBR_regioes <- function() {
+  m <- eduBR_mutate_regiao(data.frame(sg_uf = eduBR_ufs()))
+  m <- unique(m[, c("nome_regiao", "sigla_regiao")])
+  list(nomes = m$nome_regiao, siglas = m$sigla_regiao)
+}

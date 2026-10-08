@@ -57,12 +57,29 @@ do Postgres. Cada chamada fica registrada no ledger da sessão (ver
 \item \code{scores_escola} (gestora, especialista-ml): scores compostos
 (\code{\link[=scores]{scores()}});
 \item \code{indicadores_escola} (especialista-ml): ranking por indicador
-(\code{\link[=indicadores]{indicadores()}}).
+(\code{\link[=indicadores]{indicadores()}});
+\item \code{municipios} (pesquisadora): municípios do IBGE, sem geometria
+(\code{\link[=municipios]{municipios()}});
+\item \code{redes_municipio} (pesquisadora): município × rede, com matrículas,
+docentes e IDEB médio (\code{\link[=rede_municipio]{rede_municipio()}});
+\item \code{docentes_rede} (pesquisadora): contagens docentes por rede,
+localização e território (\code{\link[=docentes_rede]{docentes_rede()}}; \code{nivel} padrão \code{"brasil"}
+na ferramenta);
+\item \code{ideb} (pesquisadora, especialista-ml): IDEB por escola × etapa ×
+edição (\code{\link[=ideb]{ideb()}}); exige ao menos um filtro;
+\item \code{tendencia_ideb_regiao} (pesquisadora, especialista-ml): coeficientes
+da tendência linear por região × etapa (\code{\link[=tendencia_regiao]{tendencia_regiao()}}),
+achatados;
+\item \code{covariaveis_escola} (pesquisadora, especialista-ml): base escola ×
+covariáveis (\code{\link[=covariaveis_escola]{covariaveis_escola()}}) guardada como handle \verb{dados_<k>}
+(consulta preguiçosa) + prévia;
+\item \code{perfil_gestor} (pesquisadora): categoria modal por corte × dimensão
+(\code{\link[=gestores]{gestores()}} + \code{\link[=perfil_gestor]{perfil_gestor()}}).
 }
 
 Os argumentos (código INEP de 8 dígitos, etapa, edição bienal do IDEB,
-\code{n}) são validados antes de consultar o banco; valores inválidos
-devolvem \code{parametro_invalido} com a correção esperada.
+UF, região, rede, \code{n}) são validados antes de consultar o banco;
+valores inválidos devolvem \code{parametro_invalido} com a correção esperada.
 }
 
 \section{Limites}{

@@ -433,12 +433,14 @@ eduBR_envelope_erro <- function(tipo, mensagem, grao = NULL, filtros = NULL) {
 
 # Resultado de uma função de tool, antes do envelope: `dados` é um objeto
 # eduBR, tbl lazy, data frame ou NULL. `contexto` (opcional) é uma lista
-# serializável que vai para `metadados$contexto`.
+# serializável que vai para `metadados$contexto`. `n_padrao` (opcional)
+# substitui `limites$n_padrao` quando o modelo não informa `n` (ex.: prévias).
 eduBR_resultado <- function(dados = NULL, grao = NULL, filtros = NULL,
-                            handle = NULL, aviso = NULL, contexto = NULL) {
+                            handle = NULL, aviso = NULL, contexto = NULL,
+                            n_padrao = NULL) {
   structure(
     list(dados = dados, grao = grao, filtros = filtros, handle = handle,
-         aviso = aviso, contexto = contexto),
+         aviso = aviso, contexto = contexto, n_padrao = n_padrao),
     class = "eduBR_resultado_tool"
   )
 }
@@ -538,7 +540,7 @@ eduBR_montar_envelope <- function(sessao, res, n = NULL) {
     stop("Resultado de tool em formato n\u00e3o suportado.", call. = FALSE)
   }
 
-  cap <- eduBR_cap_n(sessao, n)
+  cap <- eduBR_cap_n(sessao, n %||% res$n_padrao)
   base <- if (inherits(x, "eduBR")) consulta(x) else x
   remoto <- eduBR_lazy(base)
   df <- coletar(x, n = cap$n + 1L)
@@ -751,6 +753,34 @@ eduBR_tools_registro <- function() {
     indicadores_escola = list(
       criar = eduBR_tool_indicadores_escola,
       personas = "especialista-ml"
+    ),
+    municipios = list(
+      criar = eduBR_tool_municipios,
+      personas = "pesquisadora-educacional"
+    ),
+    redes_municipio = list(
+      criar = eduBR_tool_redes_municipio,
+      personas = "pesquisadora-educacional"
+    ),
+    docentes_rede = list(
+      criar = eduBR_tool_docentes_rede,
+      personas = "pesquisadora-educacional"
+    ),
+    ideb = list(
+      criar = eduBR_tool_ideb,
+      personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
+    tendencia_ideb_regiao = list(
+      criar = eduBR_tool_tendencia_ideb_regiao,
+      personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
+    covariaveis_escola = list(
+      criar = eduBR_tool_covariaveis_escola,
+      personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
+    perfil_gestor = list(
+      criar = eduBR_tool_perfil_gestor,
+      personas = "pesquisadora-educacional"
     )
   )
 }
@@ -788,11 +818,28 @@ eduBR_tools_registro <- function() {
 #' - `scores_escola` (gestora, especialista-ml): scores compostos
 #'   ([scores()]);
 #' - `indicadores_escola` (especialista-ml): ranking por indicador
-#'   ([indicadores()]).
+#'   ([indicadores()]);
+#' - `municipios` (pesquisadora): municípios do IBGE, sem geometria
+#'   ([municipios()]);
+#' - `redes_municipio` (pesquisadora): município × rede, com matrículas,
+#'   docentes e IDEB médio ([rede_municipio()]);
+#' - `docentes_rede` (pesquisadora): contagens docentes por rede,
+#'   localização e território ([docentes_rede()]; `nivel` padrão `"brasil"`
+#'   na ferramenta);
+#' - `ideb` (pesquisadora, especialista-ml): IDEB por escola × etapa ×
+#'   edição ([ideb()]); exige ao menos um filtro;
+#' - `tendencia_ideb_regiao` (pesquisadora, especialista-ml): coeficientes
+#'   da tendência linear por região × etapa ([tendencia_regiao()]),
+#'   achatados;
+#' - `covariaveis_escola` (pesquisadora, especialista-ml): base escola ×
+#'   covariáveis ([covariaveis_escola()]) guardada como handle `dados_<k>`
+#'   (consulta preguiçosa) + prévia;
+#' - `perfil_gestor` (pesquisadora): categoria modal por corte × dimensão
+#'   ([gestores()] + [perfil_gestor()]).
 #'
 #' Os argumentos (código INEP de 8 dígitos, etapa, edição bienal do IDEB,
-#' `n`) são validados antes de consultar o banco; valores inválidos
-#' devolvem `parametro_invalido` com a correção esperada.
+#' UF, região, rede, `n`) são validados antes de consultar o banco;
+#' valores inválidos devolvem `parametro_invalido` com a correção esperada.
 #'
 #' @section Limites:
 #' `limites` é uma lista nomeada; chaves omitidas usam o padrão:
