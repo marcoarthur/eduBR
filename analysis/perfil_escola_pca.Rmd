@@ -55,7 +55,11 @@ Desenho:
 - recorte por etapa (uma PCA por etapa — escolas de etapas distintas não
   são comparáveis) e só públicas por padrão;
 - `pca_perfil()` (`stats::prcomp`, centro e escala): colunas sem variância
-  caem com aviso, linhas incompletas são descartadas;
+  caem com aviso, linhas incompletas são descartadas; códigos categóricos
+  do Censo (`tp_dependencia`, `tp_localizacao`) ficam fora (não são
+  grandezas) e os scores compostos `*_score` (bigint) entram como número;
+- o sinal de cada componente é fixado (maior peso positivo), então a
+  leitura dos eixos não muda entre execuções;
 - a escola de referência (`escola_id`, ou a mais próxima do centroide no
   plano PC1–PC2) aparece destacada no painel.
 
@@ -185,9 +189,21 @@ tibble(
 
 ## Leitura dos resultados
 
-- Os eixos são **descritivos**: PC1 em geral opõe escolas com mais/menos
-  recursos agregados; os loadings da seção 2 dizem o que cada eixo mede
-  **neste** recorte — não generalize para outra etapa/rede sem reestimar.
+- Os eixos são **descritivos**: os loadings da seção 2 dizem o que cada eixo
+  mede **neste** recorte — não generalize para outra etapa/rede sem
+  reestimar.
+- Snapshot (2026-10-08; fundamental II, públicas; 30.716 escolas completas):
+  **PC1 (~15% da variância) é porte** — docentes (inclusive com superior,
+  pós e concursados), matrículas, salas utilizadas e os scores de espaços
+  pedagógicos e infraestrutura essencial crescem juntos; PC1 alto = escola
+  grande e mais equipada em termos absolutos. **PC2 (~6%) separa lotação de
+  intensidade de oferta**: alunos por sala e matrículas no polo positivo;
+  docentes e salas por aluno, tecnologia, acessibilidade, biblioteca e
+  gestão com pós no negativo. PC2 alto = escola mais lotada; PC2 baixo =
+  escola mais bem servida *por aluno*, não necessariamente menor.
+- Antes de 2026-10-08 os `*_score` caíam da PCA (lidos errado como
+  `integer64`) e os códigos `tp_*` entravam como número; os eixos acima já
+  refletem as duas correções.
 - A posição da referência só faz sentido **dentro do recorte** (mesma
   etapa, mesmas redes); comparar redes distintas no mesmo plano mistura
   oferta com dependência administrativa.

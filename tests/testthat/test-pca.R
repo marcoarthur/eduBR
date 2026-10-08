@@ -62,3 +62,26 @@ test_that("pca_perfil() trata integer64 como número", {
   p_64 <- pca_perfil(b64)
   expect_equal(p_64$variancia, p_num$variancia)
 })
+
+test_that("pca_perfil() deixa códigos categóricos do Censo fora", {
+  d <- df_pca
+  d$tp_dependencia <- rep(c(2L, 3L), 15L)
+  d$tp_localizacao <- rep(c(1L, 2L), each = 15L)
+
+  p <- suppressWarnings(pca_perfil(d))
+  expect_false(any(c("tp_dependencia", "tp_localizacao") %in% p$loadings$variavel))
+})
+
+test_that("pca_perfil() fixa o sinal: maior peso de cada PC é positivo", {
+  p <- suppressWarnings(pca_perfil(df_pca))
+  maior <- tapply(p$loadings$peso, p$loadings$pc, function(v) v[which.max(abs(v))])
+  expect_true(all(maior > 0))
+
+  inv <- df_pca
+  inv[c("x1", "x2", "x3")] <- -inv[c("x1", "x2", "x3")]
+  p_inv <- suppressWarnings(pca_perfil(inv))
+  expect_equal(abs(p_inv$scores$PC1), abs(p$scores$PC1))
+  expect_true(all(
+    tapply(p_inv$loadings$peso, p_inv$loadings$pc, function(v) v[which.max(abs(v))]) > 0
+  ))
+})

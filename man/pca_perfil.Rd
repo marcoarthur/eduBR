@@ -20,9 +20,12 @@ Lista de classe \code{eduBR_pca} com \code{fit} (o \code{prcomp}), \code{varianc
 }
 \description{
 Ajusta uma PCA (\code{stats::prcomp}, com centro e escala) sobre as colunas
-numéricas de \code{dados}, excluindo identificadores e medidas de desempenho
-(nota/INSE/percentuais por nível). Colunas sem variância ou só-NA caem
-com aviso; linhas incompletas nas colunas usadas são descartadas.
+numéricas de \code{dados}, excluindo identificadores, códigos categóricos do
+Censo (\code{tp_dependencia}, \code{tp_localizacao}, \code{tp_categoria_escola_privada})
+e medidas de desempenho (nota/INSE/percentuais por nível). Colunas sem variância ou só-NA caem
+com aviso; linhas incompletas nas colunas usadas são descartadas. O sinal
+de cada componente é fixado para que o maior peso (em módulo) seja
+positivo.
 }
 \examples{
 \dontrun{
