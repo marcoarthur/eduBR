@@ -35,6 +35,25 @@
 
 ## Entradas
 
+### 2026-10-09 — 13ª rodada (follow-up M33 pelo chat)
+
+**M33 — "Treine uma floresta … veja quais features mais importam,
+retreine só com as 20 mais importantes e compare no mesmo teste."**
+(1 execução, raciocínio desligado, 77 s)
+- Resposta: cadeia completa escolhida pelo modelo — `features_escola`
+  (fund. II, 5.000, semente 2023) → `classificar_desempenho` →
+  `dividir_dados` → `treinar_floresta` (250 árvores) → `metricas_floresta`
+  → `importancia_floresta(n = 20)` → `treinar_floresta(features = …)` →
+  `metricas_floresta` **no mesmo `teste_1`**. Original: acurácia 56,5%, F1
+  56,2%, AUC 75,5%, ganho +23,0 p.p. (conferido); reduzida: 55,5% / 55,1% /
+  74,1% / +22,0 p.p.
+- Conferência: a lista de 20 features passada pelo modelo **não** era o
+  top 20 da tool — trocou `qt_doc_bas_fem` (20ª) por `qt_tablet_aluno`
+  (21ª, e ainda a chamou de "posição 21"). Com a lista dele, os números da
+  reduzida conferem (0,555/0,551/0,741); com o top 20 exato seriam
+  0,549/0,547/0,740.
+- Status: **✓ atendido** com ressalva (erro de cópia na lista de features).
+
 ### 2026-10-09 — 12ª rodada (verificação de #81)
 
 **M37 — `regressao_escolas` no modo logístico (direto, sem LLM).**
@@ -440,11 +459,15 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - [ ] Série histórica de INSE (bloqueada por dados no pipeline EduMaps).
 - [ ] Repetir M32 com o provedor Anthropic (#73, conta sem créditos).
 - [ ] Taxa do fluxo de ML com mais execuções (N ≤ 2 por rodada).
-- [ ] Follow-up M33: pelo chat, "quais features importam? retreine só com
-  as 20 primeiras e compare".
+- [x] Follow-up M33 pelo chat: importância → retreino top 20 → comparação
+  no mesmo teste (13ª rodada; erro de cópia de 1 feature).
 
 ## Sugestões priorizadas
 
+- **[baixa]** `importancia_floresta`: devolver também a lista pronta das
+  `n` features (ex.: `contexto.top_features`) para o modelo repassar a
+  `treinar_floresta(features = )` sem copiar à mão — no M33 ele trocou a
+  20ª pela 21ª (#90).
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 - **[baixa]** Chat: o modelo local ainda escreve interpretações confusas
@@ -452,6 +475,10 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-09, 13ª rodada): o fluxo avançado
+  (importância → retreino → comparação no mesmo teste) fecha pelo chat
+  com números corretos; ressalvas: erro de cópia na lista de features e
+  taxa com N pequeno.
 - **Aprova com ressalvas** (2026-10-09, 12ª rodada): tool composta de
   regressão correta também no modo logístico; ressalvas mantidas (taxa do
   fluxo de ML com N pequeno; Anthropic #73).

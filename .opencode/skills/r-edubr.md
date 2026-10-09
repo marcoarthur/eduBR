@@ -421,6 +421,8 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
     por UF/região/município (#82).
   - **[baixa]** Redação solta do modelo local no chat (#83, depende do
     #73).
+  - **[média]** `max_tokens` configurável em `chat_edubr()` (#89).
+  - **[baixa]** `importancia_floresta` com a lista pronta das features (#90).
   - **[baixa]** Tool de dicionário de rótulos; `registrar_relacao()` segue
     fora (só leitura).
   - Testes com o Ollama local: **N ≤ 2** (limite térmico do laptop).
