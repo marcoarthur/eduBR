@@ -184,6 +184,7 @@ registrar_tools <- function(chat, tools, persona = NULL) {
   persona <- eduBR_persona_efetiva(persona, tools)
   prompt <- eduBR_prompt_sistema(persona, tools, chat$get_system_prompt())
   chat$register_tools(unname(tools))
+  eduBR_ledger_gancho(chat, tools)
   chat$set_system_prompt(prompt)
   invisible(chat)
 }

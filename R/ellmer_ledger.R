@@ -133,7 +133,12 @@ eduBR_orcamento_linhas_restantes <- function(sessao) {
 #' argumentos, quantas linhas voltaram ao modelo, quanto tempo levou e, se
 #' houve, o tipo de erro (`parametro_invalido`, `sem_dados`,
 #' `limite_excedido` ou `conexao`). Chamadas recusadas por orçamento também
-#' aparecem (com `erro = "limite_excedido"`).
+#' aparecem (com `erro = "limite_excedido"`), assim como as que o próprio
+#' ellmer recusa antes de executar a ferramenta — argumento inexistente ou
+#' ferramenta desconhecida — com `erro = "argumento_recusado"`, 0 linhas e
+#' `duracao_ms` `NA` (contam no limite de chamadas). Para isso, as
+#' ferramentas precisam ser anexadas ao chat por [chat_edubr()] ou
+#' [registrar_tools()].
 #'
 #' O ledger vive na memória da sessão. Para guardá-lo em disco, use
 #' `limites = list(persistir = TRUE)` (arquivo diário em
@@ -178,4 +183,44 @@ ledger <- function(tools) {
   out <- do.call(rbind, led$registros)
   rownames(out) <- NULL
   out[, eduBR_ledger_colunas(), drop = FALSE]
+}
+
+# Chamadas que o ellmer recusa antes de executar a função da tool (argumento
+# inexistente, tool desconhecida) não passam pelo wrapper do eduBR e não
+# chegariam ao ledger. Como o wrapper nunca lança erro, um resultado com
+# `error` de uma tool do eduBR (ou de tool desconhecida) é uma recusa do
+# ellmer: registra com erro "argumento_recusado" (conta a chamada, 0 linhas).
+eduBR_ledger_gancho <- function(chat, tools) {
+  sessao <- attr(tools, "sessao")
+  on_result <- tryCatch(chat$on_tool_result, error = function(e) NULL)
+  if (is.null(sessao) || !is.function(on_result)) {
+    return(invisible(chat))
+  }
+  ja <- vapply(sessao$chats_com_gancho %||% list(), identical, logical(1),
+               y = chat)
+  if (any(ja)) {
+    return(invisible(chat))
+  }
+  sessao$chats_com_gancho <- c(sessao$chats_com_gancho %||% list(), list(chat))
+  nomes <- names(tools)
+  on_result(function(result) {
+    eduBR_ledger_recusa(sessao, result, nomes,
+                        tryCatch(names(chat$get_tools()), error = function(e) nomes))
+  })
+  invisible(chat)
+}
+
+eduBR_ledger_recusa <- function(sessao, result, nomes, registradas) {
+  erro <- tryCatch(result@error, error = function(e) NULL)
+  if (is.null(erro)) {
+    return(invisible(FALSE))
+  }
+  req <- tryCatch(result@request, error = function(e) NULL)
+  nome <- tryCatch(req@name, error = function(e) NULL) %||% "?"
+  if (!(nome %in% nomes) && nome %in% registradas) {
+    return(invisible(FALSE))
+  }
+  args <- tryCatch(as.list(req@arguments), error = function(e) list())
+  eduBR_ledger_registrar(sessao, nome, args, 0L, NA_real_, "argumento_recusado")
+  invisible(TRUE)
 }
