@@ -107,9 +107,13 @@ _R_CHECK_SYSTEM_CLOCK_=FALSE Rscript -e 'devtools::check()'
 devtools::document()                                    # NAMESPACE/man
 ```
 
-Referência (`ubaxala`, 2026-10-09): suíte completa com smoke ≈ 9 min (o
-tempo é de banco, não de CPU); só `ellmer` com smoke ≈ 4 min; `check`
-≈ 1 min.
+Referência (`ubaxala`, 2026-10-09): suíte completa com smoke de 9 a
+16 min; só `ellmer` com smoke ≈ 4 min; `check` ≈ 1 min. O tempo do
+smoke é de **rede**, não de CPU: o `ubaxala` alcança o banco por Wi-Fi
+(≈ 0,25 MB/s medidos). O smoke nacional de `perfil_gestor` (≈ 190 mil
+linhas) leva de 50 a mais de 120 s aqui, contra 6 s no container, e pode
+estourar o `timeout_s = 120` do teste. Se só esse teste falhar por
+"tempo limite atingido", confirme no container.
 
 O container `rstudio.dev` passa a ser **opcional**: serve para conferir a
 compatibilidade com o RStudio Server, que tem **dbplyr 2.5.0** (o 2.5 não
