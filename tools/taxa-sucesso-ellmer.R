@@ -103,10 +103,12 @@ cenarios <- list(
       "No Acre, rede municipal, o IDEB do fundamental I se associa a ter",
       "biblioteca e ao número de docentes? Separe por localização urbana/rural."
     ),
-    esperado = c("covariaveis_escola", "especificar_regressao",
-                 "executar_regressao", "coeficientes"),
+    # caminho em uma chamada (#81) ou passo a passo
+    esperado = list(c("regressao_escolas"),
+                    c("covariaveis_escola", "especificar_regressao",
+                      "executar_regressao", "coeficientes")),
     chave = function(res) {
-      env <- ultimo(res, "coeficientes")
+      env <- ultimo(res, "regressao_escolas") %||% ultimo(res, "coeficientes")
       if (is.null(env)) return(NULL)
       b <- Filter(function(d) identical(d$termo, "in_biblioteca") &&
                     identical(d$localizacao, "Urbana"), env$dados)
@@ -163,7 +165,9 @@ for (nome in names(cenarios)) {
     }
     dt <- as.numeric(difftime(Sys.time(), t0, units = "secs"))
     led <- ledger(tools)
-    ok_tools <- subsequencia(cen$esperado, led$tool[is.na(led$erro)])
+    caminhos <- if (is.list(cen$esperado)) cen$esperado else list(cen$esperado)
+    ok_tools <- any(vapply(caminhos, subsequencia, logical(1),
+                           obtido = led$tool[is.na(led$erro)]))
     ok_erros <- !any(!is.na(led$erro))
     ok_texto <- length(respostas) == length(cen$perguntas) &&
       all(nzchar(trimws(respostas)))

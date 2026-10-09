@@ -868,6 +868,10 @@ eduBR_tools_registro <- function() {
       criar = eduBR_tool_metricas,
       personas = c("pesquisadora-educacional", "especialista-ml")
     ),
+    regressao_escolas = list(
+      criar = eduBR_tool_regressao_escolas,
+      personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
     listar_handles = list(
       criar = eduBR_tool_listar_handles,
       personas = c("pesquisadora-educacional", "especialista-ml")
@@ -954,6 +958,10 @@ eduBR_tools_registro <- function() {
 #'   (consulta preguiçosa) + prévia;
 #' - `perfil_gestor` (pesquisadora): categoria modal por corte × dimensão
 #'   ([gestores()] + [perfil_gestor()]);
+#' - `regressao_escolas` (pesquisadora, especialista-ml): regressão por
+#'   escola numa chamada (recorte de [covariaveis_escola()] → especificação
+#'   → execução → coeficientes, com métricas por corte no contexto);
+#'   preferível para modelos pequenos.
 #' - `especificar_regressao` (pesquisadora, especialista-ml): declara a
 #'   regressão ([especificar_regressao()]) sobre um domínio do catálogo
 #'   (`fonte`) **ou** um handle de dados (`dados_id`), com `filtro` como
