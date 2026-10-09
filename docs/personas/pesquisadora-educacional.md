@@ -38,6 +38,29 @@
 
 ## Entradas
 
+### 2026-10-09 — 10ª rodada (verificação de #81 e #82)
+
+**R22 — regressão numa chamada (#81).**
+- Resposta: `regressao_escolas` (AC, rede municipal,
+  `ideb_fund_i ~ in_biblioteca + docentes` por `localizacao`) reproduz os
+  números do aceite (urbana −0,599, p = 0,049; n 43/84; r² 0,022/0,073)
+  em 2,5 s e ~690 tokens. No chat local (N = 2): **2/2** no critério
+  estrito (antes 1/4 pela cadeia de 4 tools), mediana 47 s.
+- Status: **✓ atendido** — baixa a pendência da regressão pelo chat.
+
+**R23 — pergunta regional pelo chat (#82).**
+- Pergunta (1 execução): "Qual o IDEB médio do fundamental I da rede
+  municipal em cada região do Brasil em 2023?"
+- Resposta: o modelo escolheu `ideb_agregado`; a 1ª chamada usou o
+  argumento `level` (em inglês), recusada pelo ellmer e **registrada no
+  ledger como `argumento_recusado`** (primeira evidência com LLM real do
+  #75); a 2ª, com `nivel = "regiao"`, trouxe as 5 regiões. Números
+  idênticos aos da tool (Sul 6,30; Sudeste 6,00; Centro-oeste 5,82;
+  Nordeste 5,28; Norte 4,71; escolas com nota conferidas), 44,8 s.
+  Ressalva: inventou uma "meta nacional de 5,8" (fora dos dados) e chamou
+  o recorte de "Censo 2025" ao lado do IDEB 2023.
+- Status: **✓ atendido**, com ressalva de redação (#83).
+
 ### 2026-10-09 — 9ª rodada (verificação de #71, #72, #75)
 
 Tools no banco sem LLM + transcrições de hoje + **uma** execução nova do
@@ -316,8 +339,8 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - [x] `as_sf()` com `n` e sem aviso (#36).
 - [x] Prévias enxutas / limite de texto por resposta (#71).
 - [x] Taxa de sucesso medida (#72): 1/4 estrito, cadeia completa 4/4.
-- [ ] Regressão pelo chat com resposta final confiável (modelo local não
-  fecha a cadeia; testar com Anthropic #73 e/ou tool composta).
+- [x] Regressão pelo chat com resposta final (tool composta #81: 2/2).
+- [x] Perguntas regionais agregadas (#82: `ideb_agregado`).
 - [ ] Follow-up R19: pelo chat, pedir R² e `n` por corte (`metricas`) e
   controlar por rede (`cuts = ["rede"]`, `rede = "publica"`).
 - [ ] Join escola→município **por código** em `escolas()` (bloqueado:
@@ -326,18 +349,18 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 
 ## Sugestões priorizadas
 
-- **[média]** Tool composta de regressão (ex.: `regressao_escolas`: recorte
-  + fórmula + cortes → coeficientes e métricas numa chamada) para modelos
-  pequenos, que se perdem em cadeias de 4 tools; manter as tools
-  separadas para modelos maiores (#81).
-- **[baixa]** Tools de agregação (ex.: IDEB médio por município/UF/rede)
-  para perguntas regionais, já que tabelas grandes agora chegam cortadas
-  ao modelo (#82).
+- **[baixa]** Chat: o modelo local acrescenta contexto inventado (ex.:
+  "meta nacional de 5,8") às respostas agregadas — tratar junto da #83,
+  depois da comparação com Anthropic (#73).
 - **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-09, 10ª rodada): regressão e
+  perguntas regionais agora fecham pelo chat local com números corretos;
+  ressalvas: contexto inventado ocasional (#83) e `co_municipio` em
+  `escolas()` (externa, EduMaps).
 - **Aprova com ressalvas** (2026-10-09, 9ª rodada): tools e limites
   corretos e protegendo a janela do modelo; a regressão pelo chat com o
   modelo local de 9B não fecha com resposta confiável (1/4 estrito) — falta
