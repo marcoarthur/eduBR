@@ -1,0 +1,275 @@
+{
+  "persona": "pesquisadora-educacional",
+  "modelo": "qwen3.5:9b",
+  "provedor": "ollama",
+  "data": "2026-10-09 11:10 -03",
+  "registros": [
+    {
+      "pergunta": "No Acre, rede municipal, o IDEB do fundamental I se associa a ter biblioteca e ao número de docentes? Separe por localização urbana/rural.",
+      "seguimento": "Responda agora, em texto, com base nos resultados das ferramentas.",
+      "pensar": true,
+      "segundos": 57.4,
+      "resposta": "ERRO: HTTP 400 Bad Request.\nℹ invalid message content type: <nil>",
+      "turns": [
+        {
+          "papel": "user",
+          "conteudos": [
+            {
+              "tipo": "texto",
+              "texto": "No Acre, rede municipal, o IDEB do fundamental I se associa a ter biblioteca e ao número de docentes? Separe por localização urbana/rural."
+            }
+          ]
+        },
+        {
+          "papel": "assistant",
+          "conteudos": [
+            {
+              "tipo": "thinking",
+              "texto": "O usuário quer analisar a associação entre infraestrutura (biblioteca), recursos humanos (docentes) e o IDEB na rede municipal do Acre, separando por localização urbana e rural para o ensino fundamental I.\n\nPreciso seguir estes passos:\n1. Primeiro, obter uma base de escolas no Acre com variáveis necessárias: biblioteca, docentes, IDEB fundamental I, localização urbana/rural, rede municipal\n2. Usar `covariaveis_escola` para obter a base com as covariáveis (infraestrutura, IDEB, redes)\n3. Especificar uma regressão com os preditores de interesse e o IDEB como desfecho\n4. Executar a regressão com corte por localização\n\nVou começar obtendo a base para o Acre, rede municipal, ensino fundamental I:\n- uf: \"AC\"\n- rede: \"Municipal\"\n- Vou usar o ano padrão 2025 e ano_ideb 2023\n\nDepois vou especificar a regressão com:\n- outcome: ideb_fund_i\n- predictors: in_biblioteca, docentes (preciso ver exatamente quais colunas para docente)\n- cuts: localizacao (urbana/rural)\n\nMas primeiro preciso ver as colunas disponíveis. Vou obter a base e depois ver os metadados.\n\nNo entanto, há um problema - `covariaveis_escola` não permite cortes em rede/UF no parâmetro n, mas permite filtrar via rede e uf nos argumentos.\n\nVou começar:"
+            },
+            {
+              "tipo": "tool_request",
+              "id": "call_dewznf3t",
+              "tool": "covariaveis_escola",
+              "argumentos": {
+                "uf": "AC",
+                "rede": "Municipal",
+                "ano_ideb": 2023,
+                "n": 10
+              }
+            }
+          ]
+        },
+        {
+          "papel": "user",
+          "conteudos": [
+            {
+              "tipo": "tool_result",
+              "id": "call_dewznf3t",
+              "tool": "covariaveis_escola",
+              "valor": "{\"dados\":[{\"co_entidade\":\"12034886\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":1,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":0,\"in_internet\":0,\"in_banda_larga\":null,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":1,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":1,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":1,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":6,\"matriculas\":88,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12035050\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":1,\"in_agua_rede_publica\":1,\"in_energia_rede_publica\":1,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":1,\"in_internet\":0,\"in_banda_larga\":null,\"in_sala_professor\":1,\"in_comum_creche\":1,\"in_comum_pre\":0,\"in_comum_fund_ai\":0,\"in_comum_fund_af\":0,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":0,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Urbana\",\"docentes\":2,\"matriculas\":61,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12043249\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":1,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":0,\"in_internet\":1,\"in_banda_larga\":0,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":1,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":1,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":0,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":7,\"matriculas\":112,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12043427\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":1,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":0,\"in_internet\":0,\"in_banda_larga\":null,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":0,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":1,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":0,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":2,\"matriculas\":15,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12043630\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":0,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":0,\"in_internet\":0,\"in_banda_larga\":null,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":0,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":0,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":0,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":1,\"matriculas\":11,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12044229\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":0,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":0,\"in_internet\":0,\"in_banda_larga\":null,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":0,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":1,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":0,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":2,\"matriculas\":23,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12046825\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":0,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":0,\"in_internet\":0,\"in_banda_larga\":null,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":0,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":0,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":0,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":1,\"matriculas\":21,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12047023\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":1,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":0,\"in_internet\":0,\"in_banda_larga\":null,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":0,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":0,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":0,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":1,\"matriculas\":11,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12064238\",\"sg_uf\":\"AC\",\"co_municipio\":1200500,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":1,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":0,\"in_internet\":0,\"in_banda_larga\":null,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":0,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":1,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":0,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":2,\"matriculas\":15,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null},{\"co_entidade\":\"12005533\",\"sg_uf\":\"AC\",\"co_municipio\":1200609,\"tp_dependencia\":3,\"tp_localizacao\":2,\"in_agua_rede_publica\":0,\"in_energia_rede_publica\":0,\"in_esgoto_rede_publica\":0,\"in_biblioteca\":0,\"in_laboratorio_informatica\":0,\"in_quadra_esportes\":0,\"in_refeitorio\":1,\"in_internet\":1,\"in_banda_larga\":0,\"in_sala_professor\":0,\"in_comum_creche\":0,\"in_comum_pre\":0,\"in_comum_fund_ai\":1,\"in_comum_fund_af\":0,\"in_comum_medio_medio\":0,\"in_comum_medio_integrado\":0,\"in_comum_eja_fund\":1,\"in_comum_eja_medio\":0,\"rede\":\"Municipal\",\"localizacao\":\"Rural\",\"docentes\":3,\"matriculas\":71,\"ideb_fund_i\":null,\"ideb_fund_ii\":null,\"ideb_medio\":null}],\"metadados\":{\"grao\":\"escola\",\"filtros\":{\"uf\":\"AC\",\"rede\":\"Municipal\",\"ano\":2025,\"ano_ideb\":2023,\"ativas\":true},\"n\":10,\"n_total\":null,\"truncado\":true,\"aviso\":\"Há mais linhas do que as 10 devolvidas; refine os filtros para ver o restante. Prévia: a base completa (uma linha por escola) fica no handle dados_1. Próximo passo: `especificar_regressao(dados_id = \\\"dados_1\\\", ...)` e depois `executar_regressao` com o `espec_<k>` devolvido; não reconstrua a tabela a partir da prévia. IDEB `null` na prévia é esperado (escola sem a etapa ou sem nota): a regressão descarta essas linhas, não é preciso buscar o IDEB em outra ferramenta. Na base: 885 escolas; com IDEB: ideb_fund_i = 127, ideb_fund_ii = 20, ideb_medio = 0.\",\"handle\":\"dados_1\",\"colunas_omitidas\":[],\"contexto\":{\"handle\":\"dados_1\",\"ano_censo\":2025,\"edicao_ideb\":2023,\"colunas\":[\"co_entidade\",\"sg_uf\",\"co_municipio\",\"tp_dependencia\",\"tp_localizacao\",\"in_agua_rede_publica\",\"in_energia_rede_publica\",\"in_esgoto_rede_publica\",\"in_biblioteca\",\"in_laboratorio_informatica\",\"in_quadra_esportes\",\"in_refeitorio\",\"in_internet\",\"in_banda_larga\",\"in_sala_professor\",\"in_comum_creche\",\"in_comum_pre\",\"in_comum_fund_ai\",\"in_comum_fund_af\",\"in_comum_medio_medio\",\"in_comum_medio_integrado\",\"in_comum_eja_fund\",\"in_comum_eja_medio\",\"rede\",\"localizacao\",\"docentes\",\"matriculas\",\"ideb_fund_i\",\"ideb_fund_ii\",\"ideb_medio\"],\"respostas\":[\"ideb_fund_i\",\"ideb_fund_ii\",\"ideb_medio\"],\"n_escolas\":885,\"n_com_ideb\":{\"ideb_fund_i\":127,\"ideb_fund_ii\":20,\"ideb_medio\":0},\"cortes\":[\"rede\",\"localizacao\",\"sg_uf\"]}},\"erro\":null}",
+              "erro": null
+            }
+          ]
+        },
+        {
+          "papel": "assistant",
+          "conteudos": [
+            {
+              "tipo": "thinking",
+              "texto": "A prévia mostrou 885 escolas, mas somente 127 têm IDEB de Fund I (outra nota vem para ideb_fund_i). A base já está no handle \"dados_1\". Preciso especificar uma regressão com o desfecho `ideb_fund_i`, preditores `in_biblioteca` e `docentes`, e cortar por `localizacao`. Vou incluir também um termo de intercepto (pelo padrão) e, para evitar multicolinearidade, talvez adicionar termos de base das variáveis binárias ou fixa. Mas o pedido é direto: associar biblioteca e número de docentes ao IDEB separando por localização.\n\nVou fazer uma regressão linear (modelo padrão) com preditores: `in_biblioteca`, `docentes` e interação com localizacao? Melhor primeiro sem interação para avaliar principais efeitos, depois talvez interação. Vamos começar simples: desfecho = ideb_fund_i, preditores = [\\\"in_biblioteca\\\", \\\"docentes\\\"], cortes = [\\\"localizacao\\\"]. Isso estima dois modelos (urbana/rural) separadamente, com coeficientes globais de in_biblioteca e docentes dentro de cada localização.\n\nMas cuidado: `docentes` vem como inteiro grande em texto? Na descrição diz que contagens chegam como texto e devem ser convertidas; em regressão linear o modelo espera números. A ferramenta deve fazer conversão automática? Provavelmente sim quando declaro colunas. Vou assumir que funciona com string numérica.\n\nVou especificar:\n- fonte = \"dados_1\" (handle da base covariaveis_escola)\n- outcome = \"ideb_fund_i\"\n- predictors = [\"in_biblioteca\", \"docentes\"]\n- cuts = [\"localizacao\"]\n- modelo = \"linear\""
+            },
+            {
+              "tipo": "tool_request",
+              "id": "call_p5m9vuv7",
+              "tool": "especificar_regressao",
+              "argumentos": {
+                "outcome": "ideb_fund_i",
+                "predictors": [
+                  "in_biblioteca",
+                  "docentes"
+                ],
+                "cuts": [
+                  "localizacao"
+                ],
+                "modelo": "linear",
+                "dados_id": "dados_1"
+              }
+            }
+          ]
+        },
+        {
+          "papel": "user",
+          "conteudos": [
+            {
+              "tipo": "tool_result",
+              "id": "call_p5m9vuv7",
+              "tool": "especificar_regressao",
+              "valor": "{\"dados\":[{\"handle\":\"espec_1\",\"formula\":\"ideb_fund_i ~ in_biblioteca + docentes\",\"modelo\":\"linear\",\"cortes\":\"localizacao\",\"fonte\":null,\"dados_id\":\"dados_1\",\"filtro\":null}],\"metadados\":{\"grao\":\"especificação de regressão\",\"filtros\":{\"fonte\":null,\"dados_id\":\"dados_1\"},\"n\":1,\"n_total\":1,\"truncado\":false,\"aviso\":\"Especificação guardada em espec_1; rode-a com `executar_regressao(espec_id = \\\"espec_1\\\")`.\",\"handle\":\"espec_1\",\"colunas_omitidas\":[],\"contexto\":{\"handle\":\"espec_1\",\"outcome\":\"ideb_fund_i\",\"predictors\":[\"in_biblioteca\",\"docentes\"],\"cuts\":[\"localizacao\"],\"modelo\":\"linear\",\"filtro\":null}},\"erro\":null}",
+              "erro": null
+            }
+          ]
+        },
+        {
+          "papel": "assistant",
+          "conteudos": [
+            {
+              "tipo": "thinking",
+              "texto": "A especificação foi criada com sucesso. Agora executar a regressão para obter os resultados ajustados por localização urbana e rural."
+            },
+            {
+              "tipo": "tool_request",
+              "id": "call_b648zrzs",
+              "tool": "executar_regressao",
+              "argumentos": {
+                "espec_id": "espec_1"
+              }
+            }
+          ]
+        },
+        {
+          "papel": "user",
+          "conteudos": [
+            {
+              "tipo": "tool_result",
+              "id": "call_b648zrzs",
+              "tool": "executar_regressao",
+              "valor": "{\"dados\":[{\"localizacao\":\"Rural\",\"n\":43,\"ajustado\":true},{\"localizacao\":\"Urbana\",\"n\":84,\"ajustado\":true}],\"metadados\":{\"grao\":\"corte (localizacao)\",\"filtros\":{\"espec_id\":\"espec_1\"},\"n\":2,\"n_total\":2,\"truncado\":false,\"aviso\":\"758 de 885 linhas do recorte foram descartadas por `null` no desfecho ou nos preditores (ex.: escolas sem IDEB na etapa).\",\"handle\":\"regressao_1\",\"colunas_omitidas\":[],\"contexto\":{\"handle\":\"regressao_1\",\"espec_id\":\"espec_1\",\"formula\":\"ideb_fund_i ~ in_biblioteca + docentes\",\"modelo\":\"linear\",\"n_recorte\":885,\"n_usado\":127,\"n_cortes\":2,\"n_ajustados\":2}},\"erro\":null}",
+              "erro": null
+            }
+          ]
+        },
+        {
+          "papel": "assistant",
+          "conteudos": [
+            {
+              "tipo": "thinking",
+              "texto": "Agora vou extrair os coeficientes para cada recorte (Rural e Urbana)."
+            },
+            {
+              "tipo": "tool_request",
+              "id": "call_07v2vbhh",
+              "tool": "coeficientes",
+              "argumentos": {
+                "n": 100,
+                "regressao_id": "regressao_1"
+              }
+            }
+          ]
+        },
+        {
+          "papel": "user",
+          "conteudos": [
+            {
+              "tipo": "tool_result",
+              "id": "call_07v2vbhh",
+              "tool": "coeficientes",
+              "valor": "{\"dados\":[{\"localizacao\":\"Rural\",\"termo\":\"(Intercept)\",\"estimativa\":4.57928907454762,\"erro_padrao\":0.352317133118706,\"estatistica\":12.997633790931,\"p_valor\":6.06394824826967e-16},{\"localizacao\":\"Rural\",\"termo\":\"in_biblioteca\",\"estimativa\":-0.541035351070682,\"erro_padrao\":0.582319556969924,\"estatistica\":-0.929103865042653,\"p_valor\":0.358408481482662},{\"localizacao\":\"Rural\",\"termo\":\"docentes\",\"estimativa\":0.000810088036073301,\"erro_padrao\":0.0314188508155124,\"estatistica\":0.0257835030577674,\"p_valor\":0.979558224888359},{\"localizacao\":\"Urbana\",\"termo\":\"(Intercept)\",\"estimativa\":5.11036737972871,\"erro_padrao\":0.280774058377566,\"estatistica\":18.2009955237981,\"p_valor\":2.35018883922997e-30},{\"localizacao\":\"Urbana\",\"termo\":\"in_biblioteca\",\"estimativa\":-0.599372110900232,\"erro_padrao\":0.300329667939393,\"estatistica\":-1.99571395997143,\"p_valor\":0.0493261471231232},{\"localizacao\":\"Urbana\",\"termo\":\"docentes\",\"estimativa\":0.0311309775164018,\"erro_padrao\":0.0179269741684981,\"estatistica\":1.73654389323024,\"p_valor\":0.0862695356746402}],\"metadados\":{\"grao\":\"corte × termo do modelo\",\"filtros\":{\"regressao_id\":\"regressao_1\"},\"n\":6,\"n_total\":6,\"truncado\":false,\"aviso\":null,\"handle\":null,\"colunas_omitidas\":[]},\"erro\":null}",
+              "erro": null
+            }
+          ]
+        },
+        {
+          "papel": "assistant",
+          "conteudos": [
+            {
+              "tipo": "thinking",
+              "texto": "A pesquisadora quer saber se no Acre (rede municipal), o IDEB do fundamental I se associa a ter biblioteca e ao número de docentes, separando por localização urbana/rural.\n\nVou apresentar os coeficientes da regressão já ajustada para as duas localizações:\n\n**Recorte Rural (n=43 escolas com IDEB)**:\n- Intercepto: 4.58 pontos\n- `in_biblioteca`: coef = -0.54, p = 0.36 → não significativo\n- `docentes`: coef = 0.00081 por docente, p = 0.98 → não significativo\n\n**Recorte Urbana (n=84 escolas com IDEB)**:\n- Intercepto: 5.11 pontos\n- `in_biblioteca`: coef = -0.60, p = 0.05 → quase significativo ao nível de 5%\n- `docentes`: coef = 0.031 por docente, p = 0.086 → não significativo ao nível de 5%, mas marginalmente próximo\n\n**Interpretação**:\n1. **Biblioteca**: Nas escolas urbanas, ter biblioteca está associado a uma redução levemente significativa no IDEB (-0.60 pontos). Esta é uma associação contraintuitiva que pode refletir viés de seleção (escolas com infraestrutura maior ainda podem ser mais precárias em outras dimensões) ou distorções na base amostral. No recorte rural, não há significância (p=0.36).\n\n2. **Nº docentes**: O coeficiente positivo para `docentes` sugere que, dentro de escolas com mesmo nível de infraestrutura, mais professores estariam associados a IDEB levemente maior, mas os p-valores estão bem acima do limiar de 5% (rural: 0.98; urbana: 0.086).\n \nOs resultados indicam ausência de correlação clara entre esses indicadores e a performance educacional em redes municipais do estado. As associações são estatisticamente frágeis, levantando questões sobre outros fatores determinantes não explorados no modelo."
+            }
+          ]
+        }
+      ],
+      "ledger": [
+        {
+          "timestamp": "2026-10-09T11:09:24",
+          "tool": "covariaveis_escola",
+          "args": "{\"uf\":\"AC\",\"rede\":\"Municipal\",\"ano_ideb\":2023,\"n\":10}",
+          "n_linhas": 10,
+          "duracao_ms": 1718,
+          "erro": null
+        },
+        {
+          "timestamp": "2026-10-09T11:09:39",
+          "tool": "especificar_regressao",
+          "args": "{\"outcome\":\"ideb_fund_i\",\"predictors\":[\"in_biblioteca\",\"docentes\"],\"cuts\":\"localizacao\",\"modelo\":\"linear\",\"dados_id\":\"dados_1\"}",
+          "n_linhas": 1,
+          "duracao_ms": 183,
+          "erro": null
+        },
+        {
+          "timestamp": "2026-10-09T11:09:44",
+          "tool": "executar_regressao",
+          "args": "{\"espec_id\":\"espec_1\"}",
+          "n_linhas": 2,
+          "duracao_ms": 1746,
+          "erro": null
+        },
+        {
+          "timestamp": "2026-10-09T11:09:47",
+          "tool": "coeficientes",
+          "args": "{\"regressao_id\":\"regressao_1\",\"n\":100}",
+          "n_linhas": 6,
+          "duracao_ms": 20,
+          "erro": null
+        }
+      ],
+      "tokens": [
+        {
+          "input": 8577,
+          "output": 406,
+          "cached_input": 0,
+          "cost": null,
+          "input_preview": "Text[No Acre, rede municipal, o IDEB do fu...]"
+        },
+        {
+          "input": 3121,
+          "output": 481,
+          "cached_input": 8573,
+          "cost": null,
+          "input_preview": "ToolResult"
+        },
+        {
+          "input": 305,
+          "output": 63,
+          "cached_input": 11690,
+          "cost": null,
+          "input_preview": "ToolResult"
+        },
+        {
+          "input": 264,
+          "output": 68,
+          "cached_input": 11991,
+          "cost": null,
+          "input_preview": "ToolResult"
+        },
+        {
+          "input": 739,
+          "output": 463,
+          "cached_input": 12251,
+          "cost": null,
+          "input_preview": "ToolResult"
+        }
+      ]
+    }
+  ],
+  "ledger_total": [
+    {
+      "timestamp": "2026-10-09T11:09:24",
+      "tool": "covariaveis_escola",
+      "args": "{\"uf\":\"AC\",\"rede\":\"Municipal\",\"ano_ideb\":2023,\"n\":10}",
+      "n_linhas": 10,
+      "duracao_ms": 1718,
+      "erro": null
+    },
+    {
+      "timestamp": "2026-10-09T11:09:39",
+      "tool": "especificar_regressao",
+      "args": "{\"outcome\":\"ideb_fund_i\",\"predictors\":[\"in_biblioteca\",\"docentes\"],\"cuts\":\"localizacao\",\"modelo\":\"linear\",\"dados_id\":\"dados_1\"}",
+      "n_linhas": 1,
+      "duracao_ms": 183,
+      "erro": null
+    },
+    {
+      "timestamp": "2026-10-09T11:09:44",
+      "tool": "executar_regressao",
+      "args": "{\"espec_id\":\"espec_1\"}",
+      "n_linhas": 2,
+      "duracao_ms": 1746,
+      "erro": null
+    },
+    {
+      "timestamp": "2026-10-09T11:09:47",
+      "tool": "coeficientes",
+      "args": "{\"regressao_id\":\"regressao_1\",\"n\":100}",
+      "n_linhas": 6,
+      "duracao_ms": 20,
+      "erro": null
+    }
+  ],
+  "checks": {
+    "n_resultados": 4,
+    "nomes_fisicos": 0,
+    "denormais_int64": 0,
+    "max_n_ledger": 10
+  }
+}
