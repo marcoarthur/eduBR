@@ -795,7 +795,13 @@ eduBR_tool_importancia_floresta <- function(sessao) {
       grao = "feature (import\u00e2ncia por permuta\u00e7\u00e3o)",
       filtros = list(floresta_id = floresta_id),
       n_padrao = 15L,
-      contexto = list(floresta_id = floresta_id, n_features = nrow(imp))
+      contexto = list(
+        floresta_id = floresta_id,
+        n_features = nrow(imp),
+        # Lista pronta para treinar_floresta(features = ): o modelo copiava
+        # \u00e0 m\u00e3o e trocava itens (curadoria de 2026-10-09, #90).
+        top_features = I(utils::head(imp$variavel, as.integer(n %||% 15L)))
+      )
     )
   }
   eduBR_tool(
@@ -805,8 +811,10 @@ eduBR_tool_importancia_floresta <- function(sessao) {
       "import\u00e2ncia por permuta\u00e7\u00e3o: quanto a qualidade da previs\u00e3o cai ",
       "quando a coluna \u00e9 embaralhada (maior = mais informativa; valores ",
       "perto de zero ou negativos = irrelevante). Devolve as `n` primeiras ",
-      "(padr\u00e3o 15). Use para redu\u00e7\u00e3o de dimens\u00e3o: treine de novo com ",
-      "`features` = as mais importantes e compare as m\u00e9tricas. Cuidados: ",
+      "(padr\u00e3o 15); `metadados.contexto.top_features` traz essas `n` features ",
+      "na ordem, prontas: para reduzir a dimens\u00e3o, passe essa lista TAL QUAL ",
+      "em `treinar_floresta(features = )` (n\u00e3o copie \u00e0 m\u00e3o) e compare as ",
+      "m\u00e9tricas no mesmo teste. Cuidados: ",
       "import\u00e2ncia n\u00e3o \u00e9 efeito causal nem tem sinal; features ",
       "correlacionadas dividem a import\u00e2ncia entre si."
     ),
