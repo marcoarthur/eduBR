@@ -34,6 +34,24 @@
 
 ## Entradas
 
+### 2026-10-09 — 11ª rodada (verificação de #98: escolas do cadastro do Censo)
+
+Entrega verificada: `escolas()`/`escola()` passam a ler o cadastro do Censo
+Escolar, fonte de verdade das escolas (PR #98).
+
+- **P1 — "minha escola" numa linha** → `escola(con, "13078070")` acha a
+  Esc. Municipal Prof Norma Silva de Oliveira (Boa Vista do Ramos, AM) e a
+  prévia mostra nome, município, UF, rede e localização, sem SQL nem host;
+  a geometria segue omitida com a dica de `as_sf()`. **✓ atendido.**
+- **P4 — legível para não-técnico** → a rede agora vem com rótulo
+  ("Estadual", "Municipal"...) e a localização ("Urbana"/"Rural"), em vez
+  dos textos crus da ingestão antiga; `escola(con, "15535762")` (só ensino
+  médio) → "ESCOLA ESTADUAL CENTRO MARANATA", Itaituba/PA, Estadual,
+  Urbana. **✓ atendido.**
+- P2/P3 (perfil, comparação, similares) não usam `escolas()`; sem mudança.
+
+Pendências zeradas; nenhuma sugestão nova.
+
 ### 2026-10-09 — 10ª rodada (verificação de #73/#83 com Anthropic e #94)
 
 Entregas verificadas: #73/#83 (aceite com `claude-sonnet-5`, PR #96) e
@@ -318,6 +336,8 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 11ª rodada): a escola é encontrada pelo INEP no
+  cadastro do Censo, com rede e localização rotuladas.
 - **Aprova** (2026-10-09, 10ª rodada): fluxo da gestora 2/2 também com
   Anthropic, sem frases sem base; padrões do chat local adequados (#94).
 - **Aprova** (2026-10-09, 9ª rodada): os follow-ups pelo chat (evolução do

@@ -35,6 +35,24 @@
 
 ## Entradas
 
+### 2026-10-09 — 15ª rodada (verificação de #98: fronteira lazy com o Censo)
+
+Entrega verificada: `escolas()` a partir de `clean.censo_escolas` (PR #98).
+
+- **P1 — compor sem baixar tudo** → `consulta(escolas(con, uf = "SP",
+  ativas = TRUE))` + `inner_join` com as matrículas do Censo por
+  `codigo_inep` + `summarise` por rede × localização segue `tbl_sql` até o
+  `collect` (8 linhas: ex. Municipal/Urbana 12.458 escolas, 3,70 mi de
+  matrículas). `coletar()` sem `n` avisa ("Materializando a consulta sem
+  limite"). **✓ atendido.**
+- **P2 — categóricas** → `rede` e `localizacao` vêm rotuladas no SQL, com
+  os mesmos rótulos de `dicionario()`; 0 `rede` NA nas 214.192 escolas.
+  **✓ atendido.**
+- A chave `codigo_inep` casa direto com `co_entidade` das demais relações
+  do Censo (mesmo valor e tipo `bigint`), sem conversão.
+
+Pendências do pacote zeradas; resta a de dados (INSE histórico).
+
 ### 2026-10-09 — 14ª rodada (verificação de #90, #94 e #73/#83 com Anthropic)
 
 Entregas verificadas: #90 (`top_features` em `importancia_floresta`, PR
@@ -498,6 +516,8 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 15ª rodada): `escolas()` do Censo compõe lazy
+  com as demais relações pela mesma chave, com rótulos prontos.
 - **Aprova** (2026-10-09, 14ª rodada): fluxo avançado de ML 5/5 com
   Anthropic, retreino com a lista exata de `top_features` e redação
   correta. Única pendência é de dados (INSE histórico, EduMaps).
