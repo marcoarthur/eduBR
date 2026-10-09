@@ -34,6 +34,43 @@
 
 ## Entradas
 
+### 2026-10-09 — 6ª rodada (perguntas ao chat, camada `ellmer`)
+
+Foco: as perguntas canônicas feitas **em linguagem natural a um LLM**
+(`chat_edubr("ollama")`, modelo local `qwen3.5:9b`,
+`ferramentas_edubr(con, persona = "gestora-escolar")`), sem R nem SQL.
+Transcrição: `docs/aceite-ellmer/gestora_r1.md`.
+
+**G16 — "Como está a infraestrutura da escola 13078070 comparada ao
+município?"**
+- Chamada: `perfil_escola(escola_id = "13078070")` (14 linhas, 2,2 s);
+  resposta em 48,9 s.
+- Resposta: tabela com os 10 itens (tem/não tem, % das escolas do
+  município, diferença em pontos) e um resumo "forças × pontos de
+  atenção". Conferido contra o retorno da tool: todas as frações (39%,
+  95%, 7%, 18%, 34%, 41%, 39%, 27%) e diferenças batem com `municipio` e
+  `dif_municipio`; nome e município vêm do `contexto`.
+- Ressalvas: "recursos que apenas 40–39% das escolas possuem" (frase
+  truncada); não mencionou o IDEB (não foi perguntado).
+- Status: **✓ atendido**.
+
+**G17 — "Quais escolas são parecidas com a 13078070 para trocar
+experiência?"**
+- Chamada: `escolas_similares(escola_id = "13078070")` (5 linhas, 20 s);
+  resposta em 37,8 s.
+- Resposta: as 5 escolas, municípios, UF, etapa e distância exatamente
+  como a tool devolveu, com "menor distância = mais parecida".
+- Erros do modelo (não dos dados): diz que todas são "anos iniciais (Fund.
+  I ou II)" — Fund. II são os anos finais; sugere priorizar "as de maior
+  distância no mesmo estado (AL, PI)" — inverte o sentido da distância e a
+  escola é do AM.
+- Status: **lacuna** (dados corretos; conselho inventado e errado).
+
+**G18 — a saída é legível para não-técnico?**
+- Resposta: sem SQL, sem nomes de tabela, sem `integer64` cru; tabelas
+  com rótulos em português, vírgula decimal e porcentagens inteiras.
+- Status: **✓ atendido**.
+
 ### 2026-10-08 — 5ª rodada (escola estadual com ensino médio)
 
 Foco: repetir as perguntas canônicas fora do caso "municipal de anos
@@ -202,8 +239,17 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 - [x] Prévia do `print` sem tipos técnicos/geometria (#38).
 - [x] Exportar o perfil para planilha (#39).
 - [ ] `escolas_similares()` funcionar sem `etapa =` para escola só de ensino médio (#52).
+- [ ] Repetir G16/G17 com o provedor Anthropic (conta sem créditos em
+  2026-10-09).
+- [ ] Follow-up G19: pelo chat, "melhoramos no IDEB?" (`resumo_escola` →
+  `serie_ideb_escola`) e a escola só de ensino médio (G14) pelo chat.
 
 ## Sugestões priorizadas
+
+- **[média]** Chat: o modelo local inventa conselhos fora dos dados ao
+  listar escolas parecidas (sentido da distância, "mesmo estado"). O
+  prompt já diz "menor = mais parecida"; testar com um modelo maior antes
+  de endurecer o prompt (ex.: proibir recomendações de priorização).
 
 - **[média]** `escolas_similares()`: usar por padrão as etapas em que a
   escola aparece nas features (ou todas), em vez de só fund. I/II; escola
@@ -213,6 +259,13 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
   (#53).
 
 ## Veredito
+
+- **Aprova com ressalvas** (2026-10-09, 6ª rodada, chat com
+  `qwen3.5:9b`): pelo chat, sem programar, a gestora obtém a comparação da
+  escola com o município e a lista de escolas parecidas — o modelo escolheu
+  a ferramenta certa nas duas perguntas e todos os números conferem. As
+  ressalvas são do modelo local: frases truncadas e conselhos errados ao
+  interpretar a lista de parecidas. Anthropic não testada.
 
 - **Aprova** (2026-10-08, 5ª rodada): o caminho de ensino médio (perfil,
   resumo, exportação) funciona. Lacuna nova em `escolas_similares()` para

@@ -136,3 +136,30 @@ Fonte: [`personas/especialista-ml.md`](personas/especialista-ml.md)
 | 1ª rodada, M3 extra | Ranking de indicadores | `indicadores_escola` | não coberto: ranking vazio no dev (a tool responde `sem_dados`) |
 | Sessão | Retomar objetos | `listar_handles` | coberto (só na sessão) |
 | Funções que usa | IDEB por recorte | `ideb` | coberto |
+
+## Aceite com chat real (2026-10-09)
+
+Perguntas feitas a um LLM (`chat_edubr("ollama")`, `qwen3.5:9b`, banco de
+desenvolvimento), com a transcrição em `aceite-ellmer/` e a curadoria nas
+entradas de 2026-10-09 de cada persona. "Tools chamadas" são as escolhidas
+pelo modelo, na ordem.
+
+| Persona | Pergunta | Tools chamadas | Resultado |
+|---|---|---|---|
+| Gestora (G16) | Infraestrutura da 13078070 × município | `perfil_escola` | coberto; números conferem |
+| Gestora (G17) | Escolas parecidas com a 13078070 | `escolas_similares` | coberto; lista confere, conselhos do modelo errados |
+| Pesquisadora (R18) | IDEB fund. I × biblioteca e docentes, AC municipal, por localização | `covariaveis_escola` → `especificar_regressao` → `executar_regressao` → `coeficientes` | coberto após 2 correções da camada (1 de 6 execuções); sem `metricas` |
+| ML (M32) | Floresta para terços da nota, fund. II público, contra o baseline | `features_escola` → `classificar_desempenho` → `dividir_dados` → `treinar_floresta` → `metricas_floresta` | coberto com raciocínio desligado; sem `importancia_floresta`; contas da prosa erradas |
+
+O que o aceite mudou nesta matriz:
+
+- `covariaveis_escola` passou a informar quantas escolas da base têm IDEB
+  por etapa (a prévia costuma vir toda nula) e qual tool usa o handle
+  (`especificar_regressao(dados_id =)`).
+- `features_escola` aceita `etapa` vinda do chat (array de enum, que o
+  ellmer converte em fator).
+- Perguntas que pedem números derivados (porcentagens, totais por classe,
+  ganhos relativos) continuam **parciais** com modelos pequenos: as tools
+  devolvem os valores certos, mas o modelo erra ao recalcular. Conferir
+  sempre contra o ledger/retorno.
+- Anthropic: não testado (conta sem créditos).
