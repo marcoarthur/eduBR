@@ -346,6 +346,11 @@ test_that("fluxo completo: classificar -> dividir -> treinar -> importância -> 
   top <- vapply(r$env$dados, `[[`, character(1), "variavel")
   expect_true("x1" %in% top)
   expect_false("nota_media" %in% top)
+  # lista pronta para treinar_floresta(features = ), na ordem (#90)
+  expect_equal(unlist(r$env$metadados$contexto$top_features), top)
+  r1 <- chamar(t$importancia_floresta, floresta_id = fl, n = 1L)
+  expect_length(r1$env$metadados$contexto$top_features, 1L)
+  expect_true(is.list(r1$env$metadados$contexto$top_features))
   expect_sem_objetos_r(r$json)
 
   r <- chamar(t$metricas_floresta, floresta_id = fl, teste_id = ctx$teste_id)
