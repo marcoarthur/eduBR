@@ -89,6 +89,36 @@ test_that("erros claros: provedor, chave, base_url, tools", {
   expect_error(chat_edubr("ollama", tools = list(1)), "ferramentas_edubr")
 })
 
+test_that("raciocinio desligado vira reasoning_effort none no Ollama", {
+  sem_vars_llm()
+  cap <- new.env()
+  local_mocked_bindings(eduBR_chat_construtor = construtor_falso(cap))
+
+  chat <- chat_edubr("ollama")
+  expect_null(cap$args$api_args)
+  expect_equal(attr(chat, "raciocinio"), "padrao")
+
+  chat <- chat_edubr("ollama", raciocinio = "desligado")
+  expect_equal(cap$args$api_args, list(reasoning_effort = "none"))
+  expect_equal(attr(chat, "raciocinio"), "desligado")
+
+  chat_edubr("ollama", raciocinio = "desligado",
+             api_args = list(temperature = 0))
+  expect_equal(cap$args$api_args,
+               list(temperature = 0, reasoning_effort = "none"))
+
+  expect_error(
+    chat_edubr("ollama", raciocinio = "desligado",
+               api_args = list(reasoning_effort = "high")),
+    "conflita"
+  )
+  expect_error(chat_edubr("ollama", raciocinio = "talvez"))
+
+  withr::local_envvar(ANTHROPIC_API_KEY = "chave-de-teste")
+  chat_edubr("anthropic", raciocinio = "desligado")
+  expect_null(cap$args$api_args)
+})
+
 test_that("tools são registradas no chat", {
   sem_vars_llm()
   cap <- new.env()
