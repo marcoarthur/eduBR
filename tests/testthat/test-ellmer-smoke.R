@@ -242,3 +242,113 @@ test_that("regressão declarativa no banco real (aceite da pesquisadora)", {
   message(paste(sprintf("%s: %.1f s", led$tool, led$duracao_ms / 1000),
                 collapse = "; "))
 })
+
+# Pico de memória residente do processo R (inclui o C++ do ranger), em MB.
+smoke_pico_mb <- function() {
+  st <- tryCatch(readLines("/proc/self/status"), error = function(e) character(0))
+  linha <- grep("^VmHWM:", st, value = TRUE)
+  if (!length(linha)) {
+    return(NA_real_)
+  }
+  as.numeric(gsub("[^0-9]", "", linha)) / 1024
+}
+
+test_that("tools de ML: aceite da especialista-ml no banco real", {
+  skip_if_not_installed("ranger")
+  con <- conecta(service = "edumaps")
+  withr::defer(DBI::dbDisconnect(con))
+  tools <- ferramentas_edubr(con, persona = "especialista-ml",
+                             limites = list(timeout_s = 300))
+  sessao <- attr(tools, "sessao")
+  t0 <- proc.time()[["elapsed"]]
+  mem0 <- smoke_pico_mb()
+
+  env <- smoke_checar(tools$features_escola(etapa = "fundamental_ii",
+                                            n_por_etapa = 3000L))
+  expect_null(env$erro)
+  d1 <- env$metadados$handle
+  df1 <- eduBR_handle_obter(sessao, d1)
+  expect_lte(nrow(df1), 3000L)
+  expect_lte(nrow(df1), sessao$limites$max_amostra)
+  expect_equal(unique(df1$etapa), "fundamental_ii")
+  expect_false(anyDuplicated(df1$co_entidade) > 0L)
+  message("features_escola: ", jsonlite::toJSON(
+    list(dados = env$dados, n_colunas = env$metadados$contexto$n_colunas,
+         desempenho = env$metadados$contexto$colunas_desempenho),
+    auto_unbox = TRUE, null = "null"
+  ))
+
+  # reprodutível: mesma semente, mesmas escolas; outra semente, outra amostra
+  env <- smoke_checar(tools$features_escola(etapa = "fundamental_ii",
+                                            n_por_etapa = 3000L))
+  df2 <- eduBR_handle_obter(sessao, env$metadados$handle)
+  expect_identical(df1$co_entidade, df2$co_entidade)
+  env <- smoke_checar(tools$features_escola(etapa = "fundamental_ii",
+                                            n_por_etapa = 3000L, semente = 7L))
+  df3 <- eduBR_handle_obter(sessao, env$metadados$handle)
+  expect_gt(length(setdiff(df3$co_entidade, df1$co_entidade)), 0L)
+  message(sprintf(
+    "reprodutibilidade: semente 2023 x2 identicas = %s; semente 7 troca %d de %d",
+    identical(df1$co_entidade, df2$co_entidade),
+    length(setdiff(df3$co_entidade, df1$co_entidade)), nrow(df3)
+  ))
+
+  env <- smoke_checar(tools$classificar_desempenho(dados_id = d1))
+  expect_null(env$erro)
+  cl <- env$metadados$handle
+  message("classificar_desempenho: ", jsonlite::toJSON(
+    list(dados = env$dados, limites = env$metadados$contexto$limites,
+         aviso = env$metadados$aviso),
+    auto_unbox = TRUE, null = "null", digits = 4
+  ))
+
+  env <- smoke_checar(tools$dividir_dados(dados_id = cl))
+  expect_null(env$erro)
+  dv <- env$metadados$contexto
+
+  env <- smoke_checar(tools$treinar_floresta(treino_id = dv$treino_id,
+                                             trees = 100L))
+  expect_null(env$erro)
+  fl <- env$metadados$handle
+  feats <- unlist(env$metadados$contexto$features)
+  expect_false("nota_media" %in% feats)
+  message("treinar_floresta: ", jsonlite::toJSON(
+    list(dados = env$dados, aviso = env$metadados$aviso),
+    auto_unbox = TRUE, null = "null", digits = 4
+  ))
+
+  env <- smoke_checar(tools$importancia_floresta(floresta_id = fl, n = 5L))
+  expect_null(env$erro)
+  expect_length(env$dados, 5L)
+  message("importancia_floresta (top 5): ", jsonlite::toJSON(
+    env$dados, auto_unbox = TRUE, null = "null", digits = 4
+  ))
+
+  env <- smoke_checar(tools$metricas_floresta(floresta_id = fl,
+                                              teste_id = dv$teste_id))
+  expect_null(env$erro)
+  m <- env$dados[[1]]
+  expect_gt(m$acuracia, m$baseline_acerto)
+  message("metricas_floresta: ", jsonlite::toJSON(
+    list(dados = env$dados, confusao = env$metadados$contexto$confusao),
+    auto_unbox = TRUE, null = "null", digits = 4
+  ))
+
+  env <- smoke_checar(tools$pca_perfil(dados_id = d1))
+  expect_null(env$erro)
+  expect_gt(length(env$dados), 0L)
+  message("pca_perfil: ", jsonlite::toJSON(
+    list(dados = env$dados, aviso = env$metadados$aviso,
+         n_escolas = env$metadados$contexto$n_escolas),
+    auto_unbox = TRUE, null = "null", digits = 3
+  ))
+
+  led <- ledger(tools)
+  expect_true(all(is.na(led$erro)))
+  message(paste(sprintf("%s: %.1f s", led$tool, led$duracao_ms / 1000),
+                collapse = "; "))
+  message(sprintf(
+    "ML smoke: %.1f s no total; pico de memória residente do R %.0f MB (início %.0f MB)",
+    proc.time()[["elapsed"]] - t0, smoke_pico_mb(), mem0
+  ))
+})
