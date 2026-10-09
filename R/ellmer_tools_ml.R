@@ -174,6 +174,9 @@ eduBR_coletar_amostra <- function(tb) {
 # ---------------------------------------------------------------------------
 # features_escola
 
+# Escolas por etapa quando o modelo n\u00e3o informa `n_por_etapa`.
+eduBR_n_por_etapa_padrao <- function() 3000L
+
 eduBR_tool_features_escola <- function(sessao) {
   fun <- function(etapa = NULL, publica = TRUE, n_por_etapa = NULL,
                   semente = 2023L) {
@@ -181,7 +184,8 @@ eduBR_tool_features_escola <- function(sessao) {
     publica <- eduBR_validar_logico(publica %||% TRUE, "publica")
     teto <- as.integer(floor(sessao$limites$max_amostra / length(etapa)))
     if (is.null(n_por_etapa)) {
-      n_por_etapa <- teto
+      # Padr\u00e3o menor que o teto: o treino padr\u00e3o cabe no timeout da sess\u00e3o.
+      n_por_etapa <- min(eduBR_n_por_etapa_padrao(), teto)
     } else if (is.numeric(n_por_etapa) && length(n_por_etapa) == 1L &&
                !is.na(n_por_etapa) && n_por_etapa > teto) {
       eduBR_abortar(
@@ -273,8 +277,9 @@ eduBR_tool_features_escola <- function(sessao) {
       "N\u00e3o h\u00e1 UF nem munic\u00edpio na base. A amostra \u00e9 estratificada por etapa e ",
       "feita no banco: em cada etapa as escolas s\u00e3o ordenadas por um hash ",
       "determin\u00edstico do c\u00f3digo com a `semente`, ent\u00e3o a mesma semente traz ",
-      "as mesmas escolas. `n_por_etapa` tem padr\u00e3o e teto iguais ao limite da ",
-      "sess\u00e3o (15.000 escolas) dividido entre as etapas pedidas. A base fica ",
+      "as mesmas escolas. `n_por_etapa` tem padr\u00e3o 3.000 (o treino padr\u00e3o ",
+      "leva poucos segundos) e teto igual ao limite da sess\u00e3o (15.000 ",
+      "escolas) dividido entre as etapas pedidas. A base fica ",
       "guardada no handle \"dados_<k>\"; a resposta traz o n por etapa (amostra, ",
       "popula\u00e7\u00e3o, com nota), o n\u00famero de colunas, as colunas de desempenho e ",
       "uma pr\u00e9via de 3 linhas. Fluxo: features_escola -> ",
@@ -296,8 +301,9 @@ eduBR_tool_features_escola <- function(sessao) {
       ),
       n_por_etapa = ellmer::type_integer(
         paste0(
-          "Escolas por etapa na amostra. Padr\u00e3o e m\u00e1ximo: 15.000 dividido ",
-          "pelo n\u00famero de etapas (ex.: 7.500 com duas etapas)."
+          "Escolas por etapa na amostra. Padr\u00e3o 3.000; m\u00e1ximo: 15.000 ",
+          "dividido pelo n\u00famero de etapas (ex.: 7.500 com duas etapas). ",
+          "Amostras grandes deixam o treino lento (pode exceder o tempo limite)."
         ),
         required = FALSE
       ),
