@@ -13,7 +13,7 @@ chat_edubr(
   echo = c("none", "output", "all"),
   ...,
   persona = NULL,
-  raciocinio = c("padrao", "desligado"),
+  raciocinio = NULL,
   max_tokens = NULL
 )
 }
@@ -45,11 +45,13 @@ a persona com que \code{tools} foram criadas; \code{tools} sem persona recebem
 um prompt genérico curto; sem \code{tools} nem \code{persona}, só
 \code{system_prompt}. Uma \code{persona} diferente da das \code{tools} é erro.}
 
-\item{raciocinio}{\code{"padrao"} (comportamento do modelo) ou \code{"desligado"}.
-No Ollama, \code{"desligado"} envia \code{reasoning_effort = "none"} (útil em
-fluxos longos de tools: com raciocínio ligado, o \verb{qwen3.5:9b} às vezes
-fecha o turno sem texto e o pedido seguinte falha com HTTP 400). Na
-Anthropic não muda nada: o ellmer já não liga o raciocínio estendido.}
+\item{raciocinio}{\code{NULL} (padrão por provedor), \code{"padrao"} (comportamento
+do modelo) ou \code{"desligado"}. Sem valor, o Ollama usa \code{"desligado"} —
+com o raciocínio ligado o \verb{qwen3.5:9b} às vezes fecha o turno sem texto
+(e o pedido seguinte falha com HTTP 400), o que aconteceu em fluxos com
+várias tools (#94) — e a Anthropic usa \code{"padrao"}. \code{"desligado"} envia
+\code{reasoning_effort = "none"} no Ollama; na Anthropic não muda nada (o
+ellmer já não liga o raciocínio estendido).}
 
 \item{max_tokens}{Limite de tokens gerados por resposta (inclui os de
 raciocínio). \code{NULL} usa \code{EDUBR_MAX_TOKENS}; sem ela, 4096 no Ollama

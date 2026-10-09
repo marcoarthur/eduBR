@@ -11,7 +11,9 @@
 #                                         #    especialista-ml
 #   PERGUNTAS_ARQ=perguntas.txt           # perguntas separadas por "---"
 #   SAIDA=/tmp/aceite/gestora             # prefixo dos arquivos
-#   THINK=1                               # 0 = sem raciocinio (reasoning_effort
+#   THINK=0                               # 1 = raciocinio ligado (padrao no
+#                                         #     Ollama: desligado, #94);
+#                                         # 0 = sem raciocinio (reasoning_effort
 #                                         #     "none" no Ollama)
 #   SEGUIR_SE_VAZIO=1                     # repete com um pedido de resposta
 #                                         #     se a resposta vier vazia
@@ -36,9 +38,10 @@ perguntas <- perguntas[nzchar(perguntas)]
 con <- conecta(service = "edumaps")
 tools <- ferramentas_edubr(con, persona = persona,
                            limites = list(timeout_s = 180))
-pensar <- Sys.getenv("THINK", "1") == "1"
+pensar <- Sys.getenv("THINK", "0") == "1"
 novo <- function() {
-  if (pensar) chat_edubr(provedor, tools = tools, echo = "none")
+  if (pensar) chat_edubr(provedor, tools = tools, echo = "none",
+                         raciocinio = "padrao")
   else chat_edubr(provedor, tools = tools, echo = "none",
                   raciocinio = "desligado")
 }

@@ -54,3 +54,17 @@ e métricas numa chamada), N = 2: **2/2** no critério estrito (antes 1/4),
 mediana 47 s, pico de contexto ~12k tokens; nas duas execuções o modelo
 chamou só `regressao_escolas` e citou o coeficiente de `in_biblioteca`
 (urbana −0,599, p = 0,049). Detalhes: `taxa-pesquisadora-81.csv`.
+
+## Raciocínio desligado por padrão no Ollama (#94), 2026-10-09
+
+Com `chat_edubr("ollama")` passando a usar `raciocinio = "desligado"` por
+padrão (N = 1 por execução; `taxa-r94-a.csv`, `taxa-r94-b.csv`):
+
+| Cenário | Resultado | Observação |
+|---|---|---|
+| gestora | 1/1 (53 s, antes 68–81 s) | sem regressão |
+| pesquisadora | 0/2 no critério estrito, **texto nas 2** | 1ª: respondeu sem chamar tools; 2ª: usou `regressao_escolas`, mas com `rede = "publica"` em vez de Municipal (números de outro recorte) |
+
+O turno **vazio** (motivo da #94) não se repetiu (texto em 3/3); a
+pesquisadora ainda erra a escolha de tool/argumento às vezes — limitação
+do modelo de 9B, a reavaliar com Anthropic (#73).

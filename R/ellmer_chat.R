@@ -89,11 +89,13 @@ eduBR_texto_opcional <- function(x, nome) {
 #'   um prompt genérico curto; sem `tools` nem `persona`, só
 #'   `system_prompt`. Uma `persona` diferente da das `tools` é erro.
 #'
-#' @param raciocinio `"padrao"` (comportamento do modelo) ou `"desligado"`.
-#'   No Ollama, `"desligado"` envia `reasoning_effort = "none"` (útil em
-#'   fluxos longos de tools: com raciocínio ligado, o `qwen3.5:9b` às vezes
-#'   fecha o turno sem texto e o pedido seguinte falha com HTTP 400). Na
-#'   Anthropic não muda nada: o ellmer já não liga o raciocínio estendido.
+#' @param raciocinio `NULL` (padrão por provedor), `"padrao"` (comportamento
+#'   do modelo) ou `"desligado"`. Sem valor, o Ollama usa `"desligado"` —
+#'   com o raciocínio ligado o `qwen3.5:9b` às vezes fecha o turno sem texto
+#'   (e o pedido seguinte falha com HTTP 400), o que aconteceu em fluxos com
+#'   várias tools (#94) — e a Anthropic usa `"padrao"`. `"desligado"` envia
+#'   `reasoning_effort = "none"` no Ollama; na Anthropic não muda nada (o
+#'   ellmer já não liga o raciocínio estendido).
 #'
 #' @param max_tokens Limite de tokens gerados por resposta (inclui os de
 #'   raciocínio). `NULL` usa `EDUBR_MAX_TOKENS`; sem ela, 4096 no Ollama
@@ -123,7 +125,7 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
                        system_prompt = NULL, base_url = NULL,
                        echo = c("none", "output", "all"), ...,
                        persona = NULL,
-                       raciocinio = c("padrao", "desligado"),
+                       raciocinio = NULL,
                        max_tokens = NULL) {
   rlang::check_installed("ellmer", reason = "para conversar com um LLM.")
   provedor <- eduBR_resolver_provedor(provedor)
@@ -138,7 +140,12 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
   persona <- eduBR_persona_efetiva(persona, tools)
   system_prompt <- eduBR_prompt_sistema(persona, tools, system_prompt)
 
-  raciocinio <- match.arg(raciocinio)
+  raciocinio <- raciocinio %||%
+    (if (provedor == "ollama") "desligado" else "padrao")
+  if (!is.character(raciocinio) || length(raciocinio) != 1L ||
+      !raciocinio %in% c("padrao", "desligado")) {
+    stop("`raciocinio` deve ser \"padrao\" ou \"desligado\".", call. = FALSE)
+  }
   args <- list(system_prompt = system_prompt, echo = echo, ...)
   max_tokens <- eduBR_max_tokens(max_tokens, provedor)
   if (!is.null(max_tokens)) {
