@@ -20,7 +20,12 @@ Devolve o registro de todas as chamadas feitas às ferramentas criadas por
 argumentos, quantas linhas voltaram ao modelo, quanto tempo levou e, se
 houve, o tipo de erro (\code{parametro_invalido}, \code{sem_dados},
 \code{limite_excedido} ou \code{conexao}). Chamadas recusadas por orçamento também
-aparecem (com \code{erro = "limite_excedido"}).
+aparecem (com \code{erro = "limite_excedido"}), assim como as que o próprio
+ellmer recusa antes de executar a ferramenta — argumento inexistente ou
+ferramenta desconhecida — com \code{erro = "argumento_recusado"}, 0 linhas e
+\code{duracao_ms} \code{NA} (contam no limite de chamadas). Para isso, as
+ferramentas precisam ser anexadas ao chat por \code{\link[=chat_edubr]{chat_edubr()}} ou
+\code{\link[=registrar_tools]{registrar_tools()}}.
 }
 \details{
 O ledger vive na memória da sessão. Para guardá-lo em disco, use

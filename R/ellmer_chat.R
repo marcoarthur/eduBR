@@ -199,6 +199,7 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
   )
   if (!is.null(tools)) {
     chat$register_tools(unname(tools))
+    eduBR_ledger_gancho(chat, tools)
   }
   attr(chat, "provedor") <- provedor
   attr(chat, "persona") <- persona
