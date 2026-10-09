@@ -35,6 +35,17 @@
 
 ## Entradas
 
+### 2026-10-09 — 12ª rodada (verificação de #81)
+
+**M37 — `regressao_escolas` no modo logístico (direto, sem LLM).**
+- Resposta: `in_internet ~ in_biblioteca + docentes` (AC, rede municipal,
+  `modelo = "logistico"`) → n = 885, AUC 0,843, McFadden 0,316, com os
+  coeficientes em `dados` e as métricas no `contexto`; desfecho contínuo
+  (`ideb_fund_i`) em modo logístico → `parametro_invalido` ("exige desfecho
+  binário… 48 valores distintos") sem coletar. A tool também está no prompt
+  da ML como caminho preferido.
+- Status: **✓ atendido**.
+
 ### 2026-10-09 — 11ª rodada (verificação de #70, #72, #74, #75)
 
 Tools no banco sem LLM + transcrições de hoje (`ml_r4`, `ml_r5`).
@@ -423,7 +434,9 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - [x] PCA sem códigos `tp_*`, sinal fixo e report revisado (#40).
 - [x] PCA sem componentes nulos e com opção de remover redundantes (#48, #54).
 - [x] Raciocínio desligável no chat (#70) e totais por classe (#74).
-- [x] Recusas do ellmer no ledger (#75).
+- [x] Recusas do ellmer no ledger (#75; confirmado com LLM real na
+  10ª rodada da pesquisadora).
+- [x] Regressão numa chamada também para a ML (#81).
 - [ ] Série histórica de INSE (bloqueada por dados no pipeline EduMaps).
 - [ ] Repetir M32 com o provedor Anthropic (#73, conta sem créditos).
 - [ ] Taxa do fluxo de ML com mais execuções (N ≤ 2 por rodada).
@@ -439,6 +452,9 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-09, 12ª rodada): tool composta de
+  regressão correta também no modo logístico; ressalvas mantidas (taxa do
+  fluxo de ML com N pequeno; Anthropic #73).
 - **Aprova com ressalvas** (2026-10-09, 11ª rodada): as correções #70 e
   #74 aparecem no chat (fluxo fecha; totais e ganho corretos); ressalvas:
   taxa ainda com N pequeno e redação confusa ocasional do modelo local.

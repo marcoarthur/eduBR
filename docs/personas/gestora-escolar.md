@@ -34,6 +34,13 @@
 
 ## Entradas
 
+### 2026-10-09 — 8ª rodada (sem entregas para a gestora)
+
+As entregas desde a 7ª rodada (#81 `regressao_escolas`, #82
+`ideb_agregado`) são da pesquisadora/ML; as tools da gestora não mudaram e
+a suíte segue verde no container. Sem chamadas ao LLM (limite térmico).
+- Status: **sem mudança** — veredito mantido.
+
 ### 2026-10-09 — 7ª rodada (verificação de #70–#75 e da taxa de sucesso)
 
 Sem chamadas novas ao LLM (limite térmico do laptop do Ollama): tools
@@ -275,6 +282,8 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 8ª rodada): sem mudanças nas tools da gestora
+  desde a 7ª rodada; veredito mantido.
 - **Aprova** (2026-10-09, 7ª rodada): fluxo da gestora estável no chat
   (6/6), números conferidos, erros de redação anteriores não voltaram;
   resta só redação solta ocasional do modelo local.
