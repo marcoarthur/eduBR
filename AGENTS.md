@@ -22,30 +22,57 @@ roxygen2**.
 ```
 R/
   conexao.R       conecta(), eduBR_dbConnect()
-  catalogo.R      eduBR_catalogo(), catalogo(), eduBR_tbl()
+  catalogo.R      eduBR_catalogo(), catalogo(), eduBR_tbl(), registrar_relacao()
   objeto.R        new_eduBR() + métodos S3 do genérico "eduBR"
   escola.R        escolas(), escola()
   municipio.R     municipios(), municipio()
-  rede.R          redes()
+  rede.R          redes(), rede_municipio()
   indicador.R     indicadores(), scores()
   censo.R         censo_escolar(), censo_docentes(), censo_matriculas()
+  censo_docentes.R  docentes_rede()
   ideb.R          ideb()
   cluster.R       clusters()
-  similaridade.R  municipios_similares()
+  similaridade.R  municipios_similares(), escolas_similares()
   ideb_regiao.R   ideb_regiao()
   tendencia.R     tendencia_regiao()
   inse.R          inse()
   ideb_inse.R     ideb_inse()
   regressao_inse.R  regressao_inse()
   regiao.R        helpers de macrorregião (UF -> região)
+  gestor.R        gestores(), perfil_gestor()
+  perfil.R        perfil_escola(), comparar(), resumo_escola(), exportar()
+  covariaveis.R   covariaveis_escola()
+  desempenho.R    features_escola(), classificar_desempenho()
+  floresta.R      dividir_dados(), treinar_floresta(), metricas_floresta() ...
+  pca.R           pca_perfil()
+  geo.R           as_sf()
+  dicionario.R    dicionario(), rotular()
   espec.R         especificar_regressao(), ler_espec(), ler_especs() (camada declarativa)
   regressao.R     executar_regressao() (motor por cortes)
   saida.R         coeficientes(), metricas()
   coletar.R       coletar() (materialização com limite)
+  ellmer_tools.R  ferramentas_edubr(): núcleo (envelope, serialização,
+                  tetos, timeout, erros, handles, registro das tools)
+  ellmer_tools_escola.R     tools da gestora (perfil, resumo, similares...)
+  ellmer_tools_pesquisa.R   tools da pesquisadora (ideb, redes, covariáveis...)
+  ellmer_tools_regressao.R  especificar/executar_regressao, coeficientes...
+  ellmer_tools_ml.R         features, classificação, floresta, PCA
+  ellmer_ledger.R   ledger() e orçamento da sessão
+  ellmer_personas.R prompt_persona(), registrar_tools()
+  ellmer_chat.R     chat_edubr() (provedores anthropic | ollama)
+inst/prompts/     prompts de sistema por persona (<persona>.md)
+vignettes/        ellmer.Rmd (transcrições gravadas, eval = FALSE)
 man/              Rd gerados por roxygen2 (não editar à mão)
-tests/testthat/   testes unitários + smoke opcional
+tests/testthat/   testes unitários + smoke opcional (+ smoke com LLM)
 analysis/         reports R Markdown (fora do build; HTML gitignored)
-tools/sync-rstudio.sh  rsync do repo p/ o RStudio Server (rstudio.dev)
+docs/             personas/ (curadoria) e ellmer.md (matriz pergunta × tool)
+plans/            planos de trabalho (ellmer-tools.md)
+memory.md         decisões e lições entre sessões
+tools/
+  sync-rstudio.sh   rsync do repo p/ o RStudio Server (rstudio.dev)
+  rstudio-dest.sh   destino no container (um diretório por worktree)
+  test-container.sh testes/check no container como rsuser
+  tunnel-ollama.sh  túnel SSH reverso do Ollama local para o container
 DESCRIPTION       metadados e dependências
 NAMESPACE         gerado por roxygen2 (não editar à mão)
 ```
@@ -64,22 +91,39 @@ Máx. 50 chars no subject. Mensagem de commit em **PT-BR**.
 
 ## Running tests
 
-```r
-# de dentro do repo, no R
-devtools::test()                                 # unitários (sem banco)
-EDUBR_SMOKE=1 Rscript -e 'devtools::test()'      # + smoke contra o [edumaps]
-devtools::document()                             # regenera NAMESPACE/man
-devtools::check()                                # antes de PR
+Testes rodam **só no container** `rstudio.dev`, como `rsuser` — nunca na
+máquina local (as versões divergem: o container tem dbplyr 2.5.0 e a
+máquina local, 2.6.0; ver `memory.md`). O script sincroniza a worktree e
+roda lá:
+
+```bash
+tools/test-container.sh                    # devtools::test() (unitários, sem banco)
+tools/test-container.sh --smoke            # + EDUBR_SMOKE=1 (banco real)
+tools/test-container.sh --filter ellmer    # só test-*ellmer*.R
+tools/test-container.sh --llm ollama       # + smoke com LLM real (túnel aberto)
+tools/test-container.sh --llm anthropic    # idem, com ANTHROPIC_API_KEY no rsuser
+tools/test-container.sh --check            # devtools::check() (constrói a vignette)
+tools/test-container.sh --no-sync ...      # sem rsync antes
 ```
 
-O smoke (`tests/testthat/test-smoke.R`) é pulado sem `EDUBR_SMOKE=1`.
-Testes unitários **não** tocam o banco.
+- Unitários **não** tocam o banco; o smoke (`test-smoke.R`,
+  `test-ellmer-smoke.R`) é pulado sem `EDUBR_SMOKE=1` e o do LLM
+  (`test-ellmer-chat.R`) sem `EDUBR_LLM_SMOKE`.
+- `devtools::document()` regenera `NAMESPACE`/`man/`.
+- `check` esperado: 0 erros, 0 notas e 2 warnings pré-existentes
+  (não-ASCII em `R/pca.R`/`R/perfil.R`; link `eduBR_tbl`). A vignette
+  exige `qpdf` no container (instalado em 2026-10-09; sem ele, warning
+  "'qpdf' is needed"). Se os serviços de hora (worldtimeapi) estiverem
+  fora do ar, aparece a NOTE "unable to verify current time" — ambiental;
+  confirme com `_R_CHECK_SYSTEM_CLOCK_=FALSE`.
 
 ## Sincronização com o RStudio Server (rstudio.dev)
 
 O RStudio Server roda no container `rstudio.dev` (`ubatexu.lan:2024`, SSH
 como `root`), acessível na web em `ubatexu.lan:8787`. O pareamento é um
-`rsync` do working tree para `/home/rsuser/projetos/eduBR`.
+`rsync` do working tree para `/home/rsuser/projetos/eduBR` (cada `git
+worktree` vai para o próprio `/home/rsuser/projetos/eduBR-wt-<nome>`, dado
+por `tools/rstudio-dest.sh`; `EDUBR_SYNC_DEST` sobrepõe).
 
 ```bash
 tools/sync-rstudio.sh      # manual (de qualquer lugar dentro do repo)
@@ -99,6 +143,37 @@ tools/sync-rstudio.sh      # manual (de qualquer lugar dentro do repo)
 
 No container, o pacote fica em `/home/rsuser/projetos/eduBR`; importe com
 `devtools::load_all("~/projetos/eduBR")` ou `devtools::install(...)`.
+
+## Camada `ellmer` (LLM)
+
+Expõe o `eduBR` a LLMs via [ellmer](https://ellmer.tidyverse.org) (0.5.0,
+instalado só no container; em `Suggests`):
+
+- `ferramentas_edubr(con, persona = , limites = )` → lista de tools
+  (envelope JSON `dados`/`metadados`/`erro`, sem SQL nem `schema.tabela`,
+  `integer64` como texto, teto de 1000 linhas por resposta, timeout e
+  orçamento por sessão, handles `dados_<k>`/`espec_<k>`/`regressao_<k>`/
+  `floresta_<k>`).
+- `chat_edubr("anthropic" | "ollama", tools = , persona = )`,
+  `registrar_tools(chat, tools)`, `prompt_persona()` e `ledger(tools)`.
+- Prompts por persona em `inst/prompts/`; matriz pergunta × tool em
+  `docs/ellmer.md`; plano e decisões em `plans/ellmer-tools.md`; vignette
+  `vignettes/ellmer.Rmd` (transcrições reais gravadas, `eval = FALSE`).
+- **Anthropic**: `ANTHROPIC_API_KEY` no `~/.Renviron` do `rsuser` (nunca
+  no código). **Ollama**: roda na máquina do dono do repo (`qwen3.5:9b`);
+  o container o alcança por **túnel SSH reverso**:
+
+  ```bash
+  tools/tunnel-ollama.sh abrir    # ou status | fechar
+  ```
+
+  Com o túnel aberto, `chat_edubr("ollama")` no container usa
+  `http://localhost:11434` (ou `OLLAMA_BASE_URL`).
+- Tool nova: `eduBR_tool_<nome>(sessao)` no arquivo do grupo, validação
+  antes do dbplyr, `eduBR_resultado()`/`eduBR_abortar()`, entrada em
+  `eduBR_tools_registro()` com as personas, linha no prompt da persona e
+  em `docs/ellmer.md` (os testes de personas conferem a consistência).
+  Detalhes na skill `r-edubr` ("Camada ellmer").
 
 ## Database
 
@@ -190,7 +265,8 @@ plano → execução → aprovação
 ```
 
 1. **Plano**: propor e alinhar decisões antes de tocar em código.
-2. **Execução**: implementar e validar (`devtools::test()` / `check()`).
+2. **Execução**: implementar e validar no container
+   (`tools/test-container.sh`, `--smoke`, `--check`).
    Commits em PT-BR seguindo `<type>(<scope>): <subject>`.
 3. **Aprovação**: só pedir PR após o aceite explícito da implementação.
 4. **PR + merge (via `gh`)**:
@@ -205,6 +281,20 @@ plano → execução → aprovação
    Depois: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
 5. **Deploy**: o `eduBR` é biblioteca; não há deploy nos containers. A
    instalação é local via `devtools::install()`.
+
+## Lições (ver `memory.md`)
+
+- **Valide no container**: o dbplyr 2.5 de lá não traduz o que o 2.6 local
+  traduz (ex.: `n_distinct(x, na.rm = TRUE)`); `perfil_escola()` ficou
+  quebrada no container sem ninguém ver.
+- **Strings R com acento → `\uXXXX`** (warning de não-ASCII no check). A
+  ferramenta Write dos agentes converte `\uXXXX` em acentos: reescape
+  depois de escrever e confira (deve sair vazio):
+  `git diff origin/main -- R/ | grep '^+' | grep -v '^+\s*#' | grep -P '[^\x00-\x7F]'`.
+  `.Rmd`/`.md` podem ter UTF-8.
+- **PRs empilhados**: `gh pr merge --delete-branch` no PR base apaga a
+  branch e **fecha** o PR filho (que apontava para ela). Faça o merge na
+  ordem e mude a base do filho para `main` antes de apagar a branch.
 
 ## Code style
 

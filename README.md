@@ -171,6 +171,41 @@ escolas(con, uf = "SP") |> as_tibble()
 escolas(con, uf = "SP") |> consulta() |> count(municipio)
 ```
 
+## Uso com LLM (ellmer)
+
+O `eduBR` pode ser consultado em linguagem natural por um LLM com
+[ellmer](https://ellmer.tidyverse.org): as funções viram **ferramentas**
+(tools) que devolvem JSON sem SQL, sem nomes físicos de tabela e sem dados
+pessoais, com teto de linhas, timeout e orçamento por sessão. Requer os
+pacotes `ellmer` e `jsonlite` (Suggests).
+
+```r
+library(eduBR)
+con <- conecta()
+
+# ferramentas filtradas para uma persona (gestora-escolar,
+# pesquisadora-educacional ou especialista-ml)
+tools <- ferramentas_edubr(con, persona = "gestora-escolar")
+
+# Anthropic: ANTHROPIC_API_KEY no ~/.Renviron (nunca no código)
+chat <- chat_edubr("anthropic", tools = tools)
+# Ollama local (OLLAMA_BASE_URL; padrão http://localhost:11434, modelo qwen3.5:9b)
+chat <- chat_edubr("ollama", tools = tools)
+
+chat$chat("Como está a infraestrutura da escola 13078070 comparada ao município?")
+ledger(tools)   # o que o modelo chamou, com que argumentos, linhas e tempo
+```
+
+O chat já sai com o prompt de sistema da persona (`prompt_persona()`); para
+um chat criado à parte, use `registrar_tools(chat, tools)`. No container
+`rstudio.dev`, o Ollama da máquina do desenvolvedor é alcançado por túnel
+SSH reverso (`tools/tunnel-ollama.sh abrir`).
+
+Cenários reais gravados (gestora, pesquisadora e especialista em ML) com a
+leitura crítica de cada resposta estão na vignette
+`vignette("ellmer", package = "eduBR")`; a matriz pergunta × ferramenta, em
+[`docs/ellmer.md`](docs/ellmer.md).
+
 ## Catálogo
 
 Para ver a que `schema.tabela` cada nome de domínio corresponde — com a
@@ -211,6 +246,10 @@ R/
   desempenho.R    features_escola(), classificar_desempenho(), limites_desempenho()
   floresta.R      dividir_dados(), treinar_floresta(), importancia_floresta(),
                   predizer_floresta(), metricas_floresta()
+  ellmer_*.R      camada LLM: ferramentas_edubr(), chat_edubr(),
+                  registrar_tools(), prompt_persona(), ledger()
+inst/prompts/     prompts de sistema por persona
+vignettes/        ellmer.Rmd (uso com LLM, transcrições gravadas)
 ```
 
 ## Relatórios
@@ -238,12 +277,16 @@ rmarkdown::render(
 
 ## Testes
 
-Rodar **apenas no container de teste** (`rstudio.dev`, como `rsuser`) — nunca
-na máquina local:
+Rodar **apenas no container de teste** (`rstudio.dev`, como `rsuser`) —
+nunca na máquina local. O script sincroniza o working tree e roda lá:
 
-```r
-devtools::test()                 # testes unitarios (sem banco)
-EDUBR_SMOKE=1 devtools::test()   # + smoke contra o [edumaps] real
+```bash
+tools/test-container.sh                  # testes unitarios (sem banco)
+tools/test-container.sh --smoke          # + smoke contra o [edumaps] real
+tools/test-container.sh --filter ellmer  # so os testes da camada ellmer
+tools/test-container.sh --llm ollama     # + smoke com LLM real (tunel aberto)
+tools/test-container.sh --llm anthropic  # idem, com ANTHROPIC_API_KEY
+tools/test-container.sh --check          # devtools::check() (inclui a vignette)
 ```
 
 ## Licença
