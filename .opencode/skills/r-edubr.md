@@ -410,19 +410,20 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   persona, ledger, orçamento, `chat_edubr()` (Anthropic/Ollama), prompts,
   vignette e aceite com chat real. Rodada de curadoria **com o chat**
   (2026-10-09): ver `docs/personas/`.
-- Backlog da camada ellmer (atualizado na curadoria de 2026-10-09, 2ª):
+- Backlog da camada ellmer (atualizado na curadoria de 2026-10-09, última):
   - Entregues: raciocínio desligável (#70), prévias enxutas e limite de
     texto por resposta (#71), taxa de sucesso com N ≤ 2 (#72, parcial:
     gestora 6/6, pesquisadora 1/4, ML 1/1), totais por classe (#74),
     recusas do ellmer no ledger (#75).
-  - **[alta]** Aceite com Anthropic (#73, bloqueado: conta sem créditos).
   - Entregues também: `regressao_escolas`, regressão numa chamada (#81;
     pesquisadora no chat local 1/4 → 2/2), e `ideb_agregado`, IDEB médio
     por UF/região/município (#82).
-  - **[baixa]** Redação solta do modelo local no chat (#83, depende do
-    #73).
-  - **[média]** `max_tokens` configurável em `chat_edubr()` (#89).
-  - **[baixa]** `importancia_floresta` com a lista pronta das features (#90).
+  - Entregues depois: `top_features` em `importancia_floresta` (#90),
+    `max_tokens` configurável (#89), raciocínio desligado por padrão no
+    Ollama (#94) e aceite com Anthropic (#73: 2/2 nos três cenários;
+    #83 fechada sem mudar o prompt — a redação solta era do modelo 9B).
+  - Curadoria de 2026-10-09 (10ª/12ª/14ª): gestora e ML **aprovam**;
+    pesquisadora aprova com ressalva externa (`co_municipio`).
   - **[baixa]** Tool de dicionário de rótulos; `registrar_relacao()` segue
     fora (só leitura).
   - Testes com o Ollama local: **N ≤ 2** (limite térmico do laptop).

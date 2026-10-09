@@ -34,6 +34,26 @@
 
 ## Entradas
 
+### 2026-10-09 — 10ª rodada (verificação de #73/#83 com Anthropic e #94)
+
+Entregas verificadas: #73/#83 (aceite com `claude-sonnet-5`, PR #96) e
+#94 (Ollama com raciocínio desligado por padrão, PR #95).
+
+- **G16/G17 com Anthropic** → taxa 2/2 (`tools/taxa-sucesso-ellmer.R`,
+  `docs/aceite-ellmer/taxa-anthropic.csv`, mediana 35 s): `perfil_escola`
+  → `escolas_similares`, sem erro, fração municipal conferida na
+  resposta. Transcrição em `docs/aceite-ellmer/anth_gestora.md`: nenhuma
+  frase sem base nos dados (a "única escola da região com biblioteca" do
+  modelo local não aparece). **✓ atendido** — a redação solta era do
+  modelo de 9B, não do prompt; #83 fechada sem mudar o prompt.
+- **Padrões do chat local (#94)** → `chat_edubr("ollama")` sem argumentos:
+  `raciocinio = "desligado"`, `max_tokens = 4096`, `api_args =
+  {"reasoning_effort":"none"}` (conferido sem rede, no container). Com o
+  raciocínio desligado o fluxo da gestora fechou 1/1 (PR #95). **✓
+  atendido.**
+
+Pendências zeradas; nenhuma sugestão nova.
+
 ### 2026-10-09 — 9ª rodada (follow-up G19 pelo chat)
 
 Uma execução por pergunta (Ollama `qwen3.5:9b`, limite N ≤ 2).
@@ -287,18 +307,19 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 - [x] `escolas_similares()` sem `etapa =` para escola só de ensino médio (#52).
 - [x] IDEB de etapa não ofertada sinalizado no perfil (#53).
 - [x] Chat estável nos 2 cenários da gestora (6/6, 2026-10-09).
-- [ ] Repetir G16/G17 com o provedor Anthropic (#73, conta sem créditos).
+- [x] Repetir G16/G17 com o provedor Anthropic (#73: 2/2, 10ª rodada).
 - [x] Follow-up G19 pelo chat: evolução do IDEB e escola só de ensino
   médio (9ª rodada).
 
 ## Sugestões priorizadas
 
-- **[baixa]** Chat: o modelo local ainda solta frases sem base nos dados
-  (ex.: "única escola da região com biblioteca"); conferir com um modelo
-  maior (#73) antes de endurecer o prompt (#83).
+- Nenhuma em aberto. (Redação solta do modelo local: com Anthropic não
+  ocorre; #83 fechada sem mudar o prompt.)
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 10ª rodada): fluxo da gestora 2/2 também com
+  Anthropic, sem frases sem base; padrões do chat local adequados (#94).
 - **Aprova** (2026-10-09, 9ª rodada): os follow-ups pelo chat (evolução do
   IDEB e escola só de ensino médio) respondem com números corretos.
 - **Aprova** (2026-10-09, 8ª rodada): sem mudanças nas tools da gestora
