@@ -144,3 +144,13 @@ implementação ficam no código; memória de curadoria fica em
 - O container `rstudio.dev` tem `qpdf` (apt, instalado em 2026-10-09 durante
   o chunk 7 da camada ellmer). Sem ele o `check` com vignette dá o warning
   "'qpdf' is needed". **Decisão do dono do repo: manter.**
+
+## 2026-10-09 — limite de repetições com o Ollama
+
+- O Ollama roda no laptop do dono do repo: uma medição com N = 5 levou a
+  temperatura a nível crítico e foi interrompida. **Máximo N = 2** por
+  cenário (`tools/taxa-sucesso-ellmer.R` recusa N > 2); ao terminar,
+  descarregar o modelo (`keep_alive = 0`).
+- Taxa parcial (docs/aceite-ellmer/taxa-sucesso.md): gestora 6/6,
+  pesquisadora 1/4 (cadeia completa 4/4; falha por chamada com erro
+  autocorrigida ou número ausente), ML 1/1.

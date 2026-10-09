@@ -163,3 +163,7 @@ O que o aceite mudou nesta matriz:
   devolvem os valores certos, mas o modelo erra ao recalcular. Conferir
   sempre contra o ledger/retorno.
 - Anthropic: não testado (conta sem créditos).
+
+## Taxa de sucesso
+
+Ver [`docs/aceite-ellmer/taxa-sucesso.md`](aceite-ellmer/taxa-sucesso.md) (Ollama `qwen3.5:9b`, 2026-10-09: gestora 6/6, pesquisadora 1/4 no critério estrito com cadeia completa 4/4, ML 1/1). Script: `tools/taxa-sucesso-ellmer.R` (máximo N = 2).
