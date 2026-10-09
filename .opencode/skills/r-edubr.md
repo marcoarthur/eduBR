@@ -416,10 +416,11 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
     gestora 6/6, pesquisadora 1/4, ML 1/1), totais por classe (#74),
     recusas do ellmer no ledger (#75).
   - **[alta]** Aceite com Anthropic (#73, bloqueado: conta sem créditos).
-  - **[média]** Tool composta de regressão para modelos pequenos (o 9B não
-    fecha a cadeia de 4 tools da pesquisadora com resposta) (#81).
-  - **[baixa]** Tools de agregação (IDEB médio por município/UF/rede) (#82).
-  - **[baixa]** Redação solta do modelo local no chat (#83).
+  - Entregues também: `regressao_escolas`, regressão numa chamada (#81;
+    pesquisadora no chat local 1/4 → 2/2), e `ideb_agregado`, IDEB médio
+    por UF/região/município (#82).
+  - **[baixa]** Redação solta do modelo local no chat (#83, depende do
+    #73).
   - **[baixa]** Tool de dicionário de rótulos; `registrar_relacao()` segue
     fora (só leitura).
   - Testes com o Ollama local: **N ≤ 2** (limite térmico do laptop).
