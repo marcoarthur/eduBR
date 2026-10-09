@@ -87,7 +87,27 @@ resumo por corte (\code{n}, \code{ajustado});
 \item \code{coeficientes} / \code{metricas} (pesquisadora, especialista-ml): tabelas
 achatadas (\code{\link[=coeficientes]{coeficientes()}}, \code{\link[=metricas]{metricas()}}) com nomes em português;
 \item \code{listar_handles} (pesquisadora, especialista-ml): ids, tipos e
-descrições dos handles da sessão.
+descrições dos handles da sessão;
+\item \code{features_escola} (especialista-ml): amostra \strong{reprodutível} de
+\code{\link[=features_escola]{features_escola()}}, estratificada por etapa e feita no banco (ordem
+por \code{md5(co_entidade || ':' || semente)} dentro de cada etapa), com no
+máximo \code{max_amostra} linhas; guarda o handle \verb{dados_<k>};
+\item \code{classificar_desempenho} (especialista-ml): alvo \code{nivel} por terços
+dentro do grupo (\code{\link[=classificar_desempenho]{classificar_desempenho()}}), sem as escolas sem nota;
+devolve contagens e cortes (\code{\link[=limites_desempenho]{limites_desempenho()}});
+\item \code{dividir_dados} (especialista-ml): treino/teste estratificados
+(\code{\link[=dividir_dados]{dividir_dados()}}) nos handles \verb{treino_<k>}/\verb{teste_<k>};
+\item \code{treinar_floresta} (especialista-ml): \code{\link[=treinar_floresta]{treinar_floresta()}} com
+\code{num.threads = 2} e até 500 árvores; notas SAEB (a nota da classe
+inclusive), o alvo e identificadores nunca entram como preditores
+(recusados em \code{features}); guarda o handle \verb{floresta_<k>};
+\item \code{importancia_floresta} / \code{metricas_floresta} (especialista-ml):
+\code{\link[=importancia_floresta]{importancia_floresta()}} e \code{\link[=metricas_floresta]{metricas_floresta()}} (com baseline e matriz
+de confusão longa); um teste que compartilha escolas com o treino é
+recusado;
+\item \code{pca_perfil} (especialista-ml): variância e maiores pesos de
+\code{\link[=pca_perfil]{pca_perfil()}} (\code{redundantes = "remover"} por padrão), com as colunas
+removidas em \code{aviso}.
 }
 
 Os argumentos (código INEP de 8 dígitos, etapa, edição bienal do IDEB,

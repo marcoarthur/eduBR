@@ -829,6 +829,34 @@ eduBR_tools_registro <- function() {
     listar_handles = list(
       criar = eduBR_tool_listar_handles,
       personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
+    features_escola = list(
+      criar = eduBR_tool_features_escola,
+      personas = "especialista-ml"
+    ),
+    classificar_desempenho = list(
+      criar = eduBR_tool_classificar_desempenho,
+      personas = "especialista-ml"
+    ),
+    dividir_dados = list(
+      criar = eduBR_tool_dividir_dados,
+      personas = "especialista-ml"
+    ),
+    treinar_floresta = list(
+      criar = eduBR_tool_treinar_floresta,
+      personas = "especialista-ml"
+    ),
+    importancia_floresta = list(
+      criar = eduBR_tool_importancia_floresta,
+      personas = "especialista-ml"
+    ),
+    metricas_floresta = list(
+      criar = eduBR_tool_metricas_floresta,
+      personas = "especialista-ml"
+    ),
+    pca_perfil = list(
+      criar = eduBR_tool_pca_perfil,
+      personas = "especialista-ml"
     )
   )
 }
@@ -896,7 +924,27 @@ eduBR_tools_registro <- function() {
 #' - `coeficientes` / `metricas` (pesquisadora, especialista-ml): tabelas
 #'   achatadas ([coeficientes()], [metricas()]) com nomes em português;
 #' - `listar_handles` (pesquisadora, especialista-ml): ids, tipos e
-#'   descrições dos handles da sessão.
+#'   descrições dos handles da sessão;
+#' - `features_escola` (especialista-ml): amostra **reprodutível** de
+#'   [features_escola()], estratificada por etapa e feita no banco (ordem
+#'   por `md5(co_entidade || ':' || semente)` dentro de cada etapa), com no
+#'   máximo `max_amostra` linhas; guarda o handle `dados_<k>`;
+#' - `classificar_desempenho` (especialista-ml): alvo `nivel` por terços
+#'   dentro do grupo ([classificar_desempenho()]), sem as escolas sem nota;
+#'   devolve contagens e cortes ([limites_desempenho()]);
+#' - `dividir_dados` (especialista-ml): treino/teste estratificados
+#'   ([dividir_dados()]) nos handles `treino_<k>`/`teste_<k>`;
+#' - `treinar_floresta` (especialista-ml): [treinar_floresta()] com
+#'   `num.threads = 2` e até 500 árvores; notas SAEB (a nota da classe
+#'   inclusive), o alvo e identificadores nunca entram como preditores
+#'   (recusados em `features`); guarda o handle `floresta_<k>`;
+#' - `importancia_floresta` / `metricas_floresta` (especialista-ml):
+#'   [importancia_floresta()] e [metricas_floresta()] (com baseline e matriz
+#'   de confusão longa); um teste que compartilha escolas com o treino é
+#'   recusado;
+#' - `pca_perfil` (especialista-ml): variância e maiores pesos de
+#'   [pca_perfil()] (`redundantes = "remover"` por padrão), com as colunas
+#'   removidas em `aviso`.
 #'
 #' Os argumentos (código INEP de 8 dígitos, etapa, edição bienal do IDEB,
 #' UF, região, rede, `n`) são validados antes de consultar o banco;
