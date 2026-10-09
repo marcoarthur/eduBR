@@ -13,10 +13,14 @@
   `ToolDef` (S7); `type_string/number/integer/boolean/enum(values,
   description)/array/object`; `Chat$register_tool()`/`register_tools()`/
   `set_system_prompt()`; `tool_reject(reason)`; `tool_annotations()`.
-- **Runtime do LLM**: `chat_anthropic()` no container (decisão). Requer
-  `ANTHROPIC_API_KEY` no ambiente do `rsuser` — **configurada pelo dono do
-  repo**, nunca no código. O Ollama local (192.168.0.13) não é alcançável
-  do container.
+- **Runtime do LLM** (revisto em 2026-10-08): **dois provedores**, via
+  `chat_edubr(provedor = "anthropic" | "ollama")`. Anthropic usa
+  `ANTHROPIC_API_KEY` do ambiente do `rsuser` (configurada pelo dono do
+  repo, nunca no código). Ollama usa `OLLAMA_BASE_URL` (padrão
+  `http://localhost:11434`) e modelo `qwen3.5:9b` (ou
+  `EDUBR_OLLAMA_MODELO`); o Ollama roda na máquina do dono do repo e o
+  container o alcança por **túnel SSH reverso** (`tools/tunnel-ollama.sh`).
+  Modelos locais com *tool calling*: `qwen3.5:9b`, `granite4.1:8b`.
 - **Testes**: só no container, como `rsuser` (regra do README; o
   `AGENTS.md` diverge e será corrigido no chunk 7). Unitários sem banco;
   smoke com `EDUBR_SMOKE=1`.
@@ -47,7 +51,8 @@
 | D13 | `indicador` | `analytics.ranking_escola` está **vazia** no dev: sem enum possível; a tool `indicadores_escola` usa `type_string` e devolve `sem_dados` com explicação. | Dados, não pacote. |
 | D14 | Dependência | `ellmer` em **Suggests** + `rlang::check_installed()`; `jsonlite` em Suggests (testes). | Pacote segue leve para quem não usa LLM. |
 | D15 | `registrar_tools()` | **Exportado** (a spec diz "interno"): o usuário/vignette precisa chamá-lo para anexar tools + system prompt da persona ao `chat`. | Sem ele a vignette usaria internos. |
-| D16 | Vignette | `eval = FALSE` com transcrições **gravadas** no container (chat real com `chat_anthropic()`), para o `check` não depender de rede/chave. `knitr`/`rmarkdown` em Suggests + `VignetteBuilder: knitr`. | `check` reprodutível. |
+| D16 | Vignette | `eval = FALSE` com transcrições **gravadas** no container (chat real via `chat_edubr()`, Anthropic e/ou Ollama), para o `check` não depender de rede/chave. `knitr`/`rmarkdown` em Suggests + `VignetteBuilder: knitr`. | `check` reprodutível. |
+| D18 | Provedores | `chat_edubr()` exportada escolhe o provedor (argumento > `EDUBR_LLM_PROVEDOR` > `anthropic` se houver chave > `ollama`) e registra as tools; smoke com LLM real via `tools/test-container.sh --llm ollama|anthropic`. | Usar Ollama local sem custo e Anthropic quando houver chave. |
 | D17 | Prompts | `inst/prompts/<persona>.md` estáticos, escritos a partir de `docs/personas/` (que fica fora do build); `prompt_persona(persona)` lê via `system.file()`. | `docs/` não vai para o pacote instalado. |
 
 ## 3. Inventário de tools (cada uma justificada por pergunta de persona)
@@ -108,20 +113,22 @@ pequeno com revisão humana. Execução por subagente em worktree isolada
 | **4** regressão | especificar_regressao, executar_regressao (fonte **ou** handle), coeficientes, metricas, listar_handles. | 3 | Teste sem banco com dados em memória; smoke: `ideb_fund_i ~ in_biblioteca + docentes` por `localizacao` via handle de `covariaveis_escola`. |
 | **5** ML | features_escola (amostra D5), classificar_desempenho, dividir_dados, treinar_floresta, importancia_floresta, metricas_floresta, pca_perfil. | 4 | Smoke: fluxo completo em amostra pequena dentro do teto de memória; nenhum objeto R vaza para o JSON. |
 | **6** personas | `R/ellmer_personas.R`: `prompt_persona()`, `registrar_tools(chat, tools, persona)`; `inst/prompts/*.md` (papel, vocabulário, perguntas típicas → tools, o que não fazer, pegadinhas `integer64` e IDEB só na mesma edição); `docs/ellmer.md` (matriz pergunta × tool com links para `docs/personas/`). | 2–5 | Teste: cada tool citada nos prompts existe; filtro por persona; matriz cobre todas as perguntas canônicas. |
-| **7** docs + aceite | `vignettes/ellmer.Rmd` (3 cenários, transcrições gravadas com `chat_anthropic()` no container); README "Uso com LLM"; `AGENTS.md` (testes só no container + camada ellmer); skill `r-edubr`; `memory.md`. Rodada de curadoria das 3 personas **usando o chat**. | 6 | Critérios de aceite da spec verificados com chat real e registrados em `docs/personas/`. |
+| **7** docs + aceite | `vignettes/ellmer.Rmd` (3 cenários, transcrições gravadas com `chat_edubr()` no container — Ollama via túnel e, com chave, Anthropic); README "Uso com LLM"; `AGENTS.md` (testes só no container + camada ellmer); skill `r-edubr`; `memory.md`. Rodada de curadoria das 3 personas **usando o chat**. | 6 | Critérios de aceite da spec verificados com chat real e registrados em `docs/personas/`. |
 
 ## 5. Riscos e mitigação
 
-- **Custo/limite da API Anthropic**: orçamento por sessão (D8) e modelo
-  configurável no `chat_anthropic(model = ...)`; transcrições gravadas uma
-  vez para a vignette.
+- **Custo/limite da API Anthropic**: orçamento por sessão (D8), modelo
+  configurável (`chat_edubr(modelo = )`) e Ollama local como alternativa
+  sem custo; transcrições gravadas uma vez para a vignette.
+- **Tool calling de modelos locais** (8–10B): mais sujeito a erros de
+  argumento que o Claude — por isso a validação antes do dbplyr e as
+  mensagens `parametro_invalido` acionáveis; o aceite do chunk 7 roda nos
+  dois provedores.
 - **Rede instável até o banco** (vista em 2026-10-08: quedas e picos de
   latência): timeout + erro `conexao` classificado; smoke tolerante a
   reexecução.
 - **Memória do container** no treino: D5 (amostra estratificada,
   `num.threads = 2`, `trees ≤ 500`).
-- **Tool calling de modelos pequenos**: não se aplica (Anthropic), mas as
-  descrições semânticas são escritas para não depender do modelo.
 
 ## 6. Fora de escopo (da spec)
 
