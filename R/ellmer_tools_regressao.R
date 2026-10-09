@@ -248,6 +248,15 @@ eduBR_contar_recorte <- function(tb) {
   as.numeric(n[1])
 }
 
+# Valores distintos (n\u00e3o nulos) do desfecho no recorte, contados no banco.
+eduBR_contar_niveis <- function(tb, coluna) {
+  tb <- dplyr::filter(tb, !is.na(.data[[coluna]]))
+  k <- dplyr::collect(
+    dplyr::summarise(tb, k = dplyr::n_distinct(.data[[coluna]]))
+  )$k
+  as.numeric(k[1])
+}
+
 # ---------------------------------------------------------------------------
 # especificar_regressao
 
@@ -491,6 +500,24 @@ eduBR_tool_executar_regressao <- function(sessao) {
           espec_id
         )
       )
+    }
+
+    if (identical(espec$modelo, "logistico")) {
+      # Desfecho da log\u00edstica precisa ter exatamente 2 valores no recorte.
+      niveis <- eduBR_contar_niveis(recorte, espec$outcome)
+      if (niveis != 2) {
+        eduBR_abortar(
+          "parametro_invalido",
+          sprintf(
+            paste0(
+              "O modelo log\u00edstico exige desfecho bin\u00e1rio, mas `%s` tem %s ",
+              "valores distintos no recorte de %s. Use `modelo = \"linear\"` ",
+              "ou um desfecho 0/1 (ex.: colunas `in_*`)."
+            ),
+            espec$outcome, format(niveis), espec_id
+          )
+        )
+      }
     }
 
     reg <- executar_regressao(sessao$con, espec, dados = dados)

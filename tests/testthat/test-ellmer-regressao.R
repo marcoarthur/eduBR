@@ -280,6 +280,25 @@ test_that("fluxo logístico: auc e mcfadden nas métricas", {
   expect_length(r$env$dados, 3L)
 })
 
+test_that("logístico com desfecho não binário é recusado antes de executar", {
+  s <- nova_sessao()
+  r <- chamar(s$tools$especificar_regressao, outcome = "ideb_fund_i",
+              predictors = "docentes", modelo = "logistico",
+              dados_id = s$dados_id)
+  expect_null(r$env$erro)
+  chamou <- FALSE
+  local_mocked_bindings(
+    executar_regressao = function(...) {
+      chamou <<- TRUE
+      stop("n\u00e3o deveria executar")
+    }
+  )
+  r <- chamar(s$tools$executar_regressao, espec_id = r$env$metadados$handle)
+  expect_equal(r$env$erro$tipo, "parametro_invalido")
+  expect_match(r$env$erro$mensagem, "desfecho bin", fixed = TRUE)
+  expect_false(chamou)
+})
+
 test_that("executar: corte pequeno fica sem modelo e é avisado", {
   base <- base_teste()
   base$localizacao[1:2] <- "Ilha"
