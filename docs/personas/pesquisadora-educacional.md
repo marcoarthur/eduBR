@@ -446,7 +446,7 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - **[baixa]** Cobertura de coordenadas: documentar em `escolas()` que
   ~19% das escolas ativas do Censo não têm coordenada (65% no AC) e fazer
   `as_sf()` informar (mensagem, não aviso) quantas geometrias vieram
-  vazias.
+  vazias (#99).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
