@@ -75,13 +75,22 @@ eduBR_texto_opcional <- function(x, nome) {
 #'   `"qwen3.5:9b"` (Ollama).
 #' @param tools Lista opcional de [ferramentas_edubr()] para registrar no
 #'   chat.
-#' @param system_prompt Instruções de sistema opcionais.
+#' @param system_prompt Instruções de sistema opcionais. Com `persona` (ou
+#'   `tools`), vão **depois** do prompt da persona, separadas por uma linha
+#'   em branco.
 #' @param base_url Endereço do servidor (só Ollama; Anthropic usa o padrão
 #'   do ellmer).
 #' @param echo Repassado ao ellmer (`"none"`, `"output"` ou `"all"`).
 #' @param ... Outros argumentos repassados ao construtor do ellmer.
+#' @param persona `NULL` ou uma de `"gestora-escolar"`,
+#'   `"pesquisadora-educacional"`, `"especialista-ml"`: o chat já sai com o
+#'   prompt de sistema da persona ([prompt_persona()]). Sem `persona`, usa
+#'   a persona com que `tools` foram criadas; `tools` sem persona recebem
+#'   um prompt genérico curto; sem `tools` nem `persona`, só
+#'   `system_prompt`. Uma `persona` diferente da das `tools` é erro.
 #'
-#' @return Um objeto `Chat` do ellmer, com o atributo `provedor`.
+#' @return Um objeto `Chat` do ellmer, com os atributos `provedor` e
+#'   `persona`.
 #'
 #' @examples
 #' \dontrun{
@@ -96,10 +105,13 @@ eduBR_texto_opcional <- function(x, nome) {
 #' chat$chat("Como está a infraestrutura da escola 13078070?")
 #' }
 #'
+#' @seealso [registrar_tools()], [prompt_persona()].
+#'
 #' @export
 chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
                        system_prompt = NULL, base_url = NULL,
-                       echo = c("none", "output", "all"), ...) {
+                       echo = c("none", "output", "all"), ...,
+                       persona = NULL) {
   rlang::check_installed("ellmer", reason = "para conversar com um LLM.")
   provedor <- eduBR_resolver_provedor(provedor)
   modelo <- eduBR_texto_opcional(modelo, "modelo")
@@ -110,6 +122,8 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
       (!is.list(tools) || is.null(attr(tools, "sessao")))) {
     stop("`tools` deve ser o resultado de ferramentas_edubr().", call. = FALSE)
   }
+  persona <- eduBR_persona_efetiva(persona, tools)
+  system_prompt <- eduBR_prompt_sistema(persona, tools, system_prompt)
 
   args <- list(system_prompt = system_prompt, echo = echo, ...)
   if (provedor == "anthropic") {
@@ -161,6 +175,7 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
     chat$register_tools(unname(tools))
   }
   attr(chat, "provedor") <- provedor
+  attr(chat, "persona") <- persona
   chat
 }
 

@@ -17,8 +17,9 @@ ferramentas_edubr(con, persona = NULL, limites = list())
 }
 \value{
 Uma lista nomeada de \code{ellmer::ToolDef}, com os atributos
-\code{ledger} (ambiente lido por \code{\link[=ledger]{ledger()}}) e \code{sessao}. Registre-a num chat
-com \code{chat$register_tools(tools)}.
+\code{ledger} (ambiente lido por \code{\link[=ledger]{ledger()}}), \code{sessao} e \code{persona} (ausente
+quando \code{persona = NULL}). Registre-a num chat com \code{\link[=registrar_tools]{registrar_tools()}}
+(ferramentas + prompt da persona) ou com \code{\link[=chat_edubr]{chat_edubr()}}.
 }
 \description{
 Cria uma lista de ferramentas (\code{ellmer::tool()}) que expõem o \code{eduBR} a
@@ -138,7 +139,7 @@ em CSV (por padrão em \verb{tools::R_user_dir("eduBR", "data")/ledger/}).
 con <- conecta(service = "edumaps")
 tools <- ferramentas_edubr(con, persona = "pesquisadora-educacional")
 chat <- ellmer::chat_anthropic()
-chat$register_tools(tools)
+registrar_tools(chat, tools)
 chat$chat("Quais anos de IDEB existem na base?")
 ledger(tools)
 }

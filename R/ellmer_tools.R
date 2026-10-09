@@ -972,15 +972,16 @@ eduBR_tools_registro <- function() {
 #' @param limites Lista nomeada de limites (ver seção *Limites*).
 #'
 #' @return Uma lista nomeada de `ellmer::ToolDef`, com os atributos
-#'   `ledger` (ambiente lido por [ledger()]) e `sessao`. Registre-a num chat
-#'   com `chat$register_tools(tools)`.
+#'   `ledger` (ambiente lido por [ledger()]), `sessao` e `persona` (ausente
+#'   quando `persona = NULL`). Registre-a num chat com [registrar_tools()]
+#'   (ferramentas + prompt da persona) ou com [chat_edubr()].
 #'
 #' @examples
 #' \dontrun{
 #' con <- conecta(service = "edumaps")
 #' tools <- ferramentas_edubr(con, persona = "pesquisadora-educacional")
 #' chat <- ellmer::chat_anthropic()
-#' chat$register_tools(tools)
+#' registrar_tools(chat, tools)
 #' chat$chat("Quais anos de IDEB existem na base?")
 #' ledger(tools)
 #' }
@@ -1004,5 +1005,6 @@ ferramentas_edubr <- function(con, persona = NULL, limites = list()) {
 
   attr(tools, "ledger") <- sessao$ledger
   attr(tools, "sessao") <- sessao
+  attr(tools, "persona") <- persona
   tools
 }

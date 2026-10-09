@@ -11,7 +11,8 @@ chat_edubr(
   system_prompt = NULL,
   base_url = NULL,
   echo = c("none", "output", "all"),
-  ...
+  ...,
+  persona = NULL
 )
 }
 \arguments{
@@ -24,7 +25,9 @@ chat_edubr(
 \item{tools}{Lista opcional de \code{\link[=ferramentas_edubr]{ferramentas_edubr()}} para registrar no
 chat.}
 
-\item{system_prompt}{Instruções de sistema opcionais.}
+\item{system_prompt}{Instruções de sistema opcionais. Com \code{persona} (ou
+\code{tools}), vão \strong{depois} do prompt da persona, separadas por uma linha
+em branco.}
 
 \item{base_url}{Endereço do servidor (só Ollama; Anthropic usa o padrão
 do ellmer).}
@@ -32,9 +35,17 @@ do ellmer).}
 \item{echo}{Repassado ao ellmer (\code{"none"}, \code{"output"} ou \code{"all"}).}
 
 \item{...}{Outros argumentos repassados ao construtor do ellmer.}
+
+\item{persona}{\code{NULL} ou uma de \code{"gestora-escolar"},
+\code{"pesquisadora-educacional"}, \code{"especialista-ml"}: o chat já sai com o
+prompt de sistema da persona (\code{\link[=prompt_persona]{prompt_persona()}}). Sem \code{persona}, usa
+a persona com que \code{tools} foram criadas; \code{tools} sem persona recebem
+um prompt genérico curto; sem \code{tools} nem \code{persona}, só
+\code{system_prompt}. Uma \code{persona} diferente da das \code{tools} é erro.}
 }
 \value{
-Um objeto \code{Chat} do ellmer, com o atributo \code{provedor}.
+Um objeto \code{Chat} do ellmer, com os atributos \code{provedor} e
+\code{persona}.
 }
 \description{
 Cria um chat do \href{https://ellmer.tidyverse.org}{ellmer} com um de dois
@@ -70,4 +81,7 @@ chat <- chat_edubr("ollama", modelo = "qwen3.5:9b", tools = tools)
 chat$chat("Como está a infraestrutura da escola 13078070?")
 }
 
+}
+\seealso{
+\code{\link[=registrar_tools]{registrar_tools()}}, \code{\link[=prompt_persona]{prompt_persona()}}.
 }
