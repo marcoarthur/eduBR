@@ -138,3 +138,9 @@ implementação ficam no código; memória de curadoria fica em
   `--as-cran`; NOTE "unable to verify current time" é ambiental (APIs de
   hora inacessíveis do container).
 - `AGENTS.md` corrigido: testes só no container (`tools/test-container.sh`).
+
+## 2026-10-09 — `qpdf` no container
+
+- O container `rstudio.dev` tem `qpdf` (apt, instalado em 2026-10-09 durante
+  o chunk 7 da camada ellmer). Sem ele o `check` com vignette dá o warning
+  "'qpdf' is needed". **Decisão do dono do repo: manter.**
