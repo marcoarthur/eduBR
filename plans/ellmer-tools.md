@@ -1,7 +1,8 @@
 # Plano — camada `ellmer` do `eduBR`
 
-> Status: **proposto** (2026-10-08). Aguarda aprovação antes de qualquer
-> código. Spec de origem: pedido "Tornar `eduBR` consumível por LLMs via
+> Status: **implementado** (2026-10-09): chunks 0–6 em `main` (PRs
+> #61–#68); chunk 7 (docs + aceite) na branch
+> `feat/edubr-ellmer-chunk7-docs`. Proposto em 2026-10-08. Spec de origem: pedido "Tornar `eduBR` consumível por LLMs via
 > `ellmer`" (2026-10-08). Decisões tomadas com o dono do repo estão em
 > `memory.md` (entrada de 2026-10-08).
 
@@ -114,6 +115,35 @@ pequeno com revisão humana. Execução por subagente em worktree isolada
 | **5** ML | features_escola (amostra D5), classificar_desempenho, dividir_dados, treinar_floresta, importancia_floresta, metricas_floresta, pca_perfil. | 4 | Smoke: fluxo completo em amostra pequena dentro do teto de memória; nenhum objeto R vaza para o JSON. |
 | **6** personas | `R/ellmer_personas.R`: `prompt_persona()`, `registrar_tools(chat, tools, persona)`; `inst/prompts/*.md` (papel, vocabulário, perguntas típicas → tools, o que não fazer, pegadinhas `integer64` e IDEB só na mesma edição); `docs/ellmer.md` (matriz pergunta × tool com links para `docs/personas/`). | 2–5 | Teste: cada tool citada nos prompts existe; filtro por persona; matriz cobre todas as perguntas canônicas. |
 | **7** docs + aceite | `vignettes/ellmer.Rmd` (3 cenários, transcrições gravadas com `chat_edubr()` no container — Ollama via túnel e, com chave, Anthropic); README "Uso com LLM"; `AGENTS.md` (testes só no container + camada ellmer); skill `r-edubr`; `memory.md`. Rodada de curadoria das 3 personas **usando o chat**. | 6 | Critérios de aceite da spec verificados com chat real e registrados em `docs/personas/`. |
+
+### Status dos chunks
+
+| Chunk | PR | Status |
+|---|---|---|
+| 0 infra | #61 | ✓ mergeado |
+| 1 núcleo | #62 | ✓ mergeado |
+| 2 escola/gestora | #63 | ✓ mergeado |
+| 3 pesquisa | #64 | ✓ mergeado |
+| 4 regressão | #65 | ✓ mergeado |
+| provedores (D18: `chat_edubr()`, Ollama) | #66 | ✓ mergeado |
+| 5 ML | #67 | ✓ mergeado |
+| 6 personas | #68 | ✓ mergeado |
+| 7 docs + aceite | (esta branch) | ✓ implementado; aguarda revisão |
+
+### Critérios de aceite da spec (verificados em 2026-10-09)
+
+| Critério | Status |
+|---|---|
+| Gestora responde sem SQL chamando `perfil_escola` e `escolas_similares` (13078070) | ✓ chat real (Ollama); ressalvas de prosa |
+| Regressão declarativa por linguagem natural (`covariaveis_escola` → `especificar_regressao` → `executar_regressao` → `coeficientes`/`metricas`) | ✓ após 2 correções da camada; o modelo não chamou `metricas` |
+| Fluxo de ML com o LLM escolhendo argumentos (`features_escola` → … → `metricas_floresta`) | ✓ com raciocínio desligado; sem `importancia_floresta`; denominadores inventados na prosa |
+| Nenhum retorno com nome físico, `integer64` cru ou acima do teto | ✓ testes + checagem das transcrições (0 ocorrências; máx. 14 linhas nas aceitas) |
+| Ledger registra as chamadas | ✓ (argumentos recusados pelo ellmer antes da tool não entram) |
+| Vignette com transcrições gravadas, `check` sem nova nota/warning | ✓ (`qpdf` instalado no container) |
+| Aceite com Anthropic | **pendente**: conta sem créditos |
+
+Detalhes e lições: `memory.md` (2026-10-09); curadoria com o chat em
+`docs/personas/`.
 
 ## 5. Riscos e mitigação
 

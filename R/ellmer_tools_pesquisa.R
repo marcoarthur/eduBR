@@ -505,6 +505,22 @@ eduBR_tool_tendencia_ideb_regiao <- function(sessao) {
 # ---------------------------------------------------------------------------
 # covariaveis_escola
 
+# Escolas da base e escolas com IDEB por etapa (contagem no banco). A
+# prévia pode vir toda com IDEB nulo; sem a contagem, o modelo desconfia da
+# base e desvia para outras tools (aceite com chat real, 2026-10-09).
+eduBR_contar_respostas <- function(cv, respostas) {
+  tb <- consulta(cv)
+  exprs <- c(
+    list(n_escolas = rlang::quo(dplyr::n())),
+    lapply(respostas, function(r) {
+      rlang::quo(sum(ifelse(is.na(.data[[r]]), 0L, 1L), na.rm = TRUE))
+    })
+  )
+  names(exprs) <- c("n_escolas", respostas)
+  res <- dplyr::collect(dplyr::summarise(tb, !!!exprs))
+  vapply(res, function(v) as.numeric(v)[1], numeric(1))
+}
+
 eduBR_tool_covariaveis_escola <- function(sessao) {
   fun <- function(uf = NULL, rede = NULL, ano = 2025L, ano_ideb = 2023L,
                   ativas = TRUE, n = NULL) {
@@ -519,6 +535,9 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
       ativas = ativas
     )
     colunas <- as.character(dplyr::tbl_vars(consulta(cv)))
+    respostas <- intersect(c("ideb_fund_i", "ideb_fund_ii", "ideb_medio"),
+                           colunas)
+    contagem <- eduBR_contar_respostas(cv, respostas)
     id <- eduBR_handle_guardar(
       sessao, "dados", cv,
       descricao = eduBR_handle_descrever(
@@ -537,19 +556,31 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
       aviso = sprintf(
         paste0(
           "Pr\u00e9via: a base completa (uma linha por escola) fica no handle ",
-          "%s; use-o como `dados` em `executar_regressao`, n\u00e3o reconstrua ",
-          "a tabela a partir da pr\u00e9via."
+          "%s. Pr\u00f3ximo passo: `especificar_regressao(dados_id = \"%s\", ",
+          "...)` e depois `executar_regressao` com o `espec_<k>` devolvido; ",
+          "n\u00e3o reconstrua a tabela a partir da pr\u00e9via. IDEB `null` na ",
+          "pr\u00e9via \u00e9 esperado (escola sem a etapa ou sem nota): a ",
+          "regress\u00e3o descarta essas linhas, n\u00e3o \u00e9 preciso buscar o ",
+          "IDEB em outra ferramenta. Na base: %s escolas; com IDEB: %s."
         ),
-        id
+        id, id, format(contagem[["n_escolas"]], scientific = FALSE),
+        if (length(respostas)) {
+          paste(sprintf("%s = %s", respostas,
+                        format(contagem[respostas], scientific = FALSE,
+                               trim = TRUE)),
+                collapse = ", ")
+        } else {
+          "nenhuma coluna de IDEB"
+        }
       ),
       contexto = list(
         handle = id,
         ano_censo = ano,
         edicao_ideb = ano_ideb,
         colunas = I(colunas),
-        respostas = I(intersect(
-          c("ideb_fund_i", "ideb_fund_ii", "ideb_medio"), colunas
-        )),
+        respostas = I(respostas),
+        n_escolas = contagem[["n_escolas"]],
+        n_com_ideb = as.list(contagem[respostas]),
         cortes = I(intersect(c("rede", "localizacao", "sg_uf"), colunas))
       )
     )
@@ -565,13 +596,14 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
       "por etapa (`ideb_fund_i`, `ideb_fund_ii`, `ideb_medio`; `null` sem ",
       "nota). A base N\u00c3O \u00e9 devolvida inteira: fica guardada na sess\u00e3o e a ",
       "resposta traz `metadados.handle` (ex.: \"dados_1\") para usar em ",
-      "`executar_regressao`, uma pr\u00e9via de poucas linhas (`n`, padr\u00e3o 10) e, ",
+      "`especificar_regressao(dados_id = )`, uma pr\u00e9via de poucas linhas (`n`, padr\u00e3o 10) e, ",
       "em `metadados.contexto`, a lista de colunas, as respostas (IDEB) e os ",
       "cortes dispon\u00edveis. Cuidados: `ano` (Censo, padr\u00e3o 2025) e ",
       "`ano_ideb` (padr\u00e3o 2023) s\u00e3o fixos para todas as escolas (corte ",
       "transversal); `ativas = true` mant\u00e9m s\u00f3 escolas em atividade; ",
       "`co_entidade` chega como texto; IDEB nulo em escolas que n\u00e3o ofertam a ",
-      "etapa ou n\u00e3o foram avaliadas."
+      "etapa ou n\u00e3o foram avaliadas (a base j\u00e1 traz o IDEB: n\u00e3o ",
+      "\u00e9 preciso juntar com `ideb`)."
     ),
     arguments = list(
       uf = eduBR_arg_uf(),

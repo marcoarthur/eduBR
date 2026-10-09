@@ -34,6 +34,30 @@ R/
   floresta.R      dividir_dados(), treinar_floresta(), importancia_floresta(),
                   predizer_floresta(), metricas_floresta(), print.eduBR_floresta()
   gestor.R        gestores(), perfil_gestor() (perfil modal de diretores)
+  perfil.R        perfil_escola(), comparar(), resumo_escola(), exportar()
+  covariaveis.R   covariaveis_escola()
+  similaridade.R  municipios_similares(), escolas_similares() (k-NN no banco)
+  censo_docentes.R docentes_rede()
+  pca.R           pca_perfil()
+  geo.R           as_sf()
+  dicionario.R    dicionario(), rotular()
+  ellmer_tools.R          núcleo da camada LLM: limites, sessão, envelope,
+                          serialização, anti-vazamento, timeout, erros,
+                          handles, eduBR_tools_registro(), ferramentas_edubr()
+  ellmer_tools_escola.R   perfil_escola, resumo_escola, serie_ideb_escola,
+                          escolas_similares, scores_escola, indicadores_escola
+  ellmer_tools_pesquisa.R municipios, redes_municipio, docentes_rede, ideb,
+                          tendencia_ideb_regiao, covariaveis_escola, perfil_gestor
+  ellmer_tools_regressao.R especificar_regressao, executar_regressao,
+                          coeficientes, metricas, listar_handles
+  ellmer_tools_ml.R       features_escola, classificar_desempenho,
+                          dividir_dados, treinar_floresta,
+                          importancia_floresta, metricas_floresta, pca_perfil
+  ellmer_ledger.R         ledger(), orçamento (chamadas/linhas), CSV opcional
+  ellmer_personas.R       prompt_persona(), registrar_tools()
+  ellmer_chat.R           chat_edubr() (anthropic | ollama)
+inst/prompts/   <persona>.md — prompts de sistema (lidos por prompt_persona())
+vignettes/      ellmer.Rmd — 3 cenários com transcrições reais (eval = FALSE)
 ```
 
 Todo objeto é uma lista com `tbl` (consulta `dbplyr`), `con` (conexão) e
@@ -242,6 +266,75 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
   podem ficar UTF-8); fixture de teste deve cobrir **todas** as colunas de
   contagem de todas as dimensões usadas no teste.
 
+## Camada ellmer (LLM)
+
+Plano e decisões (D1–D18): `plans/ellmer-tools.md`; matriz pergunta ×
+tool: `docs/ellmer.md`; uso: vignette `ellmer`. `ellmer` (0.5.0) e
+`jsonlite` em **Suggests** (`rlang::check_installed()`).
+
+**Padrões (toda tool segue):**
+
+- **Validação antes do dbplyr**: `eduBR_validar_*()` (UF com 27 siglas,
+  rede, etapa, edição bienal, ano do Censo, `n`, lógicos) recusa argumentos
+  ruins com `parametro_invalido` e mensagem acionável (o modelo corrige o
+  argumento). Nada de mandar valor cru para `filter()`.
+- **Envelope único** (`eduBR_resultado()` / `eduBR_abortar(tipo, msg)`):
+  a tool devolve uma **string JSON** `{dados, metadados, erro}`;
+  `metadados = {grao, filtros, n, n_total, truncado, aviso, handle,
+  colunas_omitidas, contexto}`. Erros: `parametro_invalido`, `sem_dados`,
+  `limite_excedido`, `conexao` (mensagem genérica; nunca o texto do
+  Postgres/host).
+- **Serialização** (`eduBR_serializar()`): `integer64` → texto, datas ISO,
+  fatores → texto, `NaN`/`Inf` → `null`, geometria removida, colunas PII
+  (endereço, telefone, CEP, CNPJ) omitidas e listadas em
+  `colunas_omitidas`. `eduBR_anti_vazamento()` garante que nenhum
+  `schema.tabela` do catálogo apareça no JSON (teste varre todas as tools).
+- **Tetos**: até 1000 linhas por resposta (`eduBR_hard_cap()`, via
+  `coletar(n =)`); coletas internas para treino/regressão até
+  `limites$max_amostra` (15 000; máx. 30 000), nunca devolvidas ao modelo;
+  timeout por chamada (`statement_timeout` + `setTimeLimit`); orçamento da
+  sessão (`max_chamadas` 50, `max_linhas_total` 10 000) → `limite_excedido`.
+- **Handles** (`eduBR_handle_guardar()/obter()`): objetos R (base lazy,
+  espec, regressão, treino/teste, floresta) ficam no ambiente da sessão; o
+  modelo recebe `dados_<k>`, `espec_<k>`, `regressao_<k>`, `treino_<k>`,
+  `teste_<k>`, `floresta_<k>`. O `aviso` de quem cria um handle deve dizer
+  **qual tool e qual argumento** usam o handle a seguir (o aceite mostrou
+  que o modelo de 9B segue esse texto ao pé da letra).
+- **Ledger**: toda chamada (inclusive recusada) entra em `ledger(tools)`
+  com argumentos JSON, linhas, duração e tipo de erro.
+- **Personas**: `eduBR_tools_registro()` diz quais personas veem cada tool;
+  `ferramentas_edubr(con, persona =)` filtra; `chat_edubr()`/
+  `registrar_tools()` anexam o prompt `inst/prompts/<persona>.md`.
+
+**Adicionar uma tool:**
+
+1. `eduBR_tool_<nome>(sessao)` no arquivo do grupo: `fun` valida, chama a
+   função de domínio (sem reescrevê-la), devolve `eduBR_resultado(...)`;
+   `eduBR_tool(sessao, "<nome>", fun, descricao =, arguments = list(...),
+   titulo =)` com `ellmer::type_*()` (enums quando houver domínio fechado).
+2. Entrada em `eduBR_tools_registro()` com `personas`.
+3. Linha no prompt das personas que a usam (`inst/prompts/`) e na matriz
+   `docs/ellmer.md` (bloco gerado `tools-por-persona`).
+4. Testes sem banco (`local_mocked_bindings()` na função de domínio):
+   envelope, validação, sem vazamento (`expect_sem_vazamento()`); smoke em
+   `test-ellmer-smoke.R`. Strings com acento em `\uXXXX`.
+
+**Aceite com chat real (2026-10-09, `qwen3.5:9b` via Ollama)**: as três
+personas encadeiam as tools certas com argumentos escolhidos pelo modelo
+(gestora: `perfil_escola`, `escolas_similares`; pesquisadora:
+`covariaveis_escola` → `especificar_regressao` → `executar_regressao` →
+`coeficientes`; ML: `features_escola` → `classificar_desempenho` →
+`dividir_dados` → `treinar_floresta` → `metricas_floresta`); números das
+tabelas conferem com as tools, mas a prosa do 9B erra contas derivadas.
+O aceite achou dois bugs da camada (aviso de `covariaveis_escola` apontando
+argumento inexistente; `etapa` em fator recusada — o ellmer converte
+`type_array(type_enum())` em **fator**) e motivou a contagem de escolas com
+IDEB na prévia. Janela de 16k tokens do Ollama e turnos "só raciocínio"
+são os limites do runtime (ML só completou com
+`api_args = list(reasoning_effort = "none")`). Anthropic não testada
+(conta sem créditos). Transcrições: `docs/aceite-ellmer/`; script:
+`tools/aceite-ellmer.R`.
+
 ## Conexão
 
 `conecta(service = "edumaps")` valida o argumento e delega a
@@ -250,23 +343,30 @@ permite **teste sem banco** (mock). Nunca hardcode host/senha.
 
 ## Testes
 
-```r
-devtools::test()                  # unitários (sem banco)
-EDUBR_SMOKE=1 Rscript -e 'devtools::test()'   # + smoke contra o [edumaps]
+Só no container `rstudio.dev`, como `rsuser` (dbplyr 2.5 lá × 2.6 local):
+
+```bash
+tools/test-container.sh                 # unitários (sem banco)
+tools/test-container.sh --smoke         # + EDUBR_SMOKE=1 (banco real)
+tools/test-container.sh --llm ollama    # + smoke com LLM (túnel aberto)
+tools/test-container.sh --check         # devtools::check() (com vignette)
 ```
 
 - testthat 3ª edição (`Config/testthat/edition: 3`).
 - Testes de domínio **não** tocam o banco: verifique classe, `$tbl`/
   `consulta()` e SQL gerado (`dbplyr::sql_render()`), com uma conexão falsa
   ou `mockery`/`local_mocked_bindings()` sobre `eduBR_dbConnect()`.
-- O smoke (`test-smoke.R`) é pulado via `skip_if(Sys.getenv("EDUBR_SMOKE") == "")`.
+- O smoke (`test-smoke.R`, `test-ellmer-smoke.R`) é pulado sem
+  `EDUBR_SMOKE`; o do LLM (`test-ellmer-chat.R`) sem `EDUBR_LLM_SMOKE`.
 
 ## Tooling
 
 - **Roxygen2** com `markdown = TRUE`; todo `export()` gera entrada em
   `NAMESPACE` e `man/*.Rd` — nunca editar esses arquivos à mão.
 - Após mudar docs: `devtools::document()`.
-- Antes de PR: `devtools::test()` e `devtools::check()`.
+- Antes de PR: `tools/test-container.sh --smoke` e `--check` (0 erros,
+  0 notas; 2 warnings pré-existentes: não-ASCII em `R/pca.R`/`R/perfil.R`
+  e link `eduBR_tbl`).
 - Dependências: `DESCRIPTION` → `Imports` (`DBI`, `RPostgres`, `dplyr`,
   `dbplyr`, `tibble`, `rlang`); dev em `Suggests`.
 - Comentários/docs em **PT-BR**; mensagens de erro em PT-BR com
@@ -306,6 +406,21 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   etapas padrão em `escolas_similares()` (#52); IDEB de etapa não ofertada
   sinalizado no perfil (#53); `pca_perfil(excluir =, redundantes =)` e
   report de PCA sem os `*_score` redundantes (#54).
-- Próximo passo: rodada das personas para verificar #52–#54.
+- Camada `ellmer` (2026-10-08/09, PRs #61–#68 + chunk 7): tools por
+  persona, ledger, orçamento, `chat_edubr()` (Anthropic/Ollama), prompts,
+  vignette e aceite com chat real. Rodada de curadoria **com o chat**
+  (2026-10-09): ver `docs/personas/`.
+- Backlog da camada ellmer:
+  - **[alta]** Aceite com Anthropic (bloqueado: conta sem créditos).
+  - **[média]** Opção em `chat_edubr()` para desligar o raciocínio do
+    Ollama (hoje via `...`: `api_args = list(reasoning_effort = "none")`)
+    e documentar a janela de contexto (`OLLAMA_CONTEXT_LENGTH`).
+  - **[média]** Prévias mais enxutas: `features_escola` devolve uma prévia
+    de 80 colunas e `covariaveis_escola` aceita `n` alto (100 linhas × 30
+    colunas estourou a janela de 16k do Ollama).
+  - **[baixa]** Argumento inexistente é recusado pelo ellmer antes da tool
+    e não entra no `ledger()`.
+  - **[baixa]** Tool de dicionário de rótulos; `registrar_relacao()` segue
+    fora (só leitura).
 - Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

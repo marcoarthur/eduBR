@@ -196,6 +196,18 @@ test_that("features_escola: teto da amostra, semente e resumo por etapa", {
   expect_sem_objetos_r(r$json)
 })
 
+test_that("etapa como fator (array de enum convertido pelo ellmer) é aceita", {
+  # ellmer converte `type_array(type_enum())` em fator; o aceite com chat
+  # real recusava etapa = ["fundamental_ii"] por isso.
+  expect_equal(eduBR_validar_etapas(factor("fundamental_ii",
+                                           levels = eduBR_etapas_features())),
+               "fundamental_ii")
+  expect_equal(eduBR_validar_etapas(list(factor("ensino_medio"),
+                                         "fundamental_i")),
+               c("ensino_medio", "fundamental_i"))
+  expect_error(eduBR_validar_etapas(factor("medio")), class = "eduBR_erro_tool")
+})
+
 test_that("validações: trees, prop, features com nota -> parametro_invalido", {
   chamou <- 0L
   local_mocked_bindings(

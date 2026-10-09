@@ -35,6 +35,43 @@
 
 ## Entradas
 
+### 2026-10-09 — 10ª rodada (pergunta ao chat, camada `ellmer`)
+
+Foco: o fluxo de classificação pedido em linguagem natural a um LLM
+(`chat_edubr("ollama")`, `qwen3.5:9b`,
+`ferramentas_edubr(con, persona = "especialista-ml")`), com o modelo
+escolhendo os argumentos. Transcrições: `docs/aceite-ellmer/ml_r1.md` …
+`ml_r3.md`.
+
+**M32 — "Treine uma floresta aleatória para classificar o desempenho
+(terços da nota) das escolas públicas do fundamental II, com amostra
+reprodutível, e avalie contra o baseline."**
+- Tentativa 1: `features_escola(etapa = ["fundamental_ii"])` recusada com
+  "`etapa` inválida: fundamental_ii" — **bug da camada**: o ellmer converte
+  `type_array(type_enum())` em fator e o validador só aceitava texto.
+  Corrigido com teste.
+- Tentativa 2 (após a correção, com raciocínio): `features_escola` →
+  `classificar_desempenho` e o turno terminou só com raciocínio (resposta
+  vazia; o pedido de continuação falhou com HTTP 400 do Ollama).
+- Tentativa 3 (mesma pergunta, raciocínio desligado com
+  `api_args = list(reasoning_effort = "none")`), 49 s:
+  `features_escola(etapa = ["fundamental_ii"], publica = true,
+  n_por_etapa = 3000, semente = 2023)` → `classificar_desempenho(dados_1,
+  nota = "nota_media", grupo = "etapa")` → `dividir_dados(dados_2, prop =
+  0.8, semente = 2023)` → `treinar_floresta(treino_1, trees = 250,
+  min_node_size = 5, semente = 2023)` → `metricas_floresta(floresta_1,
+  teste_1)`.
+- Conferido: 3.000 de 31.078 escolas; cortes 4,73/5,35; treino 2.401,
+  teste 599; acurácia 0,608 × baseline 0,336; F1 macro 0,602; AUC macro
+  0,778; F1 por classe 0,68/0,49/0,64 — iguais ao retorno. Nota fora dos
+  preditores (vazamento) e teste da mesma divisão.
+- Erros do modelo: denominadores da matriz de confusão inventados
+  (253/245/607; o real é 198/201/200); "ganho de 27%" para 0,27 ponto;
+  chama de "mais graves" os erros entre classes vizinhas; "%%" na
+  formatação. Não chamou `importancia_floresta`.
+- Status: **✓ atendido** (com ressalvas: só sem raciocínio; prosa com
+  contas erradas).
+
 ### 2026-10-08 — 9ª rodada (verificação de #48 e efeito dos `*_score`)
 
 **M31 — componentes nulos e scores redundantes.**
@@ -359,8 +396,19 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - [x] Covariáveis do perfil para modelos (#37).
 - [x] PCA sem códigos `tp_*`, sinal fixo e report revisado (#40).
 - [ ] Série histórica de INSE (bloqueada por dados no pipeline EduMaps).
+- [ ] Repetir M32 com o provedor Anthropic (conta sem créditos em
+  2026-10-09).
+- [ ] Follow-up M33: pelo chat, "quais features importam? retreine só com
+  as 20 primeiras e compare" (`importancia_floresta` → `treinar_floresta`
+  com `features` → `metricas_floresta` no mesmo teste).
 
 ## Sugestões priorizadas
+
+- **[média]** `chat_edubr()`: opção explícita para desligar o raciocínio
+  do Ollama (o `qwen3.5:9b` só completou o fluxo assim) e prévia de
+  `features_escola` mais enxuta (80 colunas no `contexto`).
+- **[baixa]** `metricas_floresta`: devolver o total real por classe no
+  teste junto da matriz, para o modelo não "inventar" denominadores.
 
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
@@ -370,6 +418,13 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
   (#54).
 
 ## Veredito
+
+- **Aprova com ressalvas** (2026-10-09, 10ª rodada, chat com
+  `qwen3.5:9b`): o fluxo completo (amostra reprodutível → terços → holdout
+  → floresta → métricas contra o baseline) sai de uma pergunta, com
+  argumentos escolhidos pelo modelo e sem vazamento; métricas conferem.
+  Ressalvas: exigiu corrigir a camada (`etapa` em fator) e desligar o
+  raciocínio; a prosa inventa denominadores. Anthropic não testada.
 
 - **Aprova** (2026-10-08, 9ª rodada): saída da PCA sem componentes
   degenerados e com diagnóstico de colinearidade; o efeito dos scores

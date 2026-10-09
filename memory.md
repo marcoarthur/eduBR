@@ -103,3 +103,44 @@ implementação ficam no código; memória de curadoria fica em
 - Smoke com LLM real: `tools/test-container.sh --llm ollama|anthropic`
   (Ollama com túnel aberto). Primeiro resultado: `qwen3.5:9b` chamou
   `catalogo` e respondeu "16" em ~19 s.
+
+## 2026-10-09 — chunk 7: aceite com chat real, vignette e docs
+
+- **Aceite** (`qwen3.5:9b` via Ollama + túnel; transcrições em
+  `docs/aceite-ellmer/`, script `tools/aceite-ellmer.R`): gestora
+  (`perfil_escola`, `escolas_similares`), pesquisadora (`covariaveis_escola`
+  → `especificar_regressao` → `executar_regressao` → `coeficientes`) e ML
+  (`features_escola` → `classificar_desempenho` → `dividir_dados` →
+  `treinar_floresta` → `metricas_floresta`) encadeiam as tools com
+  argumentos escolhidos pelo modelo. Números das tabelas conferem com as
+  tools; a prosa do 9B erra contas derivadas (denominadores inventados,
+  "ganho de 27%" em vez de 0,27 ponto, conselhos fora dos dados). Todos
+  "atende com ressalvas". **Anthropic não testada**: conta sem créditos
+  (HTTP 400 "credit balance is too low").
+- **Bugs da camada achados pelo aceite** (corrigidos com teste): o aviso de
+  `covariaveis_escola` mandava usar o handle como `dados` em
+  `executar_regressao` (argumento inexistente); o ellmer converte
+  `type_array(type_enum())` em **fator**, e `features_escola` recusava
+  `etapa = ["fundamental_ii"]`. A prévia de covariáveis agora traz a
+  contagem de escolas com IDEB (a prévia de 10 linhas vem toda nula e o
+  modelo desviava para a tool `ideb`).
+- **Lição — o modelo segue o `aviso` ao pé da letra**: o texto de
+  "próximo passo" de cada tool precisa nomear a tool e o argumento certos.
+- **Lição — janela do Ollama**: 16k tokens (`OLLAMA_CONTEXT_LENGTH`); o
+  prompt + 14 tools da pesquisadora já ocupam ~8,5k. Prévias largas
+  estouram a janela e o modelo "esquece" a pergunta.
+- **Lição — raciocínio do qwen3.5**: com *thinking*, turnos terminam só
+  com raciocínio (resposta vazia) e o chat seguinte falha com HTTP 400
+  `invalid message content type: <nil>`; o fluxo de ML só completou com
+  `api_args = list(reasoning_effort = "none")`. Não mudamos o padrão de
+  `chat_edubr()` (a regressão da pesquisadora foi melhor com raciocínio).
+- **Check com vignette**: `qpdf` instalado no container (apt) para o
+  `--as-cran`; NOTE "unable to verify current time" é ambiental (APIs de
+  hora inacessíveis do container).
+- `AGENTS.md` corrigido: testes só no container (`tools/test-container.sh`).
+
+## 2026-10-09 — `qpdf` no container
+
+- O container `rstudio.dev` tem `qpdf` (apt, instalado em 2026-10-09 durante
+  o chunk 7 da camada ellmer). Sem ele o `check` com vignette dá o warning
+  "'qpdf' is needed". **Decisão do dono do repo: manter.**

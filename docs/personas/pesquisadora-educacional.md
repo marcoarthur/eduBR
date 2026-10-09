@@ -38,6 +38,44 @@
 
 ## Entradas
 
+### 2026-10-09 — 8ª rodada (pergunta ao chat, camada `ellmer`)
+
+Foco: regressão declarativa pedida em linguagem natural a um LLM
+(`chat_edubr("ollama")`, `qwen3.5:9b`,
+`ferramentas_edubr(con, persona = "pesquisadora-educacional")`).
+Transcrições: `docs/aceite-ellmer/pesq_r1.md` … `pesq_r6.md`.
+
+**R18 — "No Acre, rede municipal, o IDEB do fundamental I se associa a ter
+biblioteca e ao número de docentes? Separe por localização urbana/rural."**
+- Tentativas 1–5 (mesma pergunta; a 5ª reformulada pedindo prévia curta e
+  resposta concisa): **não atendida**. O modelo abria a base com
+  `covariaveis_escola`, via a prévia toda com IDEB nulo e ia buscar o IDEB
+  em `ideb` (50–100 linhas), estourando a janela de 16k tokens do Ollama;
+  em duas, o turno acabou só com raciocínio (resposta vazia), uma delas
+  depois de encadear as quatro tools corretamente; sem raciocínio, o
+  modelo descreveu a prévia com afirmações inventadas ("IDEB ainda sendo
+  consolidado").
+- Diagnóstico: **falha da camada** em parte — o aviso da prévia mandava
+  usar o handle como `dados` em `executar_regressao` (argumento
+  inexistente) e não explicava o IDEB nulo. Corrigido (aviso aponta
+  `especificar_regressao(dados_id =)` e traz a contagem de escolas com
+  IDEB na base) — e em parte **limite do modelo/runtime** (janela,
+  raciocínio).
+- Tentativa 6 (pergunta original, após as correções): `covariaveis_escola
+  (uf = "AC", rede = "Municipal", ativas = true, n = 10)` →
+  `especificar_regressao(outcome = "ideb_fund_i", predictors =
+  ["in_biblioteca", "docentes"], cuts = ["localizacao"], dados_id =
+  "dados_1")` → `executar_regressao(espec_1)` → `coeficientes`; 85 s.
+  Conferido: 885 escolas no recorte, 127 usadas (84 urbanas, 43 rurais);
+  biblioteca −0,541 (EP 0,582; p 0,358) rural e −0,599 (EP 0,300; p
+  0,049) urbana; docentes +0,0008 (p 0,980) e +0,031 (p 0,086) — todos
+  iguais ao retorno. Lê como associação, cita seleção e cobertura do IDEB.
+- Ressalvas: não chamou `metricas` (sem R²/n por modelo além do de
+  `executar_regressao`); atribuiu a `docentes` a nota de "vínculos" que é
+  de `docentes_rede`; diferença de interceptos com sinal ambíguo.
+- Status: **✓ atendido** (com ressalvas; 1 de 6 execuções, a única após
+  as correções).
+
 ### 2026-10-08 — 7ª rodada (pendências externas)
 
 **R17 — houve mudança na carga?**
@@ -247,16 +285,33 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - [x] Tipo/ano de referência no `catalogo()` (#24).
 - [x] Mesma edição do IDEB nas comparações (#21).
 - [x] `as_sf()` com `n` e sem aviso (#36).
+- [ ] Repetir R18 com o provedor Anthropic (conta sem créditos em
+  2026-10-09) e medir a taxa de sucesso do modelo local em várias
+  execuções.
+- [ ] Follow-up R19: pelo chat, pedir explicitamente R² e `n` por corte
+  (`metricas`) e controlar por rede (`cuts = ["rede"]` com `rede =
+  "publica"`).
 - [ ] Join escola→município **por código** em `escolas()` (bloqueado:
   `clean.escolas` não tem a coluna; contornado por `covariaveis_escola()`,
   `ideb()`, `docentes_rede()` e `gestores()`, que trazem `co_municipio`).
 
 ## Sugestões priorizadas
 
+- **[média]** Chat: prévias enxutas por padrão (o modelo pediu prévias de
+  100 linhas × 30 colunas e perdeu a pergunta na janela do Ollama).
+
 - **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
+
+- **Aprova com ressalvas** (2026-10-09, 8ª rodada, chat com
+  `qwen3.5:9b`): a regressão declarativa sai de uma pergunta em linguagem
+  natural, com handles, recortes e leitura não causal, e os coeficientes
+  conferem com as ferramentas. Ressalvas: o modelo local só completou o
+  fluxo depois de duas correções da camada e falhou em 5 de 6 execuções
+  (janela de contexto/raciocínio); não informou R². Anthropic não testada.
+  Segue a ressalva externa (`co_municipio` em `clean.escolas`).
 
 - **Aprova com ressalvas** (2026-10-08, 7ª rodada): sem mudança — a única
   ressalva segue externa ao pacote (`co_municipio` em `clean.escolas`).

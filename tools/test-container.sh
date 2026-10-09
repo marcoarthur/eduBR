@@ -57,6 +57,9 @@ fi
 
 if [[ "$check" == 1 ]]; then
   expr="devtools::check(error_on = 'never', quiet = TRUE)"
+  # O container nao alcanca as APIs de hora; sem isto o check pode dar a
+  # NOTE "unable to verify current time" (ambiente, nao pacote).
+  smoke="${smoke} _R_CHECK_SYSTEM_CLOCK_=FALSE"
 elif [[ -n "$filtro" ]]; then
   expr="devtools::test(filter = '${filtro}', reporter = 'summary')"
 else

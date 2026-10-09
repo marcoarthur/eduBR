@@ -328,7 +328,8 @@ test_that("covariaveis_escola: handle guarda o objeto lazy e devolve prévia", {
     d <- tibble::tibble(
       co_entidade = 12000001 + 0:29, sg_uf = "AC", rede = "Municipal",
       localizacao = "Urbana", in_biblioteca = rep(0:1, 15),
-      docentes = 1:30, matriculas = 10 * (1:30), ideb_fund_i = 5
+      docentes = 1:30, matriculas = 10 * (1:30),
+      ideb_fund_i = c(rep(NA_real_, 10), rep(5, 20))
     )
     obj <<- new_eduBR(d, "eduBR_covariaveis", con, list(ano = ano))
     obj
@@ -347,6 +348,16 @@ test_that("covariaveis_escola: handle guarda o objeto lazy e devolve prévia", {
   expect_length(env$dados, 10L)
   expect_true(env$metadados$truncado)
   expect_match(env$metadados$aviso, "dados_1", fixed = TRUE)
+  expect_match(env$metadados$aviso, "especificar_regressao(dados_id = \"dados_1\"",
+               fixed = TRUE)
+  expect_match(env$metadados$aviso, "IDEB `null`", fixed = TRUE)
+  # Contagem no banco: a prévia (10 primeiras) vem toda nula, a base não.
+  expect_true(all(vapply(env$dados, function(l) is.null(l$ideb_fund_i),
+                         logical(1))))
+  expect_match(env$metadados$aviso, "30 escolas; com IDEB: ideb_fund_i = 20",
+               fixed = TRUE)
+  expect_equal(env$metadados$contexto$n_escolas, 30)
+  expect_equal(env$metadados$contexto$n_com_ideb$ideb_fund_i, 20)
   ctx <- env$metadados$contexto
   expect_equal(ctx$handle, "dados_1")
   expect_true(all(c("ideb_fund_i", "docentes", "rede") %in% unlist(ctx$colunas)))
