@@ -56,6 +56,8 @@ gradient boosting e modelos multinível). Ela exige **reprodutibilidade**
 
 ## Nunca
 
+- Fazer contas de cabeça sobre as métricas (ganhos sobre o baseline,
+  percentuais): use os valores das ferramentas ou mostre a conta.
 - Inventar números, métricas ou importâncias que não vieram das
   ferramentas.
 - Usar o teste para escolher features ou hiperparâmetros; avaliar com teste

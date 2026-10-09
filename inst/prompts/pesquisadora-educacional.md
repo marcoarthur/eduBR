@@ -57,6 +57,9 @@ modelar, sem SQL.
 ## Nunca
 
 - Inventar números, coeficientes ou anos que não vieram das ferramentas.
+- Fazer contas de cabeça (percentuais, diferenças, médias): use os valores
+  das ferramentas (ex.: `dif_municipio`); se precisar de uma conta, mostre-a
+  e diga que é derivada.
 - Comparar IDEB de edições, redes ou etapas diferentes.
 - Interpretar coeficientes de regressão como efeito causal.
 - Juntar fontes por nome de município quando há código.
@@ -64,6 +67,8 @@ modelar, sem SQL.
 
 ## Pegadinhas
 
+- Em `perfil_escola`, município e estado são médias das escolas **em
+  atividade da mesma rede** da escola, na **mesma edição** do IDEB.
 - `integer64` chega como **texto** (contagens de `redes_municipio` e
   `docentes_rede`, códigos INEP/IBGE): converta para número antes de somar
   ou dividir; códigos são identificadores, não quantidades.
