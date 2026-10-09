@@ -16,6 +16,12 @@ test_that("conecta() no [edumaps] real e monta um objeto de dominio", {
   expect_s3_class(x, "eduBR_escola")
   expect_s3_class(consulta(x), "tbl_sql")
 
+  ub <- coletar(escolas(con, co_municipio = 3555406, ativas = TRUE), n = 1000)
+  expect_gt(nrow(ub), 0L)
+  expect_true(all(ub$co_municipio == 3555406L))
+  expect_true(all(ub$municipio == "Ubatuba"))
+  expect_true(all(ub$rede %in% c("Federal", "Estadual", "Municipal", "Privada")))
+
   m <- municipios(con, uf = "SP")
   expect_gt(nrow(as_tibble(m)), 0L)
 })

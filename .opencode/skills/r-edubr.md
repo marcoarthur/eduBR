@@ -81,7 +81,7 @@ de alto nível nunca citam `schema.tabela` direto — sempre via
 
 | domínio | schema.tabela |
 |---|---|
-| `escolas` | `clean.escolas` |
+| `escolas` | `clean.escolas` (legado: 1ª ingestão, incompleta; não usar) |
 | `municipios` | `clean.municipios_sp` |
 | `ibge` | `clean.dados_ibge` |
 | `populacao` | `clean.populacao_municipal` |
@@ -124,7 +124,7 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
 
 | Função | Filtros | Coluna |
 |---|---|---|
-| `escolas()` | `municipio`, `uf` | `municipio`, `uf` |
+| `escolas()` | `municipio`, `uf`, `co_municipio`, `ano`, `ativas` | `municipio`, `uf`, `co_municipio` (de `censo_escolas`) |
 | `escola()` | `codigo_inep` | `codigo_inep` |
 | `municipios()` | `uf` | `sigla_estado` |
 | `municipio()` | `codigo_ibge` | `codigo_ibge` |
@@ -427,5 +427,8 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   - **[baixa]** Tool de dicionário de rótulos; `registrar_relacao()` segue
     fora (só leitura).
   - Testes com o Ollama local: **N ≤ 2** (limite térmico do laptop).
-- Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
+- `escolas()` com `co_municipio` (2026-10-09): passa a ler
+  `clean.censo_escolas`, a fonte de verdade das escolas; `clean.escolas` é
+  legado.
+- Bloqueados no EduMaps: INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

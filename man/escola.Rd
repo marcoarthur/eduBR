@@ -4,12 +4,14 @@
 \alias{escola}
 \title{Uma escola pelo código INEP}
 \usage{
-escola(con, codigo_inep)
+escola(con, codigo_inep, ano = 2025L)
 }
 \arguments{
 \item{con}{Conexão criada por \code{\link[=conecta]{conecta()}}.}
 
-\item{codigo_inep}{Código INEP da escola.}
+\item{codigo_inep}{Código INEP da escola (\code{co_entidade} do Censo).}
+
+\item{ano}{Ano do Censo Escolar (padrão 2025).}
 }
 \value{
 Objeto S3 de classe \code{eduBR_escola}.

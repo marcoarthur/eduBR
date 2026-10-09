@@ -38,6 +38,23 @@
 
 ## Entradas
 
+### 2026-10-09 — 13ª rodada (join escola→município por código)
+
+Fato registrado (dono do repo): `clean.censo_escolas` é a **fonte de
+verdade das escolas** e já traz `co_municipio`; `clean.escolas` foi a
+primeira ingestão do EduMaps, incompleta. A pendência "externa" era, na
+verdade, resolvível no pacote.
+
+- **P1/R10 — juntar escola → município por código com `escolas()`** →
+  `escolas()`/`escola()` passam a ler o cadastro do Censo:
+  `escolas(con, co_municipio = 3555406, ativas = TRUE)` devolve 84 escolas
+  de Ubatuba (Estadual 14, Municipal 51, Privada 19) com `codigo_inep`,
+  `co_municipio`, `municipio`, `uf`, `rede` e `localizacao`; o join com
+  `municipios()` por `codigo_ibge` casa 84/84. `escolas(con)` cobre
+  214.192 escolas (antes 158.182). **✓ atendido.**
+
+Pendências do pacote e externas desta persona zeradas.
+
 ### 2026-10-09 — 12ª rodada (verificação de #89, #94 e #73/#83 com Anthropic)
 
 Entregas verificadas: #89 (`max_tokens` configurável, PR #93), #94
@@ -393,7 +410,8 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
   resposta truncada).
 - [x] R19 com Anthropic: resposta completa, tool composta, números
   corretos (#73, #89; 12ª rodada).
-- [ ] Join escola→município **por código** em `escolas()` (bloqueado:
+- [x] Join escola→município **por código** em `escolas()` (13ª rodada:
+  `escolas()` lê `clean.censo_escolas`, fonte de verdade; era bloqueado:
   `clean.escolas` não tem a coluna; contornado por `covariaveis_escola()`,
   `ideb()`, `docentes_rede()` e `gestores()`, que trazem `co_municipio`).
 
@@ -402,11 +420,12 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - **[baixa]** Chat local: para regressão, preferir `raciocinio =
   "padrao"` no Ollama ou o provedor Anthropic (com raciocínio desligado o
   9B erra argumentos; documentado em `docs/ellmer.md` nesta rodada).
-- **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 13ª rodada): `escolas()` com `co_municipio`
+  pelo cadastro do Censo fecha o join por código; não restam pendências.
 - **Aprova com ressalvas** (2026-10-09, 12ª rodada): com Anthropic a
   regressão por rede sai numa chamada, completa e com números corretos;
   `max_tokens` resolvido. Única ressalva é externa (`co_municipio` em

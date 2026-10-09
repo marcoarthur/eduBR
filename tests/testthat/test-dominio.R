@@ -2,11 +2,16 @@
 fake_eduBR_tbl <- function(con, nome) {
   switch(
     nome,
-    escolas = tibble::tibble(
-      codigo_inep = c("1", "2", "3"),
-      escola      = c("A", "B", "C"),
-      municipio   = c("Ubatuba", "Ubatuba", "Campinas"),
-      uf          = c("SP", "SP", "RJ")
+    censo_escolas = tibble::tibble(
+      nu_ano_censo   = c(2025L, 2025L, 2025L, 2024L),
+      co_entidade    = c("1", "2", "3", "4"),
+      no_entidade    = c("A", "B", "C", "D"),
+      co_municipio   = c(3555406L, 3555406L, 3509502L, 3509502L),
+      no_municipio   = c("Ubatuba", "Ubatuba", "Campinas", "Campinas"),
+      sg_uf          = c("SP", "SP", "RJ", "RJ"),
+      tp_dependencia = c(3L, 2L, 4L, 4L),
+      tp_localizacao = c(1L, 2L, 1L, 1L),
+      tp_situacao_funcionamento = c(1L, 1L, 2L, 1L)
     ),
     municipios = tibble::tibble(
       codigo_ibge  = c("3555406", "3509502"),
@@ -42,6 +47,27 @@ test_that("escolas() devolve eduBR_escola e filtra", {
   y <- escolas("fake_con", municipio = "Campinas")
   expect_equal(nrow(as_tibble(y)), 1L)
   expect_equal(as_tibble(y)$escola, "C")
+})
+
+test_that("escolas() vem do Censo: co_municipio, rede e localizacao", {
+  local_mocked_bindings(eduBR_tbl = fake_eduBR_tbl)
+
+  x <- as_tibble(escolas("fake_con"))
+  expect_equal(
+    names(x),
+    c("codigo_inep", "escola", "co_municipio", "municipio", "uf", "rede",
+      "localizacao")
+  )
+  expect_equal(x$codigo_inep, c("1", "2", "3"))
+  expect_equal(x$rede, c("Municipal", "Estadual", "Privada"))
+  expect_equal(x$localizacao, c("Urbana", "Rural", "Urbana"))
+
+  y <- as_tibble(escolas("fake_con", co_municipio = "3555406"))
+  expect_equal(y$codigo_inep, c("1", "2"))
+
+  expect_equal(nrow(as_tibble(escolas("fake_con", ativas = TRUE))), 2L)
+  expect_equal(as_tibble(escolas("fake_con", ano = 2024L))$escola, "D")
+  expect_error(escolas("fake_con", co_municipio = "x"), "num\u00e9rico")
 })
 
 test_that("escola() filtra por codigo INEP", {
@@ -91,5 +117,5 @@ test_that("acessores genericos funcionam", {
   expect_s3_class(consulta(x), "tbl_df")
   expect_output(print(x), "eduBR_escola")
   expect_equal(summary(x)$linhas, 3L)
-  expect_equal(summary(x)$colunas, 4L)
+  expect_equal(summary(x)$colunas, 7L)
 })

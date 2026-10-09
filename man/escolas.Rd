@@ -4,7 +4,14 @@
 \alias{escolas}
 \title{Escolas da base do EduMaps}
 \usage{
-escolas(con, municipio = NULL, uf = NULL)
+escolas(
+  con,
+  municipio = NULL,
+  uf = NULL,
+  co_municipio = NULL,
+  ano = 2025L,
+  ativas = FALSE
+)
 }
 \arguments{
 \item{con}{Conexão criada por \code{\link[=conecta]{conecta()}}.}
@@ -12,25 +19,38 @@ escolas(con, municipio = NULL, uf = NULL)
 \item{municipio}{Filtro opcional pelo nome do município.}
 
 \item{uf}{Filtro opcional pela sigla da UF (ex.: \code{"SP"}).}
+
+\item{co_municipio}{Filtro opcional pelo código IBGE do município (um ou
+mais).}
+
+\item{ano}{Ano do Censo Escolar (padrão 2025).}
+
+\item{ativas}{Só escolas em atividade (\code{tp_situacao_funcionamento == 1})?
+Padrão \code{FALSE} (todas as escolas do cadastro).}
 }
 \value{
 Objeto S3 de classe \code{eduBR_escola}.
 }
 \description{
-Acessa a relação de escolas (código INEP, nome, município, UF e
-coordenadas). A consulta é preguiçosa: só vai ao banco quando
-materializada, por exemplo com \code{\link[tibble:as_tibble]{as_tibble()}}.
+Acessa as escolas do Censo Escolar (código INEP, nome, código e nome do
+município, UF, rede, localização e coordenadas). A consulta é
+preguiçosa: só vai ao banco quando materializada, por exemplo com
+\code{\link[tibble:as_tibble]{as_tibble()}}.
 }
 \details{
-A tabela não traz código IBGE do município: o filtro e o join
-por município são pelo \strong{nome}. O caminho por código
-(\code{co_municipio}) está em \code{\link[=docentes_rede]{docentes_rede()}} e \code{\link[=gestores]{gestores()}}, que cruzam
-com \code{clean.censo_escolas}.
+A fonte é o cadastro do Censo Escolar (domínio \code{censo_escolas}
+do \code{\link[=catalogo]{catalogo()}}), a fonte de verdade sobre as escolas. O domínio
+\code{escolas} do catálogo é a primeira ingestão do EduMaps, incompleta (sem
+código do município e sem parte das escolas), e não é mais usado aqui.
+\code{codigo_inep} é o \code{co_entidade} do Censo e \code{co_municipio} é o código
+IBGE do município (7 dígitos, \code{integer}), a chave para juntar com
+\code{\link[=docentes_rede]{docentes_rede()}}, \code{\link[=gestores]{gestores()}}, \code{\link[=covariaveis_escola]{covariaveis_escola()}} e \code{\link[=ideb]{ideb()}}.
 }
 \examples{
 \dontrun{
 con <- conecta()
 escolas(con, uf = "SP")
+escolas(con, co_municipio = 3555406)
 }
 
 }

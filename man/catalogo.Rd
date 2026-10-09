@@ -22,6 +22,10 @@ Atenção aos tipos: \code{codigo_inep}/\code{co_entidade}/\code{id_escola} são
 de juntar. Os anos refletem o \code{edumaps_dev} em 2026-10-07 e mudam com
 novas cargas. Relações de \code{\link[=registrar_relacao]{registrar_relacao()}} aparecem com metadados
 \code{NA}.
+
+A fonte de verdade sobre as escolas é \code{censo_escolas} (cadastro do Censo
+Escolar, com \code{co_municipio}), usada por \code{\link[=escolas]{escolas()}}; \code{escolas} é a
+primeira ingestão do EduMaps, incompleta, mantida só como legado.
 }
 \examples{
 catalogo()
