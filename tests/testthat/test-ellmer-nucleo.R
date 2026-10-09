@@ -327,3 +327,28 @@ test_that("persistir = TRUE grava em R_user_dir", {
   expect_true(file.exists(arq))
   expect_true(startsWith(normalizePath(arq), normalizePath(dir)))
 })
+
+test_that("max_caracteres corta linhas do fim e avisa", {
+  base <- tibble::tibble(id = sprintf("%05d", 1:200),
+                         texto = strrep("x", 200))
+  tools <- ferramentas_edubr("fake_con", limites = list(max_caracteres = 5000))
+  s <- attr(tools, "sessao")
+  env <- eduBR_executar_tool(s, "teste", list(n = 200),
+                             function(n) eduBR_resultado(base))
+  expect_null(env$erro)
+  expect_true(env$metadados$truncado)
+  expect_lt(length(env$dados), 200L)
+  expect_gte(length(env$dados), 1L)
+  expect_lte(nchar(jsonlite::toJSON(env$dados, auto_unbox = TRUE)), 5000)
+  expect_match(env$metadados$aviso, "limite de texto", fixed = TRUE)
+  expect_equal(env$dados[[1]]$id, "00001")
+
+  pequeno <- eduBR_executar_tool(s, "teste", list(n = 3),
+                                 function(n) eduBR_resultado(base))
+  expect_length(pequeno$dados, 3L)
+  expect_false(grepl("limite de texto", pequeno$metadados$aviso %||% "",
+                     fixed = TRUE))
+
+  expect_error(ferramentas_edubr("fake_con", limites = list(max_caracteres = 10)),
+               "1000")
+})

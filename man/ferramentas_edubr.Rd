@@ -129,6 +129,10 @@ estourado, a ferramenta responde \code{limite_excedido} sem executar;
 \item \code{max_amostra} (15000, máx. 30000): teto das amostras internas de
 treino e das linhas de um recorte em \code{executar_regressao} (nunca
 devolvidas ao modelo);
+\item \code{max_caracteres} (12000, mín. 1000): tamanho máximo do JSON de \code{dados}
+por resposta; acima dele as últimas linhas são cortadas (\code{truncado}
+e aviso), para caber na janela de contexto de modelos locais (ex.:
+16 mil tokens no Ollama);
 \item \code{persistir} (\code{FALSE}) e \code{ledger_arquivo} (\code{NULL}): gravação do ledger
 em CSV (por padrão em \verb{tools::R_user_dir("eduBR", "data")/ledger/}).
 }
