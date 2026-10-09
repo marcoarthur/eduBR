@@ -868,6 +868,10 @@ eduBR_tools_registro <- function() {
       criar = eduBR_tool_metricas,
       personas = c("pesquisadora-educacional", "especialista-ml")
     ),
+    ideb_agregado = list(
+      criar = eduBR_tool_ideb_agregado,
+      personas = "pesquisadora-educacional"
+    ),
     regressao_escolas = list(
       criar = eduBR_tool_regressao_escolas,
       personas = c("pesquisadora-educacional", "especialista-ml")
@@ -958,6 +962,8 @@ eduBR_tools_registro <- function() {
 #'   (consulta preguiçosa) + prévia;
 #' - `perfil_gestor` (pesquisadora): categoria modal por corte × dimensão
 #'   ([gestores()] + [perfil_gestor()]);
+#' - `ideb_agregado` (pesquisadora): IDEB médio agregado no banco por UF,
+#'   macrorregião ou município (e rede), numa edição e etapa.
 #' - `regressao_escolas` (pesquisadora, especialista-ml): regressão por
 #'   escola numa chamada (recorte de [covariaveis_escola()] → especificação
 #'   → execução → coeficientes, com métricas por corte no contexto);

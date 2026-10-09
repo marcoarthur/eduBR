@@ -453,3 +453,54 @@ test_that("filtro por persona das tools da pesquisadora", {
 
   expect_true(all(tools_pesquisa %in% nomes(NULL)))
 })
+
+test_that("ideb_agregado: média por UF/região/município na mesma edição (#82)", {
+  ideb_fake <- tibble::tibble(
+    id_escola = 1:8,
+    sg_uf = c("AC", "AC", "AC", "SP", "SP", "SP", "SP", "AC"),
+    co_municipio = c(1L, 1L, 2L, 3L, 3L, 4L, 4L, 1L),
+    no_municipio = c("A", "A", "B", "C", "C", "D", "D", "A"),
+    rede = c("Municipal", "Municipal", "Estadual", "Municipal", "Estadual",
+             "Municipal", "Municipal", "Municipal"),
+    etapa = c(rep("fundamental_i", 7), "fundamental_ii"),
+    ano = c(2023L, 2023L, 2023L, 2023L, 2023L, 2023L, 2021L, 2023L),
+    ideb_observado = c(4, 5, 6, 6, NA, 8, 9, 3)
+  )
+  local_mocked_bindings(eduBR_tbl = function(con, nome) ideb_fake)
+  tools <- ferramentas_edubr("fake_con", persona = "pesquisadora-educacional")
+  expect_true("ideb_agregado" %in% names(tools))
+
+  r <- eduBR_envelope_de(tools$ideb_agregado(etapa = "fundamental_i"))
+  expect_null(r$erro)
+  uf <- vapply(r$dados, `[[`, character(1), "sg_uf")
+  expect_equal(uf, c("AC", "SP"))
+  ac <- r$dados[[1]]
+  expect_equal(ac$ideb_medio, 5)            # 4, 5, 6 (2023, fund. I)
+  expect_equal(ac$escolas, 3)
+  sp <- r$dados[[2]]
+  expect_equal(sp$ideb_medio, 7)            # 6 e 8; NA fora; 2021 fora
+  expect_equal(sp$escolas_com_nota, 2)
+  expect_equal(sp$escolas, 3)
+
+  r <- eduBR_envelope_de(tools$ideb_agregado(etapa = "fundamental_i",
+                                             por_rede = TRUE, uf = "AC"))
+  expect_equal(vapply(r$dados, `[[`, character(1), "rede"),
+               c("Estadual", "Municipal"))
+
+  r <- eduBR_envelope_de(tools$ideb_agregado(etapa = "fundamental_i",
+                                             nivel = "regiao"))
+  expect_setequal(vapply(r$dados, `[[`, character(1), "nome_regiao"),
+                  c("Norte", "Sudeste"))
+
+  r <- eduBR_envelope_de(tools$ideb_agregado(etapa = "fundamental_i",
+                                             nivel = "municipio"))
+  expect_match(r$metadados$aviso, "filtre por `uf`", fixed = TRUE)
+
+  e <- eduBR_envelope_de(tools$ideb_agregado())
+  expect_equal(e$erro$tipo, "parametro_invalido")
+  expect_match(e$erro$mensagem, "etapa", fixed = TRUE)
+  e <- eduBR_envelope_de(tools$ideb_agregado(etapa = "fundamental_i", ano = 2022L))
+  expect_equal(e$erro$tipo, "parametro_invalido")
+  expect_false("ideb_agregado" %in%
+                 names(ferramentas_edubr("fake_con", persona = "gestora-escolar")))
+})
