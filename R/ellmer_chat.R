@@ -95,8 +95,13 @@ eduBR_texto_opcional <- function(x, nome) {
 #'   fecha o turno sem texto e o pedido seguinte falha com HTTP 400). Na
 #'   Anthropic não muda nada: o ellmer já não liga o raciocínio estendido.
 #'
+#' @param max_tokens Limite de tokens gerados por resposta (inclui os de
+#'   raciocínio). `NULL` usa `EDUBR_MAX_TOKENS`; sem ela, 4096 no Ollama
+#'   (respostas longas eram cortadas com o padrão) e o padrão do ellmer na
+#'   Anthropic. Combinado com `params` passado em `...`.
+#'
 #' @return Um objeto `Chat` do ellmer, com os atributos `provedor`,
-#'   `persona` e `raciocinio`.
+#'   `persona`, `raciocinio` e `max_tokens`.
 #'
 #' @examples
 #' \dontrun{
@@ -118,7 +123,8 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
                        system_prompt = NULL, base_url = NULL,
                        echo = c("none", "output", "all"), ...,
                        persona = NULL,
-                       raciocinio = c("padrao", "desligado")) {
+                       raciocinio = c("padrao", "desligado"),
+                       max_tokens = NULL) {
   rlang::check_installed("ellmer", reason = "para conversar com um LLM.")
   provedor <- eduBR_resolver_provedor(provedor)
   modelo <- eduBR_texto_opcional(modelo, "modelo")
@@ -134,6 +140,22 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
 
   raciocinio <- match.arg(raciocinio)
   args <- list(system_prompt = system_prompt, echo = echo, ...)
+  max_tokens <- eduBR_max_tokens(max_tokens, provedor)
+  if (!is.null(max_tokens)) {
+    prm <- args$params %||% list()
+    if (!is.null(prm$max_tokens) && !identical(as.integer(prm$max_tokens),
+                                                max_tokens)) {
+      stop(
+        paste0(
+          "`max_tokens` conflita com `params$max_tokens`; use s\u00f3 um dos ",
+          "dois."
+        ),
+        call. = FALSE
+      )
+    }
+    prm$max_tokens <- max_tokens
+    args$params <- do.call(ellmer::params, prm)
+  }
   if (provedor == "anthropic") {
     if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY", ""))) {
       stop(
@@ -204,7 +226,30 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
   attr(chat, "provedor") <- provedor
   attr(chat, "persona") <- persona
   attr(chat, "raciocinio") <- raciocinio
+  attr(chat, "max_tokens") <- max_tokens
   chat
+}
+
+# Limite efetivo de tokens gerados: argumento > EDUBR_MAX_TOKENS > 4096 no
+# Ollama (na Anthropic, sem argumento nem vari\u00e1vel, fica o padr\u00e3o do
+# ellmer).
+eduBR_max_tokens <- function(max_tokens, provedor) {
+  if (is.null(max_tokens)) {
+    env <- eduBR_env_opcional("EDUBR_MAX_TOKENS")
+    max_tokens <- if (!is.null(env)) {
+      suppressWarnings(as.numeric(env))
+    } else if (provedor == "ollama") {
+      4096L
+    }
+  }
+  if (is.null(max_tokens)) {
+    return(NULL)
+  }
+  if (!is.numeric(max_tokens) || length(max_tokens) != 1L ||
+      is.na(max_tokens) || max_tokens < 16 || max_tokens != round(max_tokens)) {
+    stop("`max_tokens` deve ser um inteiro >= 16.", call. = FALSE)
+  }
+  as.integer(max_tokens)
 }
 
 eduBR_env_opcional <- function(nome) {
