@@ -329,10 +329,10 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - **[média]** Tool composta de regressão (ex.: `regressao_escolas`: recorte
   + fórmula + cortes → coeficientes e métricas numa chamada) para modelos
   pequenos, que se perdem em cadeias de 4 tools; manter as tools
-  separadas para modelos maiores.
+  separadas para modelos maiores (#81).
 - **[baixa]** Tools de agregação (ex.: IDEB médio por município/UF/rede)
   para perguntas regionais, já que tabelas grandes agora chegam cortadas
-  ao modelo.
+  ao modelo (#82).
 - **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 

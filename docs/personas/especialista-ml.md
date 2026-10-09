@@ -435,7 +435,7 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 - **[baixa]** Chat: o modelo local ainda escreve interpretações confusas
-  da matriz de confusão; reavaliar com modelo maior (#73).
+  da matriz de confusão; reavaliar com modelo maior (#73, #83).
 
 ## Veredito
 

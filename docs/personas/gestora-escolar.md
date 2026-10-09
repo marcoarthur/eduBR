@@ -271,7 +271,7 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 
 - **[baixa]** Chat: o modelo local ainda solta frases sem base nos dados
   (ex.: "única escola da região com biblioteca"); conferir com um modelo
-  maior (#73) antes de endurecer o prompt.
+  maior (#73) antes de endurecer o prompt (#83).
 
 ## Veredito
 
