@@ -361,9 +361,11 @@ conferir: qualquer número derivado (somas, razões) contra o `contexto` de
   vazia em 2 de 2. Por isso, desde a #94, **o Ollama usa o raciocínio
   desligado por padrão** (`raciocinio = "padrao"` religa). Prefira prévias
   curtas (`n` pequeno) e abra um chat novo se a resposta vier vazia.
-- **Anthropic não testado** no aceite: a conta de desenvolvimento estava sem
-  créditos em 2026-10-09. O código do provedor é coberto por testes sem
-  rede (`test-ellmer-chat.R`) e o smoke `tools/test-container.sh --llm
-  anthropic` fica pendente.
+- **Anthropic** (`claude-sonnet-5`, 2026-10-09): os 3 cenários deram 2/2 no
+  critério estrito (gestora, pesquisadora com `regressao_escolas`, ML), em
+  20–35 s, com números conferidos e sem a redação solta do modelo local
+  (transcrições `docs/aceite-ellmer/anth_*`; comparação em
+  `docs/aceite-ellmer/taxa-sucesso.md`). Para fluxos longos de tools e
+  leitura de resultados, prefira-o ao modelo local quando houver chave.
 - Ferramentas são só leitura: não gravam arquivos (use `exportar()` em R) e
   não expõem geometria (use `as_sf()` em R).

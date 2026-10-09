@@ -154,3 +154,11 @@ implementação ficam no código; memória de curadoria fica em
 - Taxa parcial (docs/aceite-ellmer/taxa-sucesso.md): gestora 6/6,
   pesquisadora 1/4 (cadeia completa 4/4; falha por chamada com erro
   autocorrigida ou número ausente), ML 1/1.
+
+## 2026-10-09 — aceite com Anthropic
+
+- A conta Anthropic ganhou créditos: `--llm anthropic` verde (5,5 s) e os
+  3 cenários 2/2 com `claude-sonnet-5` (taxa e transcrições em
+  `docs/aceite-ellmer/`). Fecha #73.
+- Redação solta (#83) só aparece no modelo local de 9B: prompts mantidos.
+- Testes com Anthropic não aquecem o laptop, mas custam: manter N ≤ 2.
