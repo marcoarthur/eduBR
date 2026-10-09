@@ -12,6 +12,11 @@
 #   tools/test-container.sh --smoke          # + EDUBR_SMOKE=1 (banco real)
 #   tools/test-container.sh --filter ellmer  # so test-*ellmer*.R
 #   tools/test-container.sh --check          # devtools::check() (sem testes)
+#   tools/test-container.sh --llm ollama     # + smoke com LLM real
+#                                            #   (ollama: tunel aberto, ver
+#                                            #   tools/tunnel-ollama.sh;
+#                                            #   anthropic: ANTHROPIC_API_KEY
+#                                            #   no ambiente do rsuser)
 #   tools/test-container.sh --no-sync ...    # nao sincroniza antes
 
 set -euo pipefail
@@ -21,12 +26,19 @@ SRC="$(git rev-parse --show-toplevel)/"
 DEST="$("${SRC}tools/rstudio-dest.sh")"
 
 smoke=""
+llm=""
 filtro=""
 check=0
 sync=1
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --smoke) smoke="EDUBR_SMOKE=1"; shift ;;
+    --llm)
+      case "$2" in
+        ollama|anthropic) llm="EDUBR_LLM_SMOKE=$2"; shift 2 ;;
+        *) echo "--llm aceita ollama ou anthropic" >&2; exit 2 ;;
+      esac
+      ;;
     --filter) filtro="$2"; shift 2 ;;
     --check) check=1; shift ;;
     --no-sync) sync=0; shift ;;
@@ -51,5 +63,5 @@ else
   expr="devtools::test(reporter = 'summary')"
 fi
 
-echo "==> ${HOST}:${DEST} (rsuser) ${smoke} ${expr}"
-ssh "$HOST" "su - rsuser -c \"cd '${DEST}' && TZ=America/Sao_Paulo ${smoke} Rscript -e \\\"${expr}\\\"\""
+echo "==> ${HOST}:${DEST} (rsuser) ${smoke} ${llm} ${expr}"
+ssh "$HOST" "su - rsuser -c \"cd '${DEST}' && TZ=America/Sao_Paulo ${smoke} ${llm} Rscript -e \\\"${expr}\\\"\""

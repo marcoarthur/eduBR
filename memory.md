@@ -91,3 +91,15 @@ implementação ficam no código; memória de curadoria fica em
   era local.
 - **Lição**: validar sempre no container (`tools/test-container.sh`, com
   `--smoke` quando a mudança toca SQL); não confiar em execução local.
+
+## 2026-10-08 — provedores de LLM: Anthropic **e** Ollama
+
+- Revisão da decisão de runtime: `chat_edubr()` aceita `"anthropic"`
+  (chave só em `ANTHROPIC_API_KEY`) e `"ollama"` (`OLLAMA_BASE_URL`,
+  padrão `http://localhost:11434`; modelo padrão `qwen3.5:9b`).
+- O Ollama roda na máquina do dono do repo; o container o alcança por
+  **túnel SSH reverso** (`tools/tunnel-ollama.sh abrir|status|fechar`) — a
+  porta 11434 não é acessível direto da rede do container.
+- Smoke com LLM real: `tools/test-container.sh --llm ollama|anthropic`
+  (Ollama com túnel aberto). Primeiro resultado: `qwen3.5:9b` chamou
+  `catalogo` e respondeu "16" em ~19 s.

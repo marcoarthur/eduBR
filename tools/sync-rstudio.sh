@@ -26,6 +26,7 @@ ssh "$HOST" "mkdir -p '$DEST'"
 
 rsync -rlptz --no-owner --no-group \
   --exclude='.git' \
+  --exclude='.claude/' \
   --exclude='.Rproj.user/' \
   --exclude='.Rhistory' \
   --exclude='.RData' \

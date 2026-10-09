@@ -10,3 +10,4 @@ analysis/*.tex
 analysis/*_files/
 analysis/*.rds
 tests/testthat/_problems/
+.claude/
