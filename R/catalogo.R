@@ -36,7 +36,8 @@ eduBR_catalogo_meta <- function() {
     )
   }
   list(
-    escolas          = m("escola", "codigo_inep", "bigint", NA, NA),
+    escolas          = m("escola (legado: 1\u00aa ingest\u00e3o, incompleta)",
+                         "codigo_inep", "bigint", NA, NA),
     municipios       = m("munic\u00edpio", "codigo_ibge", "varchar(7)", NA, NA),
     ibge             = m("munic\u00edpio", "codigo_ibge", "text", "ano", "vazia no dev"),
     populacao        = m("munic\u00edpio", "codigo_ibge", "varchar(7)", NA, NA),
@@ -72,6 +73,10 @@ eduBR_catalogo_meta <- function() {
 #' de juntar. Os anos refletem o `edumaps_dev` em 2026-10-07 e mudam com
 #' novas cargas. Relações de [registrar_relacao()] aparecem com metadados
 #' `NA`.
+#'
+#' A fonte de verdade sobre as escolas é `censo_escolas` (cadastro do Censo
+#' Escolar, com `co_municipio`), usada por [escolas()]; `escolas` é a
+#' primeira ingestão do EduMaps, incompleta, mantida só como legado.
 #'
 #' @return Um `data.frame` com as colunas `dominio`, `schema`, `tabela`,
 #'   `granularidade`, `chave`, `tipo_chave`, `coluna_ano` e `anos`.

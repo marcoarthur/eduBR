@@ -3,12 +3,13 @@
 PT_SP <- "01010000204212000083FAB747C68241C0C39F953FD5F21CC0"
 
 fake_geo_tbl <- function(con, nome) {
-  if (nome != "escolas") {
+  if (nome != "censo_escolas") {
     stop(sprintf("fixture inesperada: %s", nome))
   }
   tibble::tibble(
-    codigo_inep = c("1", "2"),
-    escola = c("A", "B"),
+    nu_ano_censo = 2025L,
+    co_entidade = c("1", "2"),
+    no_entidade = c("A", "B"),
     geometry = c(PT_SP, NA_character_)
   )
 }
@@ -31,7 +32,9 @@ test_that("as_sf() converte hex EWKB em POINT 4674", {
 test_that("as_sf() erro sem coluna de geometria", {
   testthat::skip_if_not_installed("sf")
   local_mocked_bindings(
-    eduBR_tbl = function(con, nome) tibble::tibble(codigo_inep = "1")
+    eduBR_tbl = function(con, nome) {
+      tibble::tibble(nu_ano_censo = 2025L, co_entidade = "1")
+    }
   )
 
   expect_error(as_sf(escolas("fake_con")), "geometria inexistente")
@@ -55,7 +58,8 @@ test_that("as_sf() converte varias geometrias, respeita n e nao avisa", {
   testthat::skip_if_not_installed("sf")
   tres <- function(con, nome) {
     tibble::tibble(
-      codigo_inep = c("1", "2", "3"),
+      nu_ano_censo = 2025L,
+      co_entidade = c("1", "2", "3"),
       geometry = c(PT_SP, NA_character_, PT_SP)
     )
   }

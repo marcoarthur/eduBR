@@ -65,7 +65,7 @@ Fonte: [`personas/pesquisadora-educacional.md`](personas/pesquisadora-educaciona
 
 | ID | Pergunta | Tool(s) | Status |
 |---|---|---|---|
-| P1 | Consigo juntar `escola → município → IBGE/população` **por código**, sem adivinhar nomes de chave? | `covariaveis_escola` (`co_municipio`) + `municipios` (`codigo_ibge`); `redes_municipio`, `ideb`, `docentes_rede` também trazem o código | parcial: `co_municipio` em `escolas()` bloqueado na carga; população/IBGE sem tool (domínio `ibge` vazio no dev) |
+| P1 | Consigo juntar `escola → município → IBGE/população` **por código**, sem adivinhar nomes de chave? | `covariaveis_escola` (`co_municipio`) + `municipios` (`codigo_ibge`); `redes_municipio`, `ideb`, `docentes_rede` também trazem o código | parcial: população/IBGE sem tool (domínio `ibge` vazio no dev); `escolas()` traz `co_municipio` desde 2026-10-09 (fora do chat) |
 | P2 | As variáveis vêm no tipo certo (numérico vs texto) e com o **ano** consistente entre censo, IDEB e indicadores? | `catalogo` (chave, tipo, coluna de ano, anos) | coberto (`integer64` vira texto na fronteira JSON; prompt orienta converter) |
 | P3 | Um recorte de UF/município vira uma tabela pronta para `tidymodels`? | `covariaveis_escola` (handle `dados_<k>`) → `especificar_regressao` → `executar_regressao` | coberto (a base fica na sessão; o modelo recebe só prévia/handle, teto de 1000 linhas por resposta) |
 | P4 | A geometria dos municípios permite gerar um mapa para análise regional? | — | não coberto: as tools removem a geometria (D3); mapas via `as_sf()` em R |
@@ -86,7 +86,7 @@ Fonte: [`personas/pesquisadora-educacional.md`](personas/pesquisadora-educaciona
 | 4ª/5ª/6ª rodadas, R8/R11/R15 | `as_sf()` para mapas | — | não coberto: sem geometria nas tools |
 | 4ª/5ª rodadas, R9/R12 | Tipo/ano de referência das relações | `catalogo` | coberto |
 | 5ª rodada, R13 | Ano consistente nas comparações | `perfil_escola` (`ano_ideb`), `ideb` (`ano`) | coberto |
-| R10/R14/R16/R17 | Join escola → município por código | `covariaveis_escola` | parcial: `co_municipio` em `escolas()` segue bloqueado na carga |
+| R10/R14/R16/R17 | Join escola → município por código | `covariaveis_escola` | coberto (`co_municipio`; `escolas()` também o traz desde 2026-10-09) |
 | Funções que usa | Perfil dos gestores por rede/região | `perfil_gestor` | coberto |
 | Funções que usa | Tendência do IDEB por região | `tendencia_ideb_regiao` | coberto |
 | Funções que usa | Retomar bases/modelos já criados | `listar_handles` | coberto (só na sessão) |

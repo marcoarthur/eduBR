@@ -104,8 +104,9 @@ nada é buscado até você materializar com `as_tibble()`.
 ```r
 con <- conecta()
 
-# escolas de um municipio
+# escolas de um municipio (cadastro do Censo Escolar)
 escolas(con, municipio = "Ubatuba")
+escolas(con, co_municipio = 3555406, ativas = TRUE)  # por codigo IBGE
 escola(con, "35012345")
 
 # municipios de SP

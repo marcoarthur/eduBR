@@ -35,8 +35,14 @@ implementação ficam no código; memória de curadoria fica em
   de conversão silenciosa.
 - `coletar(n=)` + aviso já existiam (memória da 4ª rodada do ML estava
   desatualizada); `dicionario()` cobre rótulos (tipos/ano seguem abertos).
-- `co_municipio` em `escolas()` é inviável (`clean.escolas` não tem a
-  coluna) — documentado, não reabrir sem mudança de carga.
+- ~~`co_municipio` em `escolas()` é inviável~~ — **superado em
+  2026-10-09**: `clean.censo_escolas` é a **fonte de verdade das escolas**
+  (cadastro do Censo, 214 mil escolas em 2025, com `co_entidade`,
+  `co_municipio`, rede, localização e geometria). `clean.escolas` foi a
+  primeira ingestão do EduMaps, incompleta (158 mil escolas, sem código do
+  município; ~1,4 mil não estão no Censo). `escolas()`/`escola()` agora
+  leem `censo_escolas`; o domínio `escolas` do catálogo fica só como
+  legado. Não usar `clean.escolas` em código novo.
 - Restam (roadmap na skill): `as_sf()`, `perfil_escola()`/`comparar()`,
   `escolas_similares()`, origem dos `scores()`, logístico (AUC/McFadden),
   `ler_especs()`, INSE histórico, avisos `ideb_inse()`.

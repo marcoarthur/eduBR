@@ -26,14 +26,14 @@ acima são só para inspeção manual.
 
 | domínio | schema.tabela | tipo |
 |---|---|---|
-| `escolas` | `clean.escolas` | tabela/view |
+| `escolas` | `clean.escolas` | tabela (legado: 1ª ingestão, incompleta) |
 | `municipios` | `clean.municipios_sp` | view |
 | `ibge` | `clean.dados_ibge` | tabela |
 | `populacao` | `clean.populacao_municipal` | tabela |
 | `redes` | `analytics.mv_rede_escolas` | matview |
 | `indicadores` | `analytics.ranking_escola` | tabela (vazia em dev) |
 | `scores` | `clean.mv_escolas_scores` | matview |
-| `censo_escolas` | `clean.censo_escolas` | tabela (~214 mil linhas) |
+| `censo_escolas` | `clean.censo_escolas` | tabela (~214 mil linhas; **fonte de verdade das escolas**, usada por `escolas()`) |
 | `censo_docentes` | `clean.censo_docentes` | tabela |
 | `censo_matriculas` | `clean.censo_matriculas` | tabela |
 | `ideb` | `clean.ideb_notas_escolas` | tabela (~814 mil linhas) |
@@ -48,9 +48,10 @@ acima são só para inspeção manual.
   → conforme a relação.
 - `school_indicators.co_entidade` / `clean.censo_*.co_entidade` → `bigint`.
 - `clean.censo_*.nu_ano_censo` → `integer`.
-- Não há `co_municipio` em `clean.escolas`; ele existe em
-  `clean.school_indicators`. Por isso o join escola→município hoje é por
-  **nome** (lacuna registrada na curadoria).
+- `clean.censo_escolas` é a **fonte de verdade das escolas**: chave
+  `co_entidade` (= código INEP) e `co_municipio` (código IBGE, `integer`).
+  `clean.escolas` foi a primeira ingestão, incompleta (sem `co_municipio`
+  e sem parte das escolas) — não usar em código novo.
 
 ## Filtros frequentes
 
@@ -84,7 +85,7 @@ WHERE schemaname IN ('clean','analytics') ORDER BY n_live_tup DESC LIMIT 20;
 ```sql
 -- Coluna geometry: SRID 4674 (SIRGAS 2000). O eduBR a devolve como
 -- pq_geometry (WKB cru); não há as_sf() ainda (lacuna da curadoria).
-SELECT ST_AsGeoJSON(geometry)::json FROM clean.escolas WHERE ...;
+SELECT ST_AsGeoJSON(geometry)::json FROM clean.censo_escolas WHERE ...;
 
 -- Em json_build_object, qualifique colunas com alias (ex.: me.coluna)
 -- para evitar ambiguidade em JOINs (coluna 'municipio' vs alias).

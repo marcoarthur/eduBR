@@ -34,7 +34,7 @@ antes de pedir PR.
 - Materializar tabelas grandes sem filtro: `ideb` tem ~814 mil linhas e
   `censo_escolas` ~214 mil. Prefira compor filtros/`select` na consulta
   lazy e só então `as_tibble()`. Nunca `dplyr::collect()` sem recorte.
-- Assumir tipo único nas chaves: `clean.escolas.codigo_inep` é `bigint`,
+- Assumir tipo único nas chaves: `clean.censo_escolas.co_entidade` é `bigint`,
   `clean.municipios_sp.codigo_ibge` é `varchar`, `school_indicators.co_entidade`
   é `bigint`. Não confie no cast implícito do Postgres para gravar; valide.
 - Hardcodar credenciais/host: use sempre `conecta(service = "edumaps")` via
