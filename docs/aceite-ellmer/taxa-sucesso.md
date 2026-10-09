@@ -68,3 +68,21 @@ padrão (N = 1 por execução; `taxa-r94-a.csv`, `taxa-r94-b.csv`):
 O turno **vazio** (motivo da #94) não se repetiu (texto em 3/3); a
 pesquisadora ainda erra a escolha de tool/argumento às vezes — limitação
 do modelo de 9B, a reavaliar com Anthropic (#73).
+
+## Anthropic vs Ollama (#73), 2026-10-09
+
+Mesmos cenários e critério estrito, `PROVEDOR=anthropic` (`claude-sonnet-5`),
+N = 2 (`taxa-anthropic.csv`); transcrições completas em
+`anth_gestora.*`, `anth_pesq.*`, `anth_ml.*`.
+
+| Cenário | Anthropic | Ollama `qwen3.5:9b` (melhor configuração) |
+|---|---|---|
+| gestora | **2/2**, mediana 35 s | 6/6 (raciocínio ligado), 1/1 (desligado) |
+| pesquisadora | **2/2**, mediana 20 s (`regressao_escolas`) | 2/2 com `regressao_escolas` e raciocínio ligado; 0/2 com desligado (escolha de tool/argumento) |
+| ml | **2/2**, mediana 32 s | 1/1 (desligado) |
+
+Redação (#83): nas transcrições da Anthropic os números conferem com as
+tools e não aparecem as frases sem base vistas no Ollama (ex.: "única
+escola da região com biblioteca", leitura confusa da matriz de confusão,
+"meta nacional de 5,8"). A redação solta é limitação do modelo local, não
+dos prompts — nenhum ajuste de prompt foi necessário.
