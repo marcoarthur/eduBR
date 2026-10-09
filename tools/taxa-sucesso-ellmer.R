@@ -80,7 +80,7 @@ subsequencia <- function(esperado, obtido) {
 
 cenarios <- list(
   gestora = list(
-    persona = "gestora-escolar", raciocinio = "padrao",
+    persona = "gestora-escolar", raciocinio = NULL,
     perguntas = c(
       "Como está a infraestrutura da escola 13078070 comparada ao município?",
       "Quais escolas são parecidas com a 13078070 para trocar experiência?"
@@ -98,7 +98,7 @@ cenarios <- list(
     }
   ),
   pesquisadora = list(
-    persona = "pesquisadora-educacional", raciocinio = "padrao",
+    persona = "pesquisadora-educacional", raciocinio = NULL,
     perguntas = paste(
       "No Acre, rede municipal, o IDEB do fundamental I se associa a ter",
       "biblioteca e ao número de docentes? Separe por localização urbana/rural."
@@ -116,7 +116,7 @@ cenarios <- list(
     }
   ),
   ml = list(
-    persona = "especialista-ml", raciocinio = "desligado",
+    persona = "especialista-ml", raciocinio = NULL,
     perguntas = paste(
       "Treine uma floresta aleatória para classificar o desempenho (terços",
       "da nota) das escolas públicas do fundamental II, com amostra",
@@ -185,7 +185,10 @@ for (nome in names(cenarios)) {
       valor_chave = if (is.null(valor)) NA_real_ else as.numeric(valor),
       segundos = round(dt, 1), pico_tokens = pico,
       tools = paste(led$tool, collapse = " > "),
-      falha = falha %||% NA_character_, stringsAsFactors = FALSE
+      falha = falha %||% NA_character_,
+      resposta = substr(gsub("\\s+", " ", paste(respostas, collapse = " || ")),
+                        1L, 600L),
+      stringsAsFactors = FALSE
     )
     # Grava a cada execu\u00e7\u00e3o: uma interrup\u00e7\u00e3o n\u00e3o perde o que j\u00e1 rodou.
     utils::write.table(execucoes[[length(execucoes)]], csv, sep = ",",

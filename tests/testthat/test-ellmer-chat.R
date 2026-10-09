@@ -95,7 +95,12 @@ test_that("raciocinio desligado vira reasoning_effort none no Ollama", {
   cap <- new.env()
   local_mocked_bindings(eduBR_chat_construtor = construtor_falso(cap))
 
+  # padrão no Ollama: desligado (#94)
   chat <- chat_edubr("ollama")
+  expect_equal(cap$args$api_args, list(reasoning_effort = "none"))
+  expect_equal(attr(chat, "raciocinio"), "desligado")
+
+  chat <- chat_edubr("ollama", raciocinio = "padrao")
   expect_null(cap$args$api_args)
   expect_equal(attr(chat, "raciocinio"), "padrao")
 
@@ -118,6 +123,8 @@ test_that("raciocinio desligado vira reasoning_effort none no Ollama", {
   withr::local_envvar(ANTHROPIC_API_KEY = "chave-de-teste")
   chat_edubr("anthropic", raciocinio = "desligado")
   expect_null(cap$args$api_args)
+  chat <- chat_edubr("anthropic")
+  expect_equal(attr(chat, "raciocinio"), "padrao")
 })
 
 test_that("max_tokens: padrão 4096 no Ollama, configurável e combinado (#89)", {

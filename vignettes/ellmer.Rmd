@@ -271,7 +271,7 @@ na base inteira.
 tools <- ferramentas_edubr(con, persona = "especialista-ml")
 chat <- chat_edubr(
   "ollama", tools = tools,
-  raciocinio = "desligado"   # ver "Limitações"
+  raciocinio = "desligado"   # padrão no Ollama desde a #94
 )
 chat$chat(paste(
   "Treine uma floresta aleatória para classificar o desempenho (terços da",
@@ -357,9 +357,10 @@ conferir: qualquer número derivado (somas, razões) contra o `contexto` de
   texto ou chamada (resposta vazia), e o chat seguinte falha com
   `HTTP 400 invalid message content type`. No fluxo de ML isso ocorreu em
   2 de 2 tentativas; com `chat_edubr(..., raciocinio = "desligado")` o
-  fluxo completou. Na regressão da pesquisadora, ao contrário, o raciocínio
-  ajudou. Prefira prévias curtas (`n` pequeno) e abra um chat novo se a
-  resposta vier vazia.
+  fluxo completou, e na pesquisadora (R19) o raciocínio ligado deu resposta
+  vazia em 2 de 2. Por isso, desde a #94, **o Ollama usa o raciocínio
+  desligado por padrão** (`raciocinio = "padrao"` religa). Prefira prévias
+  curtas (`n` pequeno) e abra um chat novo se a resposta vier vazia.
 - **Anthropic não testado** no aceite: a conta de desenvolvimento estava sem
   créditos em 2026-10-09. O código do provedor é coberto por testes sem
   rede (`test-ellmer-chat.R`) e o smoke `tools/test-container.sh --llm
