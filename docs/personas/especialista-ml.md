@@ -35,6 +35,15 @@
 
 ## Entradas
 
+### 2026-10-09 — 16ª rodada (verificação de #99)
+
+- **Ruído na saída** → a mensagem nova de `as_sf()` sobre geometrias
+  vazias é `message()`, não `warning()`. Num pipeline, ela some com
+  `suppressMessages()` e não dispara `options(warn = 2)`. Conferido no
+  banco (RR e AC). **✓ atendido.**
+
+Pendências do pacote zeradas; resta a de dados (INSE histórico).
+
 ### 2026-10-09 — 15ª rodada (verificação de #98: fronteira lazy com o Censo)
 
 Entrega verificada: `escolas()` a partir de `clean.censo_escolas` (PR #98).
@@ -516,6 +525,8 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 16ª rodada): a mensagem nova não polui pipelines
+  (silenciável, sem warning).
 - **Aprova** (2026-10-09, 15ª rodada): `escolas()` do Censo compõe lazy
   com as demais relações pela mesma chave, com rótulos prontos.
 - **Aprova** (2026-10-09, 14ª rodada): fluxo avançado de ML 5/5 com
