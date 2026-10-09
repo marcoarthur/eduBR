@@ -20,7 +20,8 @@ construtor_falso <- function(env) {
 sem_vars_llm <- function(env = parent.frame()) {
   withr::local_envvar(
     c(EDUBR_LLM_PROVEDOR = NA, ANTHROPIC_API_KEY = NA, OLLAMA_BASE_URL = NA,
-      EDUBR_OLLAMA_MODELO = NA, EDUBR_ANTHROPIC_MODELO = NA),
+      EDUBR_OLLAMA_MODELO = NA, EDUBR_ANTHROPIC_MODELO = NA,
+      EDUBR_MAX_TOKENS = NA),
     .local_envir = env
   )
 }
@@ -117,6 +118,39 @@ test_that("raciocinio desligado vira reasoning_effort none no Ollama", {
   withr::local_envvar(ANTHROPIC_API_KEY = "chave-de-teste")
   chat_edubr("anthropic", raciocinio = "desligado")
   expect_null(cap$args$api_args)
+})
+
+test_that("max_tokens: padrão 4096 no Ollama, configurável e combinado (#89)", {
+  sem_vars_llm()
+  withr::local_envvar(EDUBR_MAX_TOKENS = NA)
+  cap <- new.env()
+  local_mocked_bindings(eduBR_chat_construtor = construtor_falso(cap))
+
+  chat <- chat_edubr("ollama")
+  expect_equal(cap$args$params$max_tokens, 4096L)
+  expect_equal(attr(chat, "max_tokens"), 4096L)
+
+  chat_edubr("ollama", max_tokens = 8000)
+  expect_equal(cap$args$params$max_tokens, 8000L)
+
+  chat_edubr("ollama", params = ellmer::params(temperature = 0))
+  expect_equal(cap$args$params$temperature, 0)
+  expect_equal(cap$args$params$max_tokens, 4096L)
+
+  expect_error(chat_edubr("ollama", max_tokens = 100,
+                          params = ellmer::params(max_tokens = 200)),
+               "conflita")
+  expect_error(chat_edubr("ollama", max_tokens = 0), "inteiro")
+
+  withr::local_envvar(EDUBR_MAX_TOKENS = "2048")
+  chat_edubr("ollama")
+  expect_equal(cap$args$params$max_tokens, 2048L)
+
+  withr::local_envvar(EDUBR_MAX_TOKENS = NA, ANTHROPIC_API_KEY = "chave-de-teste")
+  chat_edubr("anthropic")
+  expect_null(cap$args$params)
+  chat_edubr("anthropic", max_tokens = 3000)
+  expect_equal(cap$args$params$max_tokens, 3000L)
 })
 
 test_that("tools são registradas no chat", {
