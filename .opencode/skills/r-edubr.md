@@ -430,7 +430,8 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
 - `escolas()` com `co_municipio` (2026-10-09): passa a ler
   `clean.censo_escolas`, a fonte de verdade das escolas; `clean.escolas` é
   legado. Curadoria (gestora 11ª, pesquisadora 14ª, ML 15ª): as três
-  **aprovam**; sugestão [baixa]: avisar a cobertura de coordenadas (~19%
-  das escolas ativas sem ponto no Censo) em `escolas()`/`as_sf()`.
+  **aprovam**; sugestão [baixa] entregue (#99): `escolas()` documenta a
+  cobertura de coordenadas (~19% das ativas sem ponto no Censo) e
+  `as_sf()` informa, por mensagem, quantas geometrias vieram vazias.
 - Bloqueados no EduMaps: INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

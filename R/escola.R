@@ -15,6 +15,11 @@
 #'   IBGE do município (7 dígitos, `integer`), a chave para juntar com
 #'   [docentes_rede()], [gestores()], [covariaveis_escola()] e [ideb()].
 #'
+#'   Cobertura de coordenadas: cerca de 19% das escolas ativas do Censo
+#'   2025 não têm `latitude`/`longitude`/`geometry` (24% na zona rural,
+#'   65% no AC); essas linhas viram geometrias vazias em [as_sf()], que
+#'   informa quantas são.
+#'
 #' @param con Conexão criada por [conecta()].
 #' @param municipio Filtro opcional pelo nome do município.
 #' @param uf Filtro opcional pela sigla da UF (ex.: `"SP"`).
