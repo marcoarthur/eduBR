@@ -162,8 +162,14 @@ O que o aceite mudou nesta matriz:
   ganhos relativos) continuam **parciais** com modelos pequenos: as tools
   devolvem os valores certos, mas o modelo erra ao recalcular. Conferir
   sempre contra o ledger/retorno.
-- Anthropic: não testado (conta sem créditos).
+- Anthropic (`claude-sonnet-5`, 2026-10-09): os três cenários 2/2, sem
+  frases sem base nos dados (`aceite-ellmer/anth_*.md`); a pesquisadora
+  usa a tool composta `regressao_escolas` e o fluxo de ML com
+  `importancia_floresta` → retreino repassa `top_features` exato.
+- Modelo local e regressão: com o raciocínio desligado (padrão no Ollama,
+  #94) o 9B erra a escolha de tool/argumento (0/2); para regressão use
+  `chat_edubr("ollama", raciocinio = "padrao")` (2/2) ou a Anthropic.
 
 ## Taxa de sucesso
 
-Ver [`docs/aceite-ellmer/taxa-sucesso.md`](aceite-ellmer/taxa-sucesso.md) (Ollama `qwen3.5:9b`, 2026-10-09: gestora 6/6, pesquisadora 1/4 no critério estrito com cadeia completa 4/4, ML 1/1). Script: `tools/taxa-sucesso-ellmer.R` (máximo N = 2).
+Ver [`docs/aceite-ellmer/taxa-sucesso.md`](aceite-ellmer/taxa-sucesso.md) (Ollama `qwen3.5:9b`, 2026-10-09: gestora 6/6, pesquisadora 1/4 no critério estrito com cadeia completa 4/4, ML 1/1; Anthropic `claude-sonnet-5`: 2/2 nos três cenários, `taxa-anthropic.csv`). Script: `tools/taxa-sucesso-ellmer.R` (máximo N = 2).

@@ -38,6 +38,35 @@
 
 ## Entradas
 
+### 2026-10-09 — 12ª rodada (verificação de #89, #94 e #73/#83 com Anthropic)
+
+Entregas verificadas: #89 (`max_tokens` configurável, PR #93), #94
+(raciocínio desligado por padrão no Ollama, PR #95) e #73/#83 (aceite com
+Anthropic, PR #96).
+
+- **R19 com Anthropic** (*"No Acre, escolas públicas: o IDEB do
+  fundamental I se associa a ter biblioteca e ao número de docentes,
+  separando por rede? Informe o R² e o n de cada rede."*) → uma única
+  chamada a `regressao_escolas` (6 linhas, sem erro), 24,5 s, resposta de
+  2.813 caracteres **sem truncamento**. R² e `n` iguais aos da 11ª rodada
+  (Estadual n = 96, R² = 0,010; Municipal n = 127, R² = 0,087; Federal
+  n = 1, não ajustado), coeficientes e p-valores conferem, cobertura
+  224/1.484 informada e leitura não causal. **✓ atendido** — fecha os
+  dois pontos da 11ª rodada (truncamento e tool composta ignorada).
+- **`max_tokens` (#89)** → padrão 4096 no Ollama, configurável em
+  `chat_edubr(max_tokens = )` (conferido no container). **✓ atendido.**
+- **Taxa com Anthropic** (cenário da pesquisadora) → 2/2, ambas pela tool
+  composta, 20 s de mediana (`taxa-anthropic.csv`); transcrição
+  `anth_pesq.md` sem contexto inventado ("meta nacional" etc.). **✓
+  atendido** — #83 fechada sem mudar o prompt.
+- **Modelo local com raciocínio desligado (#94)** → 0/2 na taxa: texto
+  presente, mas escolhas de tool/argumento erradas (ex.:
+  `rede = "publica"`); com raciocínio ligado foi 2/2. **sugestão**
+  aplicada nesta rodada: `docs/ellmer.md` passa a recomendar `raciocinio =
+  "padrao"` (ou Anthropic) para regressão no chat local.
+
+Pendências do pacote zeradas; resta a externa (`co_municipio`).
+
 ### 2026-10-09 — 11ª rodada (follow-up R19 pelo chat)
 
 **R19 — "No Acre, escolas públicas: o IDEB do fundamental I se associa a
@@ -362,23 +391,26 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - [x] Perguntas regionais agregadas (#82: `ideb_agregado`).
 - [x] Follow-up R19 pelo chat: R² e `n` por rede (números corretos;
   resposta truncada).
+- [x] R19 com Anthropic: resposta completa, tool composta, números
+  corretos (#73, #89; 12ª rodada).
 - [ ] Join escola→município **por código** em `escolas()` (bloqueado:
   `clean.escolas` não tem a coluna; contornado por `covariaveis_escola()`,
   `ideb()`, `docentes_rede()` e `gestores()`, que trazem `co_municipio`).
 
 ## Sugestões priorizadas
 
-- **[média]** `chat_edubr()`: `max_tokens` configurável (com padrão maior
-  no Ollama) — a resposta do R19 foi cortada no meio pelo limite de
-  saída, com o raciocínio ligado (#89).
-- **[baixa]** Chat: o modelo local acrescenta contexto inventado (ex.:
-  "meta nacional de 5,8") às respostas agregadas — tratar junto da #83,
-  depois da comparação com Anthropic (#73).
+- **[baixa]** Chat local: para regressão, preferir `raciocinio =
+  "padrao"` no Ollama ou o provedor Anthropic (com raciocínio desligado o
+  9B erra argumentos; documentado em `docs/ellmer.md` nesta rodada).
 - **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-09, 12ª rodada): com Anthropic a
+  regressão por rede sai numa chamada, completa e com números corretos;
+  `max_tokens` resolvido. Única ressalva é externa (`co_municipio` em
+  `clean.escolas`, EduMaps).
 - **Aprova com ressalvas** (2026-10-09, 11ª rodada): R² e `n` por rede
   corretos pelo chat; ressalvas: resposta truncada pelo limite de saída,
   tool composta ignorada nessa pergunta, `co_municipio` (externa).

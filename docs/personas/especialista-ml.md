@@ -35,6 +35,34 @@
 
 ## Entradas
 
+### 2026-10-09 — 14ª rodada (verificação de #90, #94 e #73/#83 com Anthropic)
+
+Entregas verificadas: #90 (`top_features` em `importancia_floresta`, PR
+#92), #94 (raciocínio desligado por padrão no Ollama, PR #95) e #73/#83
+(aceite com Anthropic, PR #96).
+
+- **M33 com Anthropic** (importância → retreino com as 20 mais
+  importantes → comparação no mesmo teste), 3 execuções (41,8 s, 40,4 s,
+  43,0 s): sempre `features_escola` → `classificar_desempenho` →
+  `dividir_dados` → `treinar_floresta` → `metricas_floresta` →
+  `importancia_floresta` → `treinar_floresta` → `metricas_floresta`, sem
+  erro. Na 3ª, conferido nos objetos: a 2ª floresta tem 20 variáveis e
+  elas são **exatamente** as 20 primeiras da importância da 1ª (o
+  argumento `features` repassa `top_features` na ordem). Métricas no mesmo
+  `teste_1`: acurácia 0,608 → 0,588, F1 macro 0,603 → 0,583, AUC macro
+  0,778 → 0,768; leitura correta ("as 20 concentram quase todo o sinal").
+  **✓ atendido** — fecha o erro de cópia da 13ª rodada (#90).
+- **Taxa do fluxo de ML** → Anthropic 2/2 no cenário-base
+  (`taxa-anthropic.csv`, 32 s) + 3/3 no M33; modelo local 1/1 com o
+  padrão novo (#94). Total sem falha com Anthropic: 5/5. **✓ atendido**
+  (o modelo local segue limitado a N ≤ 2 por questão térmica).
+- **Redação** (`anth_ml.md` e M33) → matriz de confusão e baseline
+  descritos sem denominadores inventados; ressalva de causalidade e de
+  contemporaneidade do INSE presente. **✓ atendido** (#83 fechada sem
+  mudar o prompt).
+
+Pendências do pacote zeradas; resta a de dados (INSE histórico).
+
 ### 2026-10-09 — 13ª rodada (follow-up M33 pelo chat)
 
 **M33 — "Treine uma floresta … veja quais features mais importam,
@@ -457,24 +485,22 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
   10ª rodada da pesquisadora).
 - [x] Regressão numa chamada também para a ML (#81).
 - [ ] Série histórica de INSE (bloqueada por dados no pipeline EduMaps).
-- [ ] Repetir M32 com o provedor Anthropic (#73, conta sem créditos).
-- [ ] Taxa do fluxo de ML com mais execuções (N ≤ 2 por rodada).
+- [x] Repetir M32 com o provedor Anthropic (#73: 2/2, 14ª rodada).
+- [x] Taxa do fluxo de ML com mais execuções (Anthropic 5/5; local
+  limitado a N ≤ 2).
 - [x] Follow-up M33 pelo chat: importância → retreino top 20 → comparação
   no mesmo teste (13ª rodada; erro de cópia de 1 feature).
 
 ## Sugestões priorizadas
 
-- **[baixa]** `importancia_floresta`: devolver também a lista pronta das
-  `n` features (ex.: `contexto.top_features`) para o modelo repassar a
-  `treinar_floresta(features = )` sem copiar à mão — no M33 ele trocou a
-  20ª pela 21ª (#90).
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
-- **[baixa]** Chat: o modelo local ainda escreve interpretações confusas
-  da matriz de confusão; reavaliar com modelo maior (#73, #83).
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 14ª rodada): fluxo avançado de ML 5/5 com
+  Anthropic, retreino com a lista exata de `top_features` e redação
+  correta. Única pendência é de dados (INSE histórico, EduMaps).
 - **Aprova com ressalvas** (2026-10-09, 13ª rodada): o fluxo avançado
   (importância → retreino → comparação no mesmo teste) fecha pelo chat
   com números corretos; ressalvas: erro de cópia na lista de features e
