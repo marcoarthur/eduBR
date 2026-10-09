@@ -50,10 +50,14 @@ eduBR_validar_semente <- function(semente) {
 }
 
 # `etapa` do LLM (string ou array) -> vetor de etapas válidas, sem repetição.
+# O ellmer converte um array de enum em fator: volta para texto antes do
+# unlist (que transformaria o fator nos códigos inteiros).
 eduBR_validar_etapas <- function(etapa) {
   if (is.null(etapa) || (is.list(etapa) && !length(etapa))) {
     return(c("fundamental_i", "fundamental_ii"))
   }
+  texto <- function(x) if (is.factor(x)) as.character(x) else x
+  etapa <- if (is.list(etapa)) lapply(etapa, texto) else texto(etapa)
   etapa <- unlist(etapa, use.names = FALSE)
   validas <- eduBR_etapas_features()
   if (!is.character(etapa) || !length(etapa) || anyNA(etapa) ||
