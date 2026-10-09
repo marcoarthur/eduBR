@@ -467,7 +467,7 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - **[baixa]** `importancia_floresta`: devolver também a lista pronta das
   `n` features (ex.: `contexto.top_features`) para o modelo repassar a
   `treinar_floresta(features = )` sem copiar à mão — no M33 ele trocou a
-  20ª pela 21ª.
+  20ª pela 21ª (#90).
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 - **[baixa]** Chat: o modelo local ainda escreve interpretações confusas

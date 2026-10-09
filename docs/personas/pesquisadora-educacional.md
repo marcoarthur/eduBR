@@ -370,7 +370,7 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 
 - **[média]** `chat_edubr()`: `max_tokens` configurável (com padrão maior
   no Ollama) — a resposta do R19 foi cortada no meio pelo limite de
-  saída, com o raciocínio ligado.
+  saída, com o raciocínio ligado (#89).
 - **[baixa]** Chat: o modelo local acrescenta contexto inventado (ex.:
   "meta nacional de 5,8") às respostas agregadas — tratar junto da #83,
   depois da comparação com Anthropic (#73).
