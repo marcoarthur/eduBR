@@ -730,7 +730,9 @@ eduBR_tool_listar_handles <- function(sessao) {
       "rede=Municipal\"). Use para retomar um encadeamento sem refazer ",
       "consultas: `dados_<k>` vai em `especificar_regressao(dados_id=)`, ",
       "`espec_<k>` em `executar_regressao`, `regressao_<k>` em ",
-      "`coeficientes`/`metricas`. Handles somem ao fim da sess\u00e3o. N\u00e3o ",
+      "`coeficientes`/`metricas`; no fluxo de ML, `treino_<k>` vai em ",
+      "`treinar_floresta`, `teste_<k>` e `floresta_<k>` em ",
+      "`metricas_floresta`. Handles somem ao fim da sess\u00e3o. N\u00e3o ",
       "recebe argumentos."
     ),
     titulo = "Handles da sess\u00e3o"
