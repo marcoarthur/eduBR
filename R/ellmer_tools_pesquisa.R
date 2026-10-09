@@ -537,10 +537,14 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
       aviso = sprintf(
         paste0(
           "Pr\u00e9via: a base completa (uma linha por escola) fica no handle ",
-          "%s; use-o como `dados` em `executar_regressao`, n\u00e3o reconstrua ",
-          "a tabela a partir da pr\u00e9via."
+          "%s. Pr\u00f3ximo passo: `especificar_regressao(dados_id = \"%s\", ",
+          "...)` e depois `executar_regressao` com o `espec_<k>` devolvido; ",
+          "n\u00e3o reconstrua a tabela a partir da pr\u00e9via. IDEB `null` na ",
+          "pr\u00e9via \u00e9 esperado (escola sem a etapa ou sem nota): a ",
+          "regress\u00e3o descarta essas linhas, n\u00e3o \u00e9 preciso buscar o ",
+          "IDEB em outra ferramenta."
         ),
-        id
+        id, id
       ),
       contexto = list(
         handle = id,
@@ -565,13 +569,14 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
       "por etapa (`ideb_fund_i`, `ideb_fund_ii`, `ideb_medio`; `null` sem ",
       "nota). A base N\u00c3O \u00e9 devolvida inteira: fica guardada na sess\u00e3o e a ",
       "resposta traz `metadados.handle` (ex.: \"dados_1\") para usar em ",
-      "`executar_regressao`, uma pr\u00e9via de poucas linhas (`n`, padr\u00e3o 10) e, ",
+      "`especificar_regressao(dados_id = )`, uma pr\u00e9via de poucas linhas (`n`, padr\u00e3o 10) e, ",
       "em `metadados.contexto`, a lista de colunas, as respostas (IDEB) e os ",
       "cortes dispon\u00edveis. Cuidados: `ano` (Censo, padr\u00e3o 2025) e ",
       "`ano_ideb` (padr\u00e3o 2023) s\u00e3o fixos para todas as escolas (corte ",
       "transversal); `ativas = true` mant\u00e9m s\u00f3 escolas em atividade; ",
       "`co_entidade` chega como texto; IDEB nulo em escolas que n\u00e3o ofertam a ",
-      "etapa ou n\u00e3o foram avaliadas."
+      "etapa ou n\u00e3o foram avaliadas (a base j\u00e1 traz o IDEB: n\u00e3o ",
+      "\u00e9 preciso juntar com `ideb`)."
     ),
     arguments = list(
       uf = eduBR_arg_uf(),

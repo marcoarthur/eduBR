@@ -347,6 +347,9 @@ test_that("covariaveis_escola: handle guarda o objeto lazy e devolve prévia", {
   expect_length(env$dados, 10L)
   expect_true(env$metadados$truncado)
   expect_match(env$metadados$aviso, "dados_1", fixed = TRUE)
+  expect_match(env$metadados$aviso, "especificar_regressao(dados_id = \"dados_1\"",
+               fixed = TRUE)
+  expect_match(env$metadados$aviso, "IDEB `null`", fixed = TRUE)
   ctx <- env$metadados$contexto
   expect_equal(ctx$handle, "dados_1")
   expect_true(all(c("ideb_fund_i", "docentes", "rede") %in% unlist(ctx$colunas)))
