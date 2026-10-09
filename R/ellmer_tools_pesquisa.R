@@ -505,6 +505,22 @@ eduBR_tool_tendencia_ideb_regiao <- function(sessao) {
 # ---------------------------------------------------------------------------
 # covariaveis_escola
 
+# Escolas da base e escolas com IDEB por etapa (contagem no banco). A
+# prévia pode vir toda com IDEB nulo; sem a contagem, o modelo desconfia da
+# base e desvia para outras tools (aceite com chat real, 2026-10-09).
+eduBR_contar_respostas <- function(cv, respostas) {
+  tb <- consulta(cv)
+  exprs <- c(
+    list(n_escolas = rlang::quo(dplyr::n())),
+    lapply(respostas, function(r) {
+      rlang::quo(sum(ifelse(is.na(.data[[r]]), 0L, 1L), na.rm = TRUE))
+    })
+  )
+  names(exprs) <- c("n_escolas", respostas)
+  res <- dplyr::collect(dplyr::summarise(tb, !!!exprs))
+  vapply(res, function(v) as.numeric(v)[1], numeric(1))
+}
+
 eduBR_tool_covariaveis_escola <- function(sessao) {
   fun <- function(uf = NULL, rede = NULL, ano = 2025L, ano_ideb = 2023L,
                   ativas = TRUE, n = NULL) {
@@ -519,6 +535,9 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
       ativas = ativas
     )
     colunas <- as.character(dplyr::tbl_vars(consulta(cv)))
+    respostas <- intersect(c("ideb_fund_i", "ideb_fund_ii", "ideb_medio"),
+                           colunas)
+    contagem <- eduBR_contar_respostas(cv, respostas)
     id <- eduBR_handle_guardar(
       sessao, "dados", cv,
       descricao = eduBR_handle_descrever(
@@ -542,18 +561,26 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
           "n\u00e3o reconstrua a tabela a partir da pr\u00e9via. IDEB `null` na ",
           "pr\u00e9via \u00e9 esperado (escola sem a etapa ou sem nota): a ",
           "regress\u00e3o descarta essas linhas, n\u00e3o \u00e9 preciso buscar o ",
-          "IDEB em outra ferramenta."
+          "IDEB em outra ferramenta. Na base: %s escolas; com IDEB: %s."
         ),
-        id, id
+        id, id, format(contagem[["n_escolas"]], scientific = FALSE),
+        if (length(respostas)) {
+          paste(sprintf("%s = %s", respostas,
+                        format(contagem[respostas], scientific = FALSE,
+                               trim = TRUE)),
+                collapse = ", ")
+        } else {
+          "nenhuma coluna de IDEB"
+        }
       ),
       contexto = list(
         handle = id,
         ano_censo = ano,
         edicao_ideb = ano_ideb,
         colunas = I(colunas),
-        respostas = I(intersect(
-          c("ideb_fund_i", "ideb_fund_ii", "ideb_medio"), colunas
-        )),
+        respostas = I(respostas),
+        n_escolas = contagem[["n_escolas"]],
+        n_com_ideb = as.list(contagem[respostas]),
         cortes = I(intersect(c("rede", "localizacao", "sg_uf"), colunas))
       )
     )
