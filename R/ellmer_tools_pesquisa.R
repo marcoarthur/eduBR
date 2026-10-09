@@ -519,7 +519,14 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
       ativas = ativas
     )
     colunas <- as.character(dplyr::tbl_vars(consulta(cv)))
-    id <- eduBR_handle_guardar(sessao, "dados", cv)
+    id <- eduBR_handle_guardar(
+      sessao, "dados", cv,
+      descricao = eduBR_handle_descrever(
+        "covariaveis_escola",
+        list(uf = uf, rede = rede, ano = ano, ano_ideb = ano_ideb,
+             ativas = ativas)
+      )
+    )
     eduBR_resultado(
       cv,
       grao = "escola",

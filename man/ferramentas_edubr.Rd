@@ -74,7 +74,20 @@ achatados;
 covariáveis (\code{\link[=covariaveis_escola]{covariaveis_escola()}}) guardada como handle \verb{dados_<k>}
 (consulta preguiçosa) + prévia;
 \item \code{perfil_gestor} (pesquisadora): categoria modal por corte × dimensão
-(\code{\link[=gestores]{gestores()}} + \code{\link[=perfil_gestor]{perfil_gestor()}}).
+(\code{\link[=gestores]{gestores()}} + \code{\link[=perfil_gestor]{perfil_gestor()}});
+\item \code{especificar_regressao} (pesquisadora, especialista-ml): declara a
+regressão (\code{\link[=especificar_regressao]{especificar_regressao()}}) sobre um domínio do catálogo
+(\code{fonte}) \strong{ou} um handle de dados (\code{dados_id}), com \code{filtro} como
+lista de \verb{\{coluna, valor\}}; confere os nomes de colunas sem coletar e
+guarda o handle \verb{espec_<k>};
+\item \code{executar_regressao} (pesquisadora, especialista-ml): conta o recorte
+no banco e recusa com \code{limite_excedido} acima de \code{max_amostra}; senão
+roda \code{\link[=executar_regressao]{executar_regressao()}} e guarda o handle \verb{regressao_<k>}, com
+resumo por corte (\code{n}, \code{ajustado});
+\item \code{coeficientes} / \code{metricas} (pesquisadora, especialista-ml): tabelas
+achatadas (\code{\link[=coeficientes]{coeficientes()}}, \code{\link[=metricas]{metricas()}}) com nomes em português;
+\item \code{listar_handles} (pesquisadora, especialista-ml): ids, tipos e
+descrições dos handles da sessão.
 }
 
 Os argumentos (código INEP de 8 dígitos, etapa, edição bienal do IDEB,
@@ -93,7 +106,8 @@ estourado, a ferramenta responde \code{limite_excedido} sem executar;
 \item \code{timeout_s} (30): tempo máximo por chamada (aplicado também como
 \code{statement_timeout} no Postgres e restaurado ao fim);
 \item \code{max_amostra} (15000, máx. 30000): teto das amostras internas de
-treino (nunca devolvidas ao modelo);
+treino e das linhas de um recorte em \code{executar_regressao} (nunca
+devolvidas ao modelo);
 \item \code{persistir} (\code{FALSE}) e \code{ledger_arquivo} (\code{NULL}): gravação do ledger
 em CSV (por padrão em \verb{tools::R_user_dir("eduBR", "data")/ledger/}).
 }

@@ -161,6 +161,7 @@ eduBR_sessao_nova <- function(con, limites) {
   handles <- new.env(parent = emptyenv())
   handles$objetos <- new.env(parent = emptyenv())
   handles$contadores <- list()
+  handles$indice <- list()
   sessao$handles <- handles
   sessao
 }
@@ -670,17 +671,44 @@ eduBR_tool <- function(sessao, nome, fun, descricao, arguments = list(),
 # ---------------------------------------------------------------------------
 # Handles (D1)
 
-eduBR_handle_guardar <- function(sessao, prefixo, obj) {
+# `descricao` (opcional) é um texto curto mostrado por `listar_handles`
+# (ex.: "covariaveis_escola uf=AC rede=Municipal").
+eduBR_handle_guardar <- function(sessao, prefixo, obj, descricao = NULL) {
   if (!is.character(prefixo) || length(prefixo) != 1L || is.na(prefixo) ||
       !grepl("^[a-z][a-z0-9_]*$", prefixo)) {
     stop("`prefixo` deve ser um identificador em min\u00fasculas.", call. = FALSE)
+  }
+  if (!is.null(descricao) &&
+      (!is.character(descricao) || length(descricao) != 1L || is.na(descricao))) {
+    stop("`descricao` deve ser NULL ou uma string.", call. = FALSE)
   }
   h <- sessao$handles
   k <- (h$contadores[[prefixo]] %||% 0L) + 1L
   h$contadores[[prefixo]] <- k
   id <- paste0(prefixo, "_", k)
   assign(id, obj, envir = h$objetos)
+  h$indice[[id]] <- list(tipo = prefixo, descricao = descricao %||% "")
   id
+}
+
+# Handles da sessão, na ordem de criação: data frame (id, tipo, descricao).
+eduBR_handle_listar <- function(sessao) {
+  idx <- sessao$handles$indice %||% list()
+  data.frame(
+    id = names(idx) %||% character(0),
+    tipo = vapply(idx, `[[`, character(1), "tipo", USE.NAMES = FALSE),
+    descricao = vapply(idx, `[[`, character(1), "descricao", USE.NAMES = FALSE),
+    stringsAsFactors = FALSE
+  )
+}
+
+# Descrição curta "<origem> chave=valor ..." (valores NULL são omitidos).
+eduBR_handle_descrever <- function(origem, valores = list()) {
+  valores <- valores[!vapply(valores, is.null, logical(1))]
+  partes <- vapply(names(valores), function(nm) {
+    paste0(nm, "=", paste(format(valores[[nm]]), collapse = "|"))
+  }, character(1), USE.NAMES = FALSE)
+  paste(c(origem, partes), collapse = " ")
 }
 
 eduBR_handle_obter <- function(sessao, id) {
@@ -781,6 +809,26 @@ eduBR_tools_registro <- function() {
     perfil_gestor = list(
       criar = eduBR_tool_perfil_gestor,
       personas = "pesquisadora-educacional"
+    ),
+    especificar_regressao = list(
+      criar = eduBR_tool_especificar_regressao,
+      personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
+    executar_regressao = list(
+      criar = eduBR_tool_executar_regressao,
+      personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
+    coeficientes = list(
+      criar = eduBR_tool_coeficientes,
+      personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
+    metricas = list(
+      criar = eduBR_tool_metricas,
+      personas = c("pesquisadora-educacional", "especialista-ml")
+    ),
+    listar_handles = list(
+      criar = eduBR_tool_listar_handles,
+      personas = c("pesquisadora-educacional", "especialista-ml")
     )
   )
 }
@@ -835,7 +883,20 @@ eduBR_tools_registro <- function() {
 #'   covariáveis ([covariaveis_escola()]) guardada como handle `dados_<k>`
 #'   (consulta preguiçosa) + prévia;
 #' - `perfil_gestor` (pesquisadora): categoria modal por corte × dimensão
-#'   ([gestores()] + [perfil_gestor()]).
+#'   ([gestores()] + [perfil_gestor()]);
+#' - `especificar_regressao` (pesquisadora, especialista-ml): declara a
+#'   regressão ([especificar_regressao()]) sobre um domínio do catálogo
+#'   (`fonte`) **ou** um handle de dados (`dados_id`), com `filtro` como
+#'   lista de `{coluna, valor}`; confere os nomes de colunas sem coletar e
+#'   guarda o handle `espec_<k>`;
+#' - `executar_regressao` (pesquisadora, especialista-ml): conta o recorte
+#'   no banco e recusa com `limite_excedido` acima de `max_amostra`; senão
+#'   roda [executar_regressao()] e guarda o handle `regressao_<k>`, com
+#'   resumo por corte (`n`, `ajustado`);
+#' - `coeficientes` / `metricas` (pesquisadora, especialista-ml): tabelas
+#'   achatadas ([coeficientes()], [metricas()]) com nomes em português;
+#' - `listar_handles` (pesquisadora, especialista-ml): ids, tipos e
+#'   descrições dos handles da sessão.
 #'
 #' Os argumentos (código INEP de 8 dígitos, etapa, edição bienal do IDEB,
 #' UF, região, rede, `n`) são validados antes de consultar o banco;
@@ -851,7 +912,8 @@ eduBR_tools_registro <- function() {
 #' - `timeout_s` (30): tempo máximo por chamada (aplicado também como
 #'   `statement_timeout` no Postgres e restaurado ao fim);
 #' - `max_amostra` (15000, máx. 30000): teto das amostras internas de
-#'   treino (nunca devolvidas ao modelo);
+#'   treino e das linhas de um recorte em `executar_regressao` (nunca
+#'   devolvidas ao modelo);
 #' - `persistir` (`FALSE`) e `ledger_arquivo` (`NULL`): gravação do ledger
 #'   em CSV (por padrão em `tools::R_user_dir("eduBR", "data")/ledger/`).
 #'
