@@ -34,6 +34,27 @@
 
 ## Entradas
 
+### 2026-10-09 — 7ª rodada (verificação de #70–#75 e da taxa de sucesso)
+
+Sem chamadas novas ao LLM (limite térmico do laptop do Ollama): tools
+chamadas direto no banco e transcrições gravadas hoje
+(`docs/aceite-ellmer/gestora_r2.*`, `taxa-sucesso.md`).
+
+**G20 — as tools da gestora seguem leves e sem erro?**
+- Resposta: `perfil_escola` (~0,9k tokens), `resumo_escola` (~0,2k) e
+  `escolas_similares` (~0,3k) para a 13078070, sem erro nem corte — bem
+  abaixo do novo limite de texto (#71).
+- Status: **✓ atendido**.
+
+**G21 — o chat responde de forma estável?**
+- Resposta: taxa de sucesso **6/6** (critério estrito: tools certas, sem
+  erro, número da tool na resposta), 68–81 s. Na `gestora_r2` os números
+  conferem (frações e diferenças em pontos) e os erros da 6ª rodada
+  (Fund. II como "anos iniciais", AL/PI "mesmo estado") **não se
+  repetiram**. Restou uma frase solta: biblioteca "abaixo da única escola
+  da região com biblioteca" (são 7% das escolas).
+- Status: **✓ atendido**, com ressalva menor de redação.
+
 ### 2026-10-09 — 6ª rodada (perguntas ao chat, camada `ellmer`)
 
 Foco: as perguntas canônicas feitas **em linguagem natural a um LLM**
@@ -238,28 +259,25 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 - [x] Exemplo com escola real no README (#27).
 - [x] Prévia do `print` sem tipos técnicos/geometria (#38).
 - [x] Exportar o perfil para planilha (#39).
-- [ ] `escolas_similares()` funcionar sem `etapa =` para escola só de ensino médio (#52).
-- [ ] Repetir G16/G17 com o provedor Anthropic (conta sem créditos em
-  2026-10-09).
+- [x] `escolas_similares()` sem `etapa =` para escola só de ensino médio (#52).
+- [x] IDEB de etapa não ofertada sinalizado no perfil (#53).
+- [x] Chat estável nos 2 cenários da gestora (6/6, 2026-10-09).
+- [ ] Repetir G16/G17 com o provedor Anthropic (#73, conta sem créditos).
 - [ ] Follow-up G19: pelo chat, "melhoramos no IDEB?" (`resumo_escola` →
-  `serie_ideb_escola`) e a escola só de ensino médio (G14) pelo chat.
+  `serie_ideb_escola`) e a escola só de ensino médio (G14) — rodar com
+  N ≤ 2.
 
 ## Sugestões priorizadas
 
-- **[média]** Chat: o modelo local inventa conselhos fora dos dados ao
-  listar escolas parecidas (sentido da distância, "mesmo estado"). O
-  prompt já diz "menor = mais parecida"; testar com um modelo maior antes
-  de endurecer o prompt (ex.: proibir recomendações de priorização).
-
-- **[média]** `escolas_similares()`: usar por padrão as etapas em que a
-  escola aparece nas features (ou todas), em vez de só fund. I/II; escola
-  só de ensino médio hoje falha com "escola fora do recorte" (#52).
-- **[baixa]** `perfil_escola()`: sinalizar IDEB de etapa que a escola não
-  oferta mais no Censo de referência (ex.: médio em 2023, sem médio em 2025)
-  (#53).
+- **[baixa]** Chat: o modelo local ainda solta frases sem base nos dados
+  (ex.: "única escola da região com biblioteca"); conferir com um modelo
+  maior (#73) antes de endurecer o prompt.
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 7ª rodada): fluxo da gestora estável no chat
+  (6/6), números conferidos, erros de redação anteriores não voltaram;
+  resta só redação solta ocasional do modelo local.
 - **Aprova com ressalvas** (2026-10-09, 6ª rodada, chat com
   `qwen3.5:9b`): pelo chat, sem programar, a gestora obtém a comparação da
   escola com o município e a lista de escolas parecidas — o modelo escolheu

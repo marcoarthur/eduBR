@@ -410,17 +410,17 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   persona, ledger, orçamento, `chat_edubr()` (Anthropic/Ollama), prompts,
   vignette e aceite com chat real. Rodada de curadoria **com o chat**
   (2026-10-09): ver `docs/personas/`.
-- Backlog da camada ellmer:
-  - **[alta]** Aceite com Anthropic (bloqueado: conta sem créditos).
-  - **[média]** Opção em `chat_edubr()` para desligar o raciocínio do
-    Ollama (hoje via `...`: `api_args = list(reasoning_effort = "none")`)
-    e documentar a janela de contexto (`OLLAMA_CONTEXT_LENGTH`).
-  - **[média]** Prévias mais enxutas: `features_escola` devolve uma prévia
-    de 80 colunas e `covariaveis_escola` aceita `n` alto (100 linhas × 30
-    colunas estourou a janela de 16k do Ollama).
-  - **[baixa]** Argumento inexistente é recusado pelo ellmer antes da tool
-    e não entra no `ledger()`.
+- Backlog da camada ellmer (atualizado na curadoria de 2026-10-09, 2ª):
+  - Entregues: raciocínio desligável (#70), prévias enxutas e limite de
+    texto por resposta (#71), taxa de sucesso com N ≤ 2 (#72, parcial:
+    gestora 6/6, pesquisadora 1/4, ML 1/1), totais por classe (#74),
+    recusas do ellmer no ledger (#75).
+  - **[alta]** Aceite com Anthropic (#73, bloqueado: conta sem créditos).
+  - **[média]** Tool composta de regressão para modelos pequenos (o 9B não
+    fecha a cadeia de 4 tools da pesquisadora com resposta).
+  - **[baixa]** Tools de agregação (IDEB médio por município/UF/rede).
   - **[baixa]** Tool de dicionário de rótulos; `registrar_relacao()` segue
     fora (só leitura).
+  - Testes com o Ollama local: **N ≤ 2** (limite térmico do laptop).
 - Bloqueados no EduMaps: `co_municipio` em `clean.escolas`; INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).
