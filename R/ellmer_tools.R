@@ -32,6 +32,7 @@ eduBR_limites_padrao <- function() {
     max_linhas_total = 10000,
     timeout_s = 30,
     max_amostra = 15000L,
+    max_caracteres = 12000L,
     persistir = FALSE,
     ledger_arquivo = NULL
   )
@@ -77,7 +78,8 @@ eduBR_limites_normalizar <- function(limites) {
 
   out <- padrao
   for (nm in intersect(names(limites), c("n_padrao", "max_linhas",
-                                         "max_chamadas", "max_amostra"))) {
+                                         "max_chamadas", "max_amostra",
+                                         "max_caracteres"))) {
     out[[nm]] <- as.integer(positivo(nm))
   }
   if ("max_linhas_total" %in% names(limites)) {
@@ -121,8 +123,33 @@ eduBR_limites_normalizar <- function(limites) {
       call. = FALSE
     )
   }
+  if (out$max_caracteres < 1000L) {
+    stop("`limites$max_caracteres` deve ser ao menos 1000.", call. = FALSE)
+  }
   out$n_padrao <- min(out$n_padrao, out$max_linhas)
   out
+}
+
+# Corta linhas do fim at\u00e9 os registros serializados caberem em `limite`
+# caracteres de JSON (janela de contexto de modelos locais). Sempre mant\u00e9m
+# ao menos uma linha.
+eduBR_cortar_caracteres <- function(dados, limite) {
+  tam <- function(k) {
+    nchar(jsonlite::toJSON(dados[seq_len(k)], auto_unbox = TRUE,
+                           null = "null", na = "null", digits = NA),
+          type = "chars")
+  }
+  n <- length(dados)
+  if (n <= 1L || tam(n) <= limite) {
+    return(list(dados = dados, cortado = FALSE))
+  }
+  lo <- 1L
+  hi <- n - 1L
+  while (lo < hi) {
+    meio <- (lo + hi + 1L) %/% 2L
+    if (tam(meio) <= limite) lo <- meio else hi <- meio - 1L
+  }
+  list(dados = dados[seq_len(lo)], cortado = TRUE)
 }
 
 eduBR_validar_persona <- function(persona) {
@@ -568,6 +595,21 @@ eduBR_montar_envelope <- function(sessao, res, n = NULL) {
   }
 
   ser <- eduBR_serializar(df)
+  corte <- eduBR_cortar_caracteres(ser$dados, sessao$limites$max_caracteres)
+  if (corte$cortado) {
+    avisos <- c(avisos, sprintf(
+      paste0(
+        "Resposta reduzida a %d de %d linhas para caber no limite de texto ",
+        "por resposta (%s caracteres): filtre mais, pe\u00e7a menos linhas ",
+        "(`n`) ou menos colunas."
+      ),
+      length(corte$dados), length(ser$dados),
+      format(sessao$limites$max_caracteres, big.mark = ".",
+             decimal.mark = ",", scientific = FALSE)
+    ))
+    ser$dados <- corte$dados
+    truncado <- TRUE
+  }
   if (length(ser$omitidas)) {
     avisos <- c(avisos, sprintf(
       "Colunas omitidas (geometria ou dados institucionais): %s.",
@@ -962,6 +1004,10 @@ eduBR_tools_registro <- function() {
 #' - `max_amostra` (15000, máx. 30000): teto das amostras internas de
 #'   treino e das linhas de um recorte em `executar_regressao` (nunca
 #'   devolvidas ao modelo);
+#' - `max_caracteres` (12000, mín. 1000): tamanho máximo do JSON de `dados`
+#'   por resposta; acima dele as últimas linhas são cortadas (`truncado`
+#'   e aviso), para caber na janela de contexto de modelos locais (ex.:
+#'   16 mil tokens no Ollama);
 #' - `persistir` (`FALSE`) e `ledger_arquivo` (`NULL`): gravação do ledger
 #'   em CSV (por padrão em `tools::R_user_dir("eduBR", "data")/ledger/`).
 #'

@@ -249,7 +249,8 @@ eduBR_tool_redes_municipio <- function(sessao) {
     eduBR_resultado(
       rede_municipio(sessao$con, uf = uf, regiao = regiao, rede = rede),
       grao = "munic\u00edpio \u00d7 rede",
-      filtros = list(uf = uf, regiao = regiao, rede = rede)
+      filtros = list(uf = uf, regiao = regiao, rede = rede),
+      n_padrao = 20L
     )
   }
   eduBR_tool(
@@ -272,7 +273,7 @@ eduBR_tool_redes_municipio <- function(sessao) {
       uf = eduBR_arg_uf(),
       regiao = eduBR_arg_regiao(),
       rede = eduBR_arg_rede(publica = TRUE),
-      n = eduBR_arg_n()
+      n = eduBR_arg_n(20L)
     ),
     titulo = "Redes por munic\u00edpio"
   )
@@ -398,7 +399,8 @@ eduBR_tool_ideb <- function(sessao) {
       grao = "escola \u00d7 etapa \u00d7 edi\u00e7\u00e3o do IDEB",
       filtros = list(uf = uf, municipio = municipio, etapa = etapa,
                      rede = rede, ano = ano),
-      aviso = aviso
+      aviso = aviso,
+      n_padrao = 20L
     )
   }
   eduBR_tool(
@@ -428,7 +430,7 @@ eduBR_tool_ideb <- function(sessao) {
         "Edi\u00e7\u00e3o do IDEB (bienal: 2005, 2007, ..., 2023).",
         required = FALSE
       ),
-      n = eduBR_arg_n()
+      n = eduBR_arg_n(20L)
     ),
     titulo = "IDEB por escola"
   )
@@ -529,7 +531,9 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
     ano <- eduBR_validar_ano_censo(ano %||% 2025L)
     ano_ideb <- eduBR_validar_edicao(ano_ideb %||% 2023L, "ano_ideb")
     ativas <- eduBR_validar_logico(ativas %||% TRUE, "ativas")
-    eduBR_validar_n(n)
+    if (!is.null(n)) {
+      n <- eduBR_validar_inteiro(n, "n", 1L, 20L)
+    }
     cv <- covariaveis_escola(
       sessao$con, ano = ano, ano_ideb = ano_ideb, uf = uf, rede = rede,
       ativas = ativas
@@ -620,7 +624,11 @@ eduBR_tool_covariaveis_escola <- function(sessao) {
         "S\u00f3 escolas em atividade? Padr\u00e3o true.", required = FALSE
       ),
       n = ellmer::type_integer(
-        "Linhas da pr\u00e9via (padr\u00e3o 10).", required = FALSE
+        paste0(
+          "Linhas da pr\u00e9via (padr\u00e3o 10, m\u00e1ximo 20). A base completa fica ",
+          "no handle; n\u00e3o pe\u00e7a mais linhas para ver os dados."
+        ),
+        required = FALSE
       )
     ),
     titulo = "Covari\u00e1veis escolares (handle)"
