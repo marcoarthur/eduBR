@@ -358,6 +358,18 @@ test_that("fluxo completo: classificar -> dividir -> treinar -> importância -> 
   expect_length(conf, 9L)
   expect_setequal(names(conf[[1]]), c("real", "predito", "n"))
   expect_equal(sum(vapply(conf, `[[`, numeric(1), "n")), m$n_teste)
+  tot <- r$env$metadados$contexto$totais_classe
+  expect_length(tot, 3L)
+  expect_setequal(names(tot[[1]]), c("classe", "n_real", "n_predito", "acertos"))
+  for (k in tot) {
+    expect_equal(k$n_real, sum(vapply(Filter(function(x) x$real == k$classe, conf),
+                                      `[[`, numeric(1), "n")))
+    expect_equal(k$n_predito, sum(vapply(Filter(function(x) x$predito == k$classe, conf),
+                                         `[[`, numeric(1), "n")))
+  }
+  expect_equal(sum(vapply(tot, `[[`, numeric(1), "n_real")), m$n_teste)
+  expect_equal(sum(vapply(tot, `[[`, numeric(1), "acertos")) / m$n_teste,
+               m$acuracia, tolerance = 1e-8)
   expect_sem_objetos_r(r$json)
 
   # teste com escolas do treino -> recusado (vazamento)
