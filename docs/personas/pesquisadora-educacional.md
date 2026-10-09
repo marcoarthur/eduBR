@@ -38,6 +38,29 @@
 
 ## Entradas
 
+### 2026-10-09 — 14ª rodada (verificação de #98: tipos, ano e mapa)
+
+Entrega verificada: `escolas()` a partir de `clean.censo_escolas` (PR #98).
+
+- **P2 — tipos e ano** → `codigo_inep` chega como `integer64`,
+  `co_municipio` como `integer`, `rede`/`localizacao` como texto rotulado;
+  o ano é o do Censo (`ano = 2025`, mesmo padrão de `covariaveis_escola()`).
+  Junção `escolas(uf = "AC", ativas = TRUE)` × `covariaveis_escola(uf =
+  "AC")` por código: 1.524 de 1.524, `co_municipio` idêntico. **✓
+  atendido.**
+- **P4 — mapa** → `as_sf(escolas(con, uf = "AC", ativas = TRUE), n =
+  2000)`: 1.524 pontos, SRID 4674, 0,7 s, sem aviso — mas **992 (65%) com
+  geometria vazia**. Conferido no banco: não é regressão (toda escola com
+  ponto na ingestão antiga tem o mesmo ponto no Censo; distância média
+  0,0 m em 28.526 escolas de SP); são escolas que a ingestão antiga nem
+  tinha, sem coordenada no próprio Censo. No Brasil, 34.806 das 180.540
+  ativas (19%) não têm coordenada; na zona rural, 24%. **lacuna** (de
+  dados) → **sugestão**: dizer isso ao usuário.
+- **Catálogo para o LLM** → o domínio `escolas` aparece como "escola
+  (legado: 1ª ingestão, incompleta)". **✓ atendido.**
+
+Follow-up: `as_sf()` informar quantas geometrias vieram vazias?
+
 ### 2026-10-09 — 13ª rodada (join escola→município por código)
 
 Fato registrado (dono do repo): `clean.censo_escolas` é a **fonte de
@@ -420,10 +443,17 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - **[baixa]** Chat local: para regressão, preferir `raciocinio =
   "padrao"` no Ollama ou o provedor Anthropic (com raciocínio desligado o
   9B erra argumentos; documentado em `docs/ellmer.md` nesta rodada).
+- **[baixa]** Cobertura de coordenadas: documentar em `escolas()` que
+  ~19% das escolas ativas do Censo não têm coordenada (65% no AC) e fazer
+  `as_sf()` informar (mensagem, não aviso) quantas geometrias vieram
+  vazias.
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 14ª rodada): tipos, ano e joins por código
+  corretos com o cadastro do Censo; a falta de coordenadas é dos dados
+  (sugestão [baixa] para avisar o usuário).
 - **Aprova** (2026-10-09, 13ª rodada): `escolas()` com `co_municipio`
   pelo cadastro do Censo fecha o join por código; não restam pendências.
 - **Aprova com ressalvas** (2026-10-09, 12ª rodada): com Anthropic a

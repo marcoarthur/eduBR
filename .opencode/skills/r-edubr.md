@@ -429,6 +429,8 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   - Testes com o Ollama local: **N ≤ 2** (limite térmico do laptop).
 - `escolas()` com `co_municipio` (2026-10-09): passa a ler
   `clean.censo_escolas`, a fonte de verdade das escolas; `clean.escolas` é
-  legado.
+  legado. Curadoria (gestora 11ª, pesquisadora 14ª, ML 15ª): as três
+  **aprovam**; sugestão [baixa]: avisar a cobertura de coordenadas (~19%
+  das escolas ativas sem ponto no Censo) em `escolas()`/`as_sf()`.
 - Bloqueados no EduMaps: INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).
