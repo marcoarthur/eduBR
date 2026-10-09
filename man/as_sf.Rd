@@ -22,8 +22,14 @@ Um \code{sf} (\code{data.frame} com coluna \code{sfc} ativa).
 Materializa um objeto \link{eduBR} e converte a coluna de geometria (hex EWKB,
 SRID 4674 — SIRGAS 2000) em geometria \code{sf}, permitindo mapas com
 \code{ggplot2::geom_sf()} e companhia. Linhas sem geometria (\code{NA}) viram
-geometrias vazias (as linhas são mantidas). Pedir o \code{sf} já é pedir a
-materialização, então não há aviso de custo; use \code{n} para limitar.
+geometrias vazias (as linhas são mantidas) e uma mensagem informa
+quantas são. Pedir o \code{sf} já é pedir a materialização, então não há
+aviso de custo; use \code{n} para limitar.
+}
+\details{
+Nas escolas (\code{\link[=escolas]{escolas()}}), a falta de geometria vem da fonte: cerca de
+19\% das escolas ativas do Censo Escolar 2025 não têm coordenada (24\% na
+zona rural; 65\% no AC).
 }
 \examples{
 \dontrun{

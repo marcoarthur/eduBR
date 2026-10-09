@@ -45,6 +45,11 @@ código do município e sem parte das escolas), e não é mais usado aqui.
 \code{codigo_inep} é o \code{co_entidade} do Censo e \code{co_municipio} é o código
 IBGE do município (7 dígitos, \code{integer}), a chave para juntar com
 \code{\link[=docentes_rede]{docentes_rede()}}, \code{\link[=gestores]{gestores()}}, \code{\link[=covariaveis_escola]{covariaveis_escola()}} e \code{\link[=ideb]{ideb()}}.
+
+Cobertura de coordenadas: cerca de 19\% das escolas ativas do Censo
+2025 não têm \code{latitude}/\code{longitude}/\code{geometry} (24\% na zona rural,
+65\% no AC); essas linhas viram geometrias vazias em \code{\link[=as_sf]{as_sf()}}, que
+informa quantas são.
 }
 \examples{
 \dontrun{

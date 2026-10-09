@@ -18,7 +18,10 @@ test_that("as_sf() converte hex EWKB em POINT 4674", {
   testthat::skip_if_not_installed("sf")
   local_mocked_bindings(eduBR_tbl = fake_geo_tbl)
 
-  s <- as_sf(escolas("fake_con"))
+  expect_message(
+    s <- as_sf(escolas("fake_con")),
+    "1 de 2 linhas sem geometria"
+  )
 
   expect_s3_class(s, "sf")
   expect_equal(as.character(sf::st_geometry_type(s, by_geometry = FALSE)), "POINT")
@@ -65,10 +68,14 @@ test_that("as_sf() converte varias geometrias, respeita n e nao avisa", {
   }
   local_mocked_bindings(eduBR_tbl = tres)
 
-  s <- expect_no_warning(as_sf(escolas("fake_con")))
+  expect_message(
+    s <- expect_no_warning(as_sf(escolas("fake_con"))),
+    "1 de 3 linhas sem geometria"
+  )
   expect_equal(nrow(s), 3L)
   expect_equal(as.logical(sf::st_is_empty(s$geometry)), c(FALSE, TRUE, FALSE))
   expect_equal(s$geometry[[1L]], s$geometry[[3L]])
 
-  expect_equal(nrow(as_sf(escolas("fake_con"), n = 1L)), 1L)
+  expect_no_message(um <- as_sf(escolas("fake_con"), n = 1L))
+  expect_equal(nrow(um), 1L)
 })

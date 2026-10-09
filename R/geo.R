@@ -9,8 +9,13 @@
 #' Materializa um objeto [eduBR] e converte a coluna de geometria (hex EWKB,
 #' SRID 4674 — SIRGAS 2000) em geometria `sf`, permitindo mapas com
 #' `ggplot2::geom_sf()` e companhia. Linhas sem geometria (`NA`) viram
-#' geometrias vazias (as linhas são mantidas). Pedir o `sf` já é pedir a
-#' materialização, então não há aviso de custo; use `n` para limitar.
+#' geometrias vazias (as linhas são mantidas) e uma mensagem informa
+#' quantas são. Pedir o `sf` já é pedir a materialização, então não há
+#' aviso de custo; use `n` para limitar.
+#'
+#' Nas escolas ([escolas()]), a falta de geometria vem da fonte: cerca de
+#' 19% das escolas ativas do Censo Escolar 2025 não têm coordenada (24% na
+#' zona rural; 65% no AC).
 #'
 #' @param x Um objeto `eduBR` com coluna de geometria.
 #' @param geometry Nome da coluna de geometria (padrão `"geometry"`).
@@ -60,5 +65,12 @@ as_sf.eduBR <- function(x, geometry = "geometry", crs = 4674, n = NULL) {
     )
   }
   df[[geometry]] <- sf::st_sfc(geoms, crs = crs)
+  vazias <- sum(!ok)
+  if (vazias > 0L) {
+    message(sprintf(
+      "as_sf(): %d de %d linhas sem geometria (sem coordenada na fonte).",
+      vazias, length(ok)
+    ))
+  }
   sf::st_sf(df)
 }
