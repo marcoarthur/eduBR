@@ -11,3 +11,8 @@ analysis/*_files/
 analysis/*.rds
 tests/testthat/_problems/
 .claude/
+vignettes/*.html
+vignettes/*.R
+inst/doc
+doc
+Meta

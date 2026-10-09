@@ -1,0 +1,368 @@
+---
+title: "eduBR com LLM (ellmer)"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{eduBR com LLM (ellmer)}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(eval = FALSE, collapse = TRUE, comment = "#>")
+```
+
+O `eduBR` pode ser consultado em linguagem natural por um LLM com o pacote
+[ellmer](https://ellmer.tidyverse.org). As funções do pacote viram
+**ferramentas** (*tools*) que o modelo chama sozinho; cada uma devolve um
+JSON pequeno, sem SQL, sem nomes físicos de tabela e sem dados pessoais.
+
+Esta vignette **não executa** código (todos os chunks têm `eval = FALSE`):
+precisa de banco, de rede e de um LLM. As saídas mostradas foram
+**gravadas** num chat real em 2026-10-09, no container de desenvolvimento,
+com o modelo local `qwen3.5:9b` (Ollama) e o banco de desenvolvimento do
+EduMaps. As transcrições completas (com todas as chamadas, resultados e o
+ledger) estão no repositório em `docs/aceite-ellmer/`, e o script que as
+gerou em `tools/aceite-ellmer.R`. Os números mudam com novas cargas do
+banco.
+
+## Configuração
+
+Requer os pacotes `ellmer` e `jsonlite` (em `Suggests`).
+
+### Anthropic
+
+A chave vem **só** da variável de ambiente `ANTHROPIC_API_KEY`, por
+exemplo no `~/.Renviron` (nunca no código):
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+EDUBR_ANTHROPIC_MODELO=claude-...   # opcional; sem ela, o padrão do ellmer
+```
+
+```{r}
+library(eduBR)
+con <- conecta(service = "edumaps")
+tools <- ferramentas_edubr(con, persona = "gestora-escolar")
+chat <- chat_edubr("anthropic", tools = tools)
+```
+
+### Ollama (modelo local)
+
+O endereço vem de `OLLAMA_BASE_URL` (padrão `http://localhost:11434`) e o
+modelo de `EDUBR_OLLAMA_MODELO` (padrão `qwen3.5:9b`); o modelo precisa
+suportar *tool calling*.
+
+```{r}
+chat <- chat_edubr("ollama", tools = tools)
+chat <- chat_edubr("ollama", modelo = "granite4.1:8b", tools = tools)
+```
+
+No container `rstudio.dev`, o Ollama roda na máquina do desenvolvedor e é
+alcançado por um **túnel SSH reverso** (o container passa a ver o Ollama em
+`localhost:11434`):
+
+```bash
+tools/tunnel-ollama.sh abrir    # status | fechar
+```
+
+Sem `provedor`, `chat_edubr()` usa `EDUBR_LLM_PROVEDOR`; senão
+`"anthropic"` se houver `ANTHROPIC_API_KEY`; senão `"ollama"`.
+
+### Chat criado à parte
+
+`registrar_tools()` anexa as ferramentas e o prompt de sistema da persona a
+um chat do ellmer criado por fora:
+
+```{r}
+chat <- ellmer::chat_ollama(model = "qwen3.5:9b")
+registrar_tools(chat, tools)
+cat(prompt_persona("gestora-escolar"))   # o que o modelo recebe
+```
+
+## Personas
+
+`ferramentas_edubr(con, persona = ...)` filtra as ferramentas e
+`chat_edubr()`/`registrar_tools()` aplicam o prompt de sistema da persona
+(papel, vocabulário, perguntas típicas → ferramentas, o que nunca fazer,
+pegadinhas dos dados):
+
+| Persona | Ferramentas |
+|---|---|
+| `gestora-escolar` | `catalogo`, `perfil_escola`, `resumo_escola`, `serie_ideb_escola`, `escolas_similares`, `scores_escola` |
+| `pesquisadora-educacional` | `catalogo`, `perfil_escola`, `municipios`, `redes_municipio`, `docentes_rede`, `ideb`, `tendencia_ideb_regiao`, `covariaveis_escola`, `perfil_gestor`, `especificar_regressao`, `executar_regressao`, `coeficientes`, `metricas`, `listar_handles` |
+| `especialista-ml` | `catalogo`, `scores_escola`, `indicadores_escola`, `ideb`, `tendencia_ideb_regiao`, `covariaveis_escola`, regressão (4), `listar_handles`, `features_escola`, `classificar_desempenho`, `dividir_dados`, `treinar_floresta`, `importancia_floresta`, `metricas_floresta`, `pca_perfil` |
+
+Sem `persona`, todas as ferramentas e um prompt genérico curto. A matriz
+pergunta × ferramenta de cada persona está em `docs/ellmer.md`.
+
+## Limites, orçamento e ledger
+
+```{r}
+tools <- ferramentas_edubr(
+  con,
+  persona = "especialista-ml",
+  limites = list(
+    timeout_s = 120,         # por chamada (padrão 30)
+    max_chamadas = 30,       # orçamento da sessão (padrão 50)
+    max_linhas_total = 5000, # linhas devolvidas ao modelo (padrão 10.000)
+    max_amostra = 15000,     # coletas internas p/ treino/regressão
+    persistir = TRUE         # grava o ledger em tools::R_user_dir()
+  )
+)
+ledger(tools)
+```
+
+- Cada resposta tem no máximo **1000 linhas** (teto fixo); pedidos maiores
+  são cortados com `metadados.aviso`.
+- Bases para modelagem **não voltam ao modelo**: ficam na sessão e o
+  modelo recebe um *handle* (`dados_1`, `espec_1`, `regressao_1`,
+  `treino_1`, `floresta_1`...), que só vale nesta sessão.
+- Ao estourar orçamento ou tempo, a ferramenta devolve
+  `erro.tipo = "limite_excedido"` sem executar.
+- `ledger(tools)` lista toda chamada: horário, ferramenta, argumentos
+  (JSON), linhas devolvidas, duração e tipo de erro. Argumentos que o
+  ellmer recusa antes de chamar a ferramenta (ex.: nome de argumento
+  inexistente) **não** aparecem no ledger.
+
+## Cenário 1 — gestora escolar
+
+Uma diretora quer comparar a escola 13078070 (municipal, Boa Vista do
+Ramos/AM) com o município e achar escolas parecidas.
+
+```{r}
+tools <- ferramentas_edubr(con, persona = "gestora-escolar")
+chat <- chat_edubr("ollama", tools = tools)
+chat$chat("Como está a infraestrutura da escola 13078070 comparada ao município?")
+chat$chat("Quais escolas são parecidas com a 13078070 para trocar experiência?")
+ledger(tools)
+```
+
+Chamadas (ledger), 48,9 s e 37,8 s:
+
+```text
+tool               args                       n_linhas duracao_ms
+perfil_escola      {"escola_id":"13078070"}         14       2189
+escolas_similares  {"escola_id":"13078070"}          5      20049
+```
+
+Resposta 1 (trecho):
+
+```text
+| Item                    | Escola tem? | Escolas do município que têm* | Como está comparada ao município |
+| Água de rede pública    | ✅ Sim      | Apenas 39%                    | Muito à frente (+61 pontos)      |
+| Energia de rede pública | ✅ Sim      | 95%                           | Na média (+5 pontos)             |
+| Esgoto de rede pública  | ✅ Sim      | Apenas 7%                     | Muito à frente (+93 pontos) ⬆️    |
+| Biblioteca              | ❌ Não tem  | Apenas 7%                     | A maioria do município também não tem |
+| Laboratório de informática | ❌ Não tem | 18%                       | Abaixo da média da rede (-18 pontos) ⬇️ |
+| Quadra de esportes      | ✅ Sim      | Apenas 7%                     | Muito à frente (+93 pontos) ⬆️    |
+| ...                     |             |                               |                                  |
+| Sala dos professores    | ✅ Sim      | 27%                           | Muito à frente (+73 pontos) ⬆️    |
+
+### Resumo rápido:
+- Forças da escola: tem recursos que apenas 40–39% das escolas do município
+  possuem (internet, banda larga, esgoto, quadra).
+- Ponto de atenção: não tem biblioteca nem laboratório de informática —
+  itens raros no município todo.
+```
+
+Resposta 2 (trecho):
+
+```text
+| Distância | Escola                                     | Município | UF | Etapa          |
+| 5,23      | ESCOLA MUNICIPAL DE ENSINO FUNDAMENTAL ... | Rio Largo | AL | Fundamental II |
+| 5,59      | EM DEPUTADO ABELARD PEREIRA                | Carandaí  | MG | Fundamental I  |
+| 5,70      | ESCOLA MUNICIPAL POETA DA COSTA E SILVA    | Teresina  | PI | Fundamental II |
+| 5,74      | ANTONIO DUARTE NOGUEIRA DOUTOR EMEF        | Barrinha  | SP | Fundamental I  |
+| 5,78      | EM FRANCISCO MEIRELES                      | Dourados  | MS | Fundamental I  |
+
+- Trocas de experiência válidas: todas estão nos anos iniciais (Fund. I ou
+  II) ...
+- Dica: priorize as de maior distância no mesmo estado (AL, PI) ...
+```
+
+**Leitura crítica.** O modelo escolheu sozinho a ferramenta certa em cada
+pergunta, sem SQL. Os 10 itens de infraestrutura conferem com o retorno de
+`perfil_escola` (frações do município arredondadas corretamente; diferenças
+em pontos percentuais iguais a `dif_municipio`), e a lista de escolas
+parecidas é exatamente a de `escolas_similares`. Erros de **prosa**, não de
+dados: "40–39%" no resumo; "Fund. II" chamado de anos iniciais; a "dica"
+inverte o sentido da distância (menor = mais parecida) e trata AL/PI como
+"o mesmo estado" de uma escola do AM. O que conferir: números da tabela
+contra `perfil_escola`, e desconfiar de conselhos que não vêm das
+ferramentas.
+
+## Cenário 2 — pesquisadora educacional
+
+Uma regressão declarativa pedida em linguagem natural.
+
+```{r}
+tools <- ferramentas_edubr(con, persona = "pesquisadora-educacional")
+chat <- chat_edubr("ollama", tools = tools)
+chat$chat(paste(
+  "No Acre, rede municipal, o IDEB do fundamental I se associa a ter",
+  "biblioteca e ao número de docentes? Separe por localização urbana/rural."
+))
+ledger(tools)
+```
+
+Chamadas (85,1 s no total; a primeira tentativa de `covariaveis_escola`
+usou um argumento inexistente, `ativo`, foi recusada pelo ellmer e
+corrigida pelo modelo — por isso não aparece no ledger):
+
+```text
+tool                   args                                                     n_linhas
+covariaveis_escola     {"uf":"AC","rede":"Municipal","ativas":true,"n":10}          10
+especificar_regressao  {"outcome":"ideb_fund_i",
+                        "predictors":["in_biblioteca","docentes"],
+                        "cuts":"localizacao","modelo":"linear",
+                        "dados_id":"dados_1"}                                        1
+executar_regressao     {"espec_id":"espec_1"}                                        2
+coeficientes           {"regressao_id":"regressao_1","n":100}                        6
+```
+
+Resposta (trecho):
+
+```text
+Base: 885 escolas, 127 com nota IDEB fundamental I (ed. 2023), cortes por
+localidade (urbana = 84 escolas; rural = 43).
+
+| Localidade | Biblioteca | estimativa (erro-padrão) | p-valor | Docentes | estimativa (erro-padrão) | p-valor |
+| Rural      | Sim        | −0,541 (0,582)           | 0,358   | +1       | +0,0008 (0,031)          | 0,980   |
+| Urbana     | Sim        | −0,599 (0,300)           | 0,049   | +1       | +0,031 (0,018)           | 0,086   |
+
+- Rural: nem ter biblioteca nem aumentar o número absoluto de docentes se
+  associam à nota IDEB fundamental I.
+- Urbana: escolas com biblioteca apresentam IDEB ~0,6 ponto menor que
+  escolas sem biblioteca. O coeficiente de professores (+0,031 por docente)
+  é positivo mas não significativo ao nível 5 %.
+
+Cuidados: 1. Associação, não causalidade: o efeito negativo da biblioteca
+pode refletir seleção ... 2. Cobertura do IDEB: apenas 127 das 885 escolas
+tiveram nota na etapa ...
+```
+
+**Leitura crítica.** O encadeamento é o esperado (`covariaveis_escola` →
+`especificar_regressao` com o handle → `executar_regressao` →
+`coeficientes`), com os argumentos escolhidos pelo modelo. Todos os
+coeficientes, erros-padrão, p-valores e os `n` (885 no recorte, 127 usados;
+84 urbanas, 43 rurais) conferem com o retorno das ferramentas, e a leitura
+evita causalidade. Ressalvas: o modelo não chamou `metricas` (não informa
+R²); a nota sobre "vínculos docentes" vem do prompt de `docentes_rede` e
+não se aplica a `docentes` desta base; a diferença de interceptos citada
+("−0,5") tem o sinal ambíguo (as urbanas têm intercepto ~0,5 maior).
+
+**Antes de funcionar**, o pedido não foi atendido em cinco execuções
+(transcrições `pesq_r1` a `pesq_r5`, a última com a pergunta reformulada).
+Em duas, a prévia vinha toda com IDEB nulo, o modelo desconfiava da base e
+buscava o IDEB na ferramenta `ideb` (50 a 100 linhas), estourando a janela
+de contexto do Ollama (16 mil tokens; o prompt de sistema e as definições
+das 14 ferramentas já ocupam ~8,5 mil) e perdendo a pergunta; numa
+terceira, sem raciocínio, pediu uma prévia de 100 linhas e descreveu a
+prévia (com afirmações inventadas) em vez de modelar. Nas outras duas, o turno terminou só com raciocínio,
+sem resposta (uma delas depois de encadear corretamente as quatro
+ferramentas). A camada foi corrigida: o aviso de `covariaveis_escola` dizia
+para usar o handle num argumento inexistente; agora aponta
+`especificar_regressao(dados_id = )` e traz a contagem de escolas com IDEB
+na base inteira.
+
+## Cenário 3 — especialista em ML
+
+```{r}
+tools <- ferramentas_edubr(con, persona = "especialista-ml")
+chat <- chat_edubr(
+  "ollama", tools = tools,
+  api_args = list(reasoning_effort = "none")   # ver "Limitações"
+)
+chat$chat(paste(
+  "Treine uma floresta aleatória para classificar o desempenho (terços da",
+  "nota) das escolas públicas do fundamental II, com amostra reprodutível,",
+  "e avalie contra o baseline."
+))
+ledger(tools)
+```
+
+Chamadas (49,3 s; todos os argumentos escolhidos pelo modelo):
+
+```text
+tool                    args                                                         n_linhas duracao_ms
+features_escola         {"etapa":"fundamental_ii","publica":true,
+                         "n_por_etapa":3000,"semente":2023}                                1        784
+classificar_desempenho  {"dados_id":"dados_1","nota":"nota_media","grupo":"etapa"}         3        142
+dividir_dados           {"dados_id":"dados_2","prop":0.8,"semente":2023}                   6         17
+treinar_floresta        {"treino_id":"treino_1","trees":250,"min_node_size":5,
+                         "semente":2023}                                                   1       4129
+metricas_floresta       {"floresta_id":"floresta_1","teste_id":"teste_1"}                  1        129
+```
+
+Resposta (trecho):
+
+```text
+- Base: 3.000 escolas públicas do Fundamental II (semente=2023)
+- Classificação: terços da nota_media — Baixo: até 4,73 | Médio: 4,73–5,35 | Alto: ≥5,35
+- Treino: 2.401 escolas | Teste: 599 escolas (estratificado)
+- Árvores: 250 | Features: 77 preditores | Erro OOB: 0,338
+
+| Métrica   | Valor | Interpretação                                  |
+| Acurácia  | 0,608 | Contra baseline 0,336 → ganho de 27%% ✅         |
+| F1_macro  | 0,602 | Média das F1 nas 3 classes                     |
+| AUC_macro | 0,778 | Boa capacidade de separação (0,5 = acaso)      |
+
+Matriz de Confusão (Teste)
+- Baixo: 151 acertos/253 → 68%% F1
+- Médio: 90 acertos/245 → 49%% F1 ⚠️ (o mais difícil)
+- Alto: 123 acertos/607 → 64%% F1
+...
+- Associação, não causalidade ...
+```
+
+**Leitura crítica.** O fluxo completo saiu de uma única pergunta: amostra
+reprodutível (semente 2023, 3.000 de 31.078 escolas), terços dentro da
+etapa, holdout estratificado 80/20, floresta sem a nota entre os preditores
+e avaliação só no teste da mesma divisão. Conferem com as ferramentas:
+cortes (4,73 e 5,35), tamanhos, acurácia, baseline, F1 e AUC macro e os F1
+por classe. **Erros do modelo**: os denominadores da matriz de confusão
+(253, 245, 607) são inventados — o teste tem 198/201/200 escolas por
+classe; o "ganho de 27%" é a diferença em pontos (0,27 =
+`ganho_sobre_baseline`), não um ganho relativo; "57 reais → baixo, 54
+médio → alto" chama de "mais graves" os erros entre classes vizinhas (os
+graves, baixo ↔ alto, foram 36 + 8); o "%%" é falha de formatação; o
+"erro OOB" é o Brier OOB. Não chamou `importancia_floresta`. O que
+conferir: qualquer número derivado (somas, razões) contra o `contexto` de
+`metricas_floresta`.
+
+## Garantias
+
+- **Sem SQL e sem nomes físicos**: nenhuma resposta contém
+  `schema.tabela` (teste automático varre o JSON de todas as ferramentas;
+  nas transcrições acima, 0 ocorrências).
+- **Sem dados pessoais**: gestor e docentes são contagens por escola;
+  endereço, telefone, CEP e CNPJ ficam fora das respostas.
+- **Tipos seguros**: `integer64` chega como texto (sem números
+  "denormais"); datas em ISO-8601; geometria removida.
+- **Teto e orçamento**: até 1000 linhas por resposta (nas três
+  transcrições acima, no máximo 14 linhas por chamada), timeout por chamada e orçamento por
+  sessão; tudo registrado no ledger.
+- **Erros classificados** (`parametro_invalido`, `sem_dados`,
+  `limite_excedido`, `conexao`), com mensagem acionável e sem o texto do
+  banco.
+
+## Limitações
+
+- **Modelo local de 9B** (`qwen3.5:9b`): escolhe bem as ferramentas e
+  encadeia handles, mas erra em contas e interpretações na prosa
+  (cenários 1 e 3). Confira sempre os números contra o ledger/retorno.
+- **Janela de contexto e raciocínio**: o Ollama de desenvolvimento roda com
+  16 mil tokens (`OLLAMA_CONTEXT_LENGTH`). Com o raciocínio (*thinking*)
+  ligado, o `qwen3.5:9b` às vezes termina o turno só com raciocínio e sem
+  texto ou chamada (resposta vazia), e o chat seguinte falha com
+  `HTTP 400 invalid message content type`. No fluxo de ML isso ocorreu em
+  2 de 2 tentativas; com `api_args = list(reasoning_effort = "none")` o
+  fluxo completou. Na regressão da pesquisadora, ao contrário, o raciocínio
+  ajudou. Prefira prévias curtas (`n` pequeno) e abra um chat novo se a
+  resposta vier vazia.
+- **Anthropic não testado** no aceite: a conta de desenvolvimento estava sem
+  créditos em 2026-10-09. O código do provedor é coberto por testes sem
+  rede (`test-ellmer-chat.R`) e o smoke `tools/test-container.sh --llm
+  anthropic` fica pendente.
+- Ferramentas são só leitura: não gravam arquivos (use `exportar()` em R) e
+  não expõem geometria (use `as_sf()` em R).
