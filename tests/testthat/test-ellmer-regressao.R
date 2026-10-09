@@ -453,3 +453,55 @@ test_that("covariaveis_escola guarda o handle com descrição", {
     "covariaveis_escola uf=AC rede=Municipal ano=2025 ano_ideb=2023 ativas=TRUE"
   )
 })
+
+test_that("regressao_escolas: fluxo completo numa chamada (#81)", {
+  local_mocked_bindings(
+    covariaveis_escola = function(con, ano, ano_ideb, uf, rede, ativas) {
+      new_eduBR(base_teste(), "eduBR_covariaveis")
+    }
+  )
+  tools <- ferramentas_edubr("fake_con", persona = "pesquisadora-educacional")
+  expect_true("regressao_escolas" %in% names(tools))
+  r <- chamar(tools$regressao_escolas, outcome = "ideb_fund_i",
+              predictors = list("in_biblioteca", "docentes"),
+              cuts = list("localizacao"), uf = "AC", rede = "Municipal")
+  expect_null(r$env$erro)
+  termos <- vapply(r$env$dados, `[[`, character(1), "termo")
+  expect_true(all(c("in_biblioteca", "docentes") %in% termos))
+  expect_setequal(unique(vapply(r$env$dados, `[[`, character(1),
+                                "localizacao")), c("Urbana", "Rural"))
+  ctx <- r$env$metadados$contexto
+  expect_length(ctx$metricas, 2L)
+  expect_true(all(c("r2", "nobs") %in% names(ctx$metricas[[1]])))
+  expect_equal(ctx$n_recorte, 60)
+  expect_match(ctx$formula, "ideb_fund_i", fixed = TRUE)
+  expect_match(r$env$metadados$handle, "^regressao_[0-9]+$")
+  for (h in c(ctx$dados_id, ctx$espec_id, ctx$regressao_id)) {
+    expect_false(is.null(eduBR_handle_obter(attr(tools, "sessao"), h)))
+  }
+  for (marca in c("model_fit", "<environment", "clean.", "analytics.")) {
+    expect_false(grepl(marca, r$json, fixed = TRUE), info = marca)
+  }
+  # uma chamada no ledger (as etapas internas não contam)
+  expect_equal(ledger(tools)$tool, "regressao_escolas")
+})
+
+test_that("regressao_escolas: erros acionáveis e personas", {
+  local_mocked_bindings(
+    covariaveis_escola = function(con, ano, ano_ideb, uf, rede, ativas) {
+      new_eduBR(base_teste(), "eduBR_covariaveis")
+    }
+  )
+  tools <- ferramentas_edubr("fake_con")
+  r <- chamar(tools$regressao_escolas, outcome = "nao_existe",
+              predictors = list("docentes"))
+  expect_equal(r$env$erro$tipo, "parametro_invalido")
+  expect_match(r$env$erro$mensagem, "nao_existe", fixed = TRUE)
+  r <- chamar(tools$regressao_escolas, outcome = "ideb_fund_i",
+              predictors = list("docentes"), uf = "XX")
+  expect_equal(r$env$erro$tipo, "parametro_invalido")
+  expect_false("regressao_escolas" %in%
+                 names(ferramentas_edubr("fake_con", persona = "gestora-escolar")))
+  expect_true("regressao_escolas" %in%
+                names(ferramentas_edubr("fake_con", persona = "especialista-ml")))
+})

@@ -76,6 +76,10 @@ covariáveis (\code{\link[=covariaveis_escola]{covariaveis_escola()}}) guardada 
 (consulta preguiçosa) + prévia;
 \item \code{perfil_gestor} (pesquisadora): categoria modal por corte × dimensão
 (\code{\link[=gestores]{gestores()}} + \code{\link[=perfil_gestor]{perfil_gestor()}});
+\item \code{regressao_escolas} (pesquisadora, especialista-ml): regressão por
+escola numa chamada (recorte de \code{\link[=covariaveis_escola]{covariaveis_escola()}} → especificação
+→ execução → coeficientes, com métricas por corte no contexto);
+preferível para modelos pequenos.
 \item \code{especificar_regressao} (pesquisadora, especialista-ml): declara a
 regressão (\code{\link[=especificar_regressao]{especificar_regressao()}}) sobre um domínio do catálogo
 (\code{fonte}) \strong{ou} um handle de dados (\code{dados_id}), com \code{filtro} como

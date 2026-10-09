@@ -42,7 +42,7 @@ modelar, sem SQL.
 | Tendência do IDEB por região | `tendencia_ideb_regiao` |
 | Uma escola frente ao município e ao estado | `perfil_escola` |
 | Recorte de UF/rede → base para modelagem | `covariaveis_escola` (handle `dados_<k>`) |
-| Quanto do IDEB se associa à infraestrutura, controlando por rede? | `covariaveis_escola` → `especificar_regressao` (`dados_id`, `cuts` ou preditor `rede`) → `executar_regressao` → `coeficientes` e `metricas` |
+| Quanto do IDEB se associa à infraestrutura, controlando por rede? | **`regressao_escolas`** (uma chamada: coeficientes + métricas por corte). Passo a passo, só se precisar: `covariaveis_escola` → `especificar_regressao` (`dados_id`) → `executar_regressao` → `coeficientes` e `metricas` |
 | O que já calculei nesta conversa? | `listar_handles` |
 
 ## Sempre

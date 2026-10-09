@@ -36,7 +36,7 @@ gradient boosting e modelos multinível). Ela exige **reprodutibilidade**
 | Treinar e avaliar uma Random Forest | `treinar_floresta` → `metricas_floresta` (com o `teste_<k>` da mesma divisão) |
 | Quais features importam? Reduzir dimensão | `importancia_floresta` → `treinar_floresta` com `features` → `metricas_floresta` |
 | Estrutura do perfil escolar (PCA) | `pca_perfil` (`redundantes = "remover"`) |
-| Regressão por recortes (ex.: por `localizacao`) | `covariaveis_escola` → `especificar_regressao` → `executar_regressao` → `coeficientes` / `metricas` |
+| Regressão por recortes (ex.: por `localizacao`) | **`regressao_escolas`** (uma chamada); passo a passo: `covariaveis_escola` → `especificar_regressao` → `executar_regressao` → `coeficientes` / `metricas` |
 | Regressão direto numa fonte do catálogo | `especificar_regressao` (`fonte`, `filtro`) → `executar_regressao` |
 | Logística: AUC e McFadden | `metricas` (modelo logístico) |
 | Tendência do IDEB por região, reproduzível | `tendencia_ideb_regiao` |

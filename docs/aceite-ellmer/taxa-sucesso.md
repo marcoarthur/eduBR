@@ -46,3 +46,11 @@ ssh rstudio.dev "su - rsuser -c 'cd /home/rsuser/projetos/eduBR && \
 `CENARIOS=gestora,pesquisadora,ml` escolhe um subconjunto; `PROVEDOR=anthropic`
 mede o outro provedor (pendente: #73). Ao terminar, descarregue o modelo do
 Ollama (`keep_alive = 0`) para o laptop esfriar.
+
+## Pesquisadora com a tool composta (#81), 2026-10-09
+
+Com `regressao_escolas` (recorte → especificação → execução → coeficientes
+e métricas numa chamada), N = 2: **2/2** no critério estrito (antes 1/4),
+mediana 47 s, pico de contexto ~12k tokens; nas duas execuções o modelo
+chamou só `regressao_escolas` e citou o coeficiente de `in_biblioteca`
+(urbana −0,599, p = 0,049). Detalhes: `taxa-pesquisadora-81.csv`.
