@@ -3,7 +3,9 @@
 # tools/test-container.sh
 #
 # Roda os testes (e opcionalmente o check) do eduBR no container
-# rstudio.dev, como rsuser — o unico lugar onde os testes devem rodar.
+# rstudio.dev, como rsuser. Opcional desde 2026-10-09: os testes rodam
+# localmente no host de desenvolvimento (ver AGENTS.md); use este script
+# para conferir a compatibilidade com o dbplyr 2.5.0 do RStudio Server.
 # Sincroniza antes o working tree para o destino da worktree atual
 # (tools/rstudio-dest.sh).
 #

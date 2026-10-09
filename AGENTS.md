@@ -71,7 +71,7 @@ memory.md         decisões e lições entre sessões
 tools/
   sync-rstudio.sh   rsync do repo p/ o RStudio Server (rstudio.dev)
   rstudio-dest.sh   destino no container (um diretório por worktree)
-  test-container.sh testes/check no container como rsuser
+  test-container.sh testes/check no container como rsuser (opcional)
   tunnel-ollama.sh  túnel SSH reverso do Ollama local para o container
 DESCRIPTION       metadados e dependências
 NAMESPACE         gerado por roxygen2 (não editar à mão)
@@ -91,10 +91,30 @@ Máx. 50 chars no subject. Mensagem de commit em **PT-BR**.
 
 ## Running tests
 
-Testes rodam **só no container** `rstudio.dev`, como `rsuser` — nunca na
-máquina local (as versões divergem: o container tem dbplyr 2.5.0 e a
-máquina local, 2.6.0; ver `memory.md`). O script sincroniza a worktree e
-roda lá:
+Testes rodam **localmente** no host de desenvolvimento `ubaxala` (regra
+revista em 2026-10-09). A regra antiga, "só no container", existia por
+causa do laptop anterior, de CPU fraca; o `ubaxala` é robusto e tem o
+ambiente completo: R 4.6.1, dbplyr 2.6.0, `ellmer` 0.5.0, `sf`, `ranger`,
+`qpdf` e o serviço `edumaps` no `~/.pg_service.conf`. O `document()` local
+não gera diferença no `man/` (o do container reformata).
+
+```bash
+devtools::test()                                        # unitários (sem banco)
+EDUBR_SMOKE=1 Rscript -e 'devtools::test()'             # + smoke (banco real)
+EDUBR_SMOKE=1 Rscript -e 'devtools::test(filter = "ellmer")'
+EDUBR_LLM_SMOKE=ollama Rscript -e 'devtools::test(filter = "ellmer-chat")'
+_R_CHECK_SYSTEM_CLOCK_=FALSE Rscript -e 'devtools::check()'
+devtools::document()                                    # NAMESPACE/man
+```
+
+Referência (`ubaxala`, 2026-10-09): suíte completa com smoke ≈ 9 min (o
+tempo é de banco, não de CPU); só `ellmer` com smoke ≈ 4 min; `check`
+≈ 1 min.
+
+O container `rstudio.dev` passa a ser **opcional**: serve para conferir a
+compatibilidade com o RStudio Server, que tem **dbplyr 2.5.0** (o 2.5 não
+traduz tudo o que o 2.6 traduz; ver "Lições"). Rode lá quando mexer em
+tradução dbplyr nova ou antes de um PR com mudança grande de SQL:
 
 ```bash
 tools/test-container.sh                    # devtools::test() (unitários, sem banco)
@@ -109,10 +129,11 @@ tools/test-container.sh --no-sync ...      # sem rsync antes
 - Unitários **não** tocam o banco; o smoke (`test-smoke.R`,
   `test-ellmer-smoke.R`) é pulado sem `EDUBR_SMOKE=1` e o do LLM
   (`test-ellmer-chat.R`) sem `EDUBR_LLM_SMOKE`.
-- `devtools::document()` regenera `NAMESPACE`/`man/`.
+- `devtools::document()` regenera `NAMESPACE`/`man/` — rode localmente.
 - `check` esperado: 0 erros, 0 notas e 2 warnings pré-existentes
   (não-ASCII em `R/pca.R`/`R/perfil.R`; link `eduBR_tbl`). A vignette
-  exige `qpdf` no container (instalado em 2026-10-09; sem ele, warning
+  exige o executável `qpdf` (instalado no `ubaxala` e no container em
+  2026-10-09; sem ele, warning
   "'qpdf' is needed"). Se os serviços de hora (worldtimeapi) estiverem
   fora do ar, aparece a NOTE "unable to verify current time" — ambiental;
   confirme com `_R_CHECK_SYSTEM_CLOCK_=FALSE`.
@@ -147,7 +168,7 @@ No container, o pacote fica em `/home/rsuser/projetos/eduBR`; importe com
 ## Camada `ellmer` (LLM)
 
 Expõe o `eduBR` a LLMs via [ellmer](https://ellmer.tidyverse.org) (0.5.0,
-instalado só no container; em `Suggests`):
+instalado localmente e no container; em `Suggests`):
 
 - `ferramentas_edubr(con, persona = , limites = )` → lista de tools
   (envelope JSON `dados`/`metadados`/`erro`, sem SQL nem `schema.tabela`,
@@ -265,8 +286,9 @@ plano → execução → aprovação
 ```
 
 1. **Plano**: propor e alinhar decisões antes de tocar em código.
-2. **Execução**: implementar e validar no container
-   (`tools/test-container.sh`, `--smoke`, `--check`).
+2. **Execução**: implementar e validar **localmente**
+   (`devtools::test()` com `EDUBR_SMOKE=1`, `devtools::check()`); o
+   container é opcional (compatibilidade com dbplyr 2.5).
    Commits em PT-BR seguindo `<type>(<scope>): <subject>`.
 3. **Aprovação**: só pedir PR após o aceite explícito da implementação.
 4. **PR + merge (via `gh`)**:
@@ -284,9 +306,11 @@ plano → execução → aprovação
 
 ## Lições (ver `memory.md`)
 
-- **Valide no container**: o dbplyr 2.5 de lá não traduz o que o 2.6 local
-  traduz (ex.: `n_distinct(x, na.rm = TRUE)`); `perfil_escola()` ficou
-  quebrada no container sem ninguém ver.
+- **Compatibilidade com o container**: o dbplyr 2.5 do RStudio Server não
+  traduz tudo o que o 2.6 local traduz (ex.: `n_distinct(x, na.rm =
+  TRUE)`); `perfil_escola()` ficou quebrada no container sem ninguém ver.
+  Testes locais são o padrão; ao usar tradução dbplyr nova, confirme
+  também com `tools/test-container.sh --smoke`.
 - **Strings R com acento → `\uXXXX`** (warning de não-ASCII no check). A
   ferramenta Write dos agentes converte `\uXXXX` em acentos: reescape
   depois de escrever e confira (deve sair vazio):

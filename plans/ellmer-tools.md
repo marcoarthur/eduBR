@@ -24,7 +24,9 @@
   Modelos locais com *tool calling*: `qwen3.5:9b`, `granite4.1:8b`.
 - **Testes**: só no container, como `rsuser` (regra do README; o
   `AGENTS.md` diverge e será corrigido no chunk 7). Unitários sem banco;
-  smoke com `EDUBR_SMOKE=1`.
+  smoke com `EDUBR_SMOKE=1`. *(Revisto em 2026-10-09: testes rodam
+  localmente no `ubaxala`, que já tem `ellmer` 0.5.0; o container ficou
+  opcional. Ver `AGENTS.md`.)*
 - **PII** (auditoria no banco): `censo_gestor` (65 col.) e `censo_docentes`
   (156 col.) são **só contagens por escola** — nenhum nome/CPF/e-mail.
   `censo_escolas`/`escolas` têm dados **institucionais** (endereço,
