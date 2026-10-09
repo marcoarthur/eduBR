@@ -20,7 +20,7 @@ Gerado a partir de `eduBR_tools_registro()` (conferido em
 
 <!-- tools-por-persona:inicio -->
 - **gestora-escolar** (6): `catalogo`, `perfil_escola`, `resumo_escola`, `serie_ideb_escola`, `escolas_similares`, `scores_escola`
-- **pesquisadora-educacional** (15): `catalogo`, `perfil_escola`, `municipios`, `redes_municipio`, `docentes_rede`, `ideb`, `tendencia_ideb_regiao`, `covariaveis_escola`, `perfil_gestor`, `especificar_regressao`, `executar_regressao`, `coeficientes`, `metricas`, `regressao_escolas`, `listar_handles`
+- **pesquisadora-educacional** (16): `catalogo`, `perfil_escola`, `municipios`, `redes_municipio`, `docentes_rede`, `ideb`, `tendencia_ideb_regiao`, `covariaveis_escola`, `perfil_gestor`, `especificar_regressao`, `executar_regressao`, `coeficientes`, `metricas`, `ideb_agregado`, `regressao_escolas`, `listar_handles`
 - **especialista-ml** (19): `catalogo`, `scores_escola`, `indicadores_escola`, `ideb`, `tendencia_ideb_regiao`, `covariaveis_escola`, `especificar_regressao`, `executar_regressao`, `coeficientes`, `metricas`, `regressao_escolas`, `listar_handles`, `features_escola`, `classificar_desempenho`, `dividir_dados`, `treinar_floresta`, `importancia_floresta`, `metricas_floresta`, `pca_perfil`
 <!-- tools-por-persona:fim -->
 

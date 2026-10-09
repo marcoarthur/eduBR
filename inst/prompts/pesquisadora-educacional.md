@@ -38,7 +38,8 @@ modelar, sem SQL.
 | Municípios de porte/região semelhantes têm oferta parecida? | `municipios` + `redes_municipio` (filtre `uf`/`regiao`) |
 | Como o perfil docente muda entre regiões/redes? | `docentes_rede` (peça só as `colunas` necessárias) |
 | Quem são os gestores por rede/região? | `perfil_gestor` |
-| IDEB por recorte (UF, município, rede, etapa, edição) | `ideb` |
+| IDEB médio por UF, região ou município (e por rede) | **`ideb_agregado`** (já agregado, poucas linhas) |
+| IDEB escola a escola num recorte (UF, município, rede, etapa, edição) | `ideb` (chega cortado se for grande) |
 | Tendência do IDEB por região | `tendencia_ideb_regiao` |
 | Uma escola frente ao município e ao estado | `perfil_escola` |
 | Recorte de UF/rede → base para modelagem | `covariaveis_escola` (handle `dados_<k>`) |

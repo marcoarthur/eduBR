@@ -76,6 +76,8 @@ covariáveis (\code{\link[=covariaveis_escola]{covariaveis_escola()}}) guardada 
 (consulta preguiçosa) + prévia;
 \item \code{perfil_gestor} (pesquisadora): categoria modal por corte × dimensão
 (\code{\link[=gestores]{gestores()}} + \code{\link[=perfil_gestor]{perfil_gestor()}});
+\item \code{ideb_agregado} (pesquisadora): IDEB médio agregado no banco por UF,
+macrorregião ou município (e rede), numa edição e etapa.
 \item \code{regressao_escolas} (pesquisadora, especialista-ml): regressão por
 escola numa chamada (recorte de \code{\link[=covariaveis_escola]{covariaveis_escola()}} → especificação
 → execução → coeficientes, com métricas por corte no contexto);
