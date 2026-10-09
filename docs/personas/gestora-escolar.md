@@ -34,6 +34,24 @@
 
 ## Entradas
 
+### 2026-10-09 — 9ª rodada (follow-up G19 pelo chat)
+
+Uma execução por pergunta (Ollama `qwen3.5:9b`, limite N ≤ 2).
+
+**G19a — "A escola 13078070 melhorou no IDEB em relação à edição anterior?"**
+- Resposta: chamou `resumo_escola` (31 s) e respondeu "Fundamental I: 3,6
+  em 2023, melhorou 0,1 ponto"; Fund. II "sem variação" (só há 2023);
+  ensino médio "não ofertado no Censo atual". Confere com a tool.
+- Status: **✓ atendido**.
+
+**G19b — escola só de ensino médio: "Quais escolas são parecidas com a
+15535762?"**
+- Resposta: chamou `escolas_similares` sem `etapa =` (#52) e listou 5
+  escolas estaduais de ensino médio (Croatá/CE 4,15; Delta/MG 4,17;
+  Santarém/PA 4,19; São Luís/MA; Santa Izabel do Pará/PA), iguais ao
+  retorno da tool, em 27 s.
+- Status: **✓ atendido** — fecha o follow-up G19.
+
 ### 2026-10-09 — 8ª rodada (sem entregas para a gestora)
 
 As entregas desde a 7ª rodada (#81 `regressao_escolas`, #82
@@ -270,9 +288,8 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 - [x] IDEB de etapa não ofertada sinalizado no perfil (#53).
 - [x] Chat estável nos 2 cenários da gestora (6/6, 2026-10-09).
 - [ ] Repetir G16/G17 com o provedor Anthropic (#73, conta sem créditos).
-- [ ] Follow-up G19: pelo chat, "melhoramos no IDEB?" (`resumo_escola` →
-  `serie_ideb_escola`) e a escola só de ensino médio (G14) — rodar com
-  N ≤ 2.
+- [x] Follow-up G19 pelo chat: evolução do IDEB e escola só de ensino
+  médio (9ª rodada).
 
 ## Sugestões priorizadas
 
@@ -282,6 +299,8 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 9ª rodada): os follow-ups pelo chat (evolução do
+  IDEB e escola só de ensino médio) respondem com números corretos.
 - **Aprova** (2026-10-09, 8ª rodada): sem mudanças nas tools da gestora
   desde a 7ª rodada; veredito mantido.
 - **Aprova** (2026-10-09, 7ª rodada): fluxo da gestora estável no chat

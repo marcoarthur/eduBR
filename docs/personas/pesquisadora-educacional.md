@@ -38,6 +38,25 @@
 
 ## Entradas
 
+### 2026-10-09 — 11ª rodada (follow-up R19 pelo chat)
+
+**R19 — "No Acre, escolas públicas: o IDEB do fundamental I se associa a
+ter biblioteca e ao número de docentes, separando por rede? Informe o R²
+e o n de cada rede."** (1 execução, 76 s)
+- Resposta: o modelo **não** usou `regressao_escolas` (indicada no prompt)
+  e foi pelo passo a passo: a 1ª `especificar_regressao` misturou
+  `fonte` e `dados_id` (`parametro_invalido`), a 2ª acertou; depois
+  `executar_regressao`, `coeficientes` e `metricas`. Números conferidos
+  contra `regressao_escolas` direto: 1.484 escolas no recorte, 224 usadas;
+  Estadual n 96, R² 0,0104; Municipal n 127, R² 0,0870; docentes na
+  municipal +0,0504 (p 0,0017); biblioteca não significativa; Federal sem
+  modelo (n 1) — **tudo igual**.
+- Ressalva: a resposta foi **cortada** no meio de uma tabela (aviso do
+  ellmer: limite de `max_tokens`), provavelmente porque o raciocínio
+  ligado consumiu o orçamento de saída.
+- Status: **✓ atendido** com ressalvas (resposta truncada; tool composta
+  ignorada).
+
 ### 2026-10-09 — 10ª rodada (verificação de #81 e #82)
 
 **R22 — regressão numa chamada (#81).**
@@ -341,14 +360,17 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - [x] Taxa de sucesso medida (#72): 1/4 estrito, cadeia completa 4/4.
 - [x] Regressão pelo chat com resposta final (tool composta #81: 2/2).
 - [x] Perguntas regionais agregadas (#82: `ideb_agregado`).
-- [ ] Follow-up R19: pelo chat, pedir R² e `n` por corte (`metricas`) e
-  controlar por rede (`cuts = ["rede"]`, `rede = "publica"`).
+- [x] Follow-up R19 pelo chat: R² e `n` por rede (números corretos;
+  resposta truncada).
 - [ ] Join escola→município **por código** em `escolas()` (bloqueado:
   `clean.escolas` não tem a coluna; contornado por `covariaveis_escola()`,
   `ideb()`, `docentes_rede()` e `gestores()`, que trazem `co_municipio`).
 
 ## Sugestões priorizadas
 
+- **[média]** `chat_edubr()`: `max_tokens` configurável (com padrão maior
+  no Ollama) — a resposta do R19 foi cortada no meio pelo limite de
+  saída, com o raciocínio ligado.
 - **[baixa]** Chat: o modelo local acrescenta contexto inventado (ex.:
   "meta nacional de 5,8") às respostas agregadas — tratar junto da #83,
   depois da comparação com Anthropic (#73).
@@ -357,6 +379,9 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-09, 11ª rodada): R² e `n` por rede
+  corretos pelo chat; ressalvas: resposta truncada pelo limite de saída,
+  tool composta ignorada nessa pergunta, `co_municipio` (externa).
 - **Aprova com ressalvas** (2026-10-09, 10ª rodada): regressão e
   perguntas regionais agora fecham pelo chat local com números corretos;
   ressalvas: contexto inventado ocasional (#83) e `co_municipio` em
