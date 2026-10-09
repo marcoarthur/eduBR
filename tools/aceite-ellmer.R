@@ -1,6 +1,6 @@
 # tools/aceite-ellmer.R
 #
-# Aceite da camada ellmer com chat real (Ollama): faz as perguntas de um
+# Aceite da camada ellmer com chat real (Ollama ou Anthropic): faz as perguntas de um
 # arquivo a uma persona e grava a transcricao (turns, chamadas de tool com
 # argumentos, resultados, resposta, tempo, tokens e ledger) em <SAIDA>.json
 # e <SAIDA>.md, mais checagens de fronteira (nomes fisicos, integer64 cru,
@@ -16,6 +16,8 @@
 #   SEGUIR_SE_VAZIO=1                     # repete com um pedido de resposta
 #                                         #     se a resposta vier vazia
 #   NOVO_CHAT=0                           # 1 = um chat por pergunta
+#   PROVEDOR=ollama                       # ou anthropic (ANTHROPIC_API_KEY
+#                                         #    no ~/.Renviron do rsuser)
 #
 # Transcricoes de 2026-10-09 em docs/aceite-ellmer/.
 dest <- Sys.getenv("EDUBR_DEST")
@@ -23,6 +25,7 @@ persona <- Sys.getenv("PERSONA")
 perg_arq <- Sys.getenv("PERGUNTAS_ARQ")
 saida <- Sys.getenv("SAIDA")
 novo_chat <- Sys.getenv("NOVO_CHAT", "0") == "1"
+provedor <- Sys.getenv("PROVEDOR", "ollama")
 suppressMessages(devtools::load_all(dest, quiet = TRUE))
 library(ellmer)
 
@@ -35,8 +38,8 @@ tools <- ferramentas_edubr(con, persona = persona,
                            limites = list(timeout_s = 180))
 pensar <- Sys.getenv("THINK", "1") == "1"
 novo <- function() {
-  if (pensar) chat_edubr("ollama", tools = tools, echo = "none")
-  else chat_edubr("ollama", tools = tools, echo = "none",
+  if (pensar) chat_edubr(provedor, tools = tools, echo = "none")
+  else chat_edubr(provedor, tools = tools, echo = "none",
                   raciocinio = "desligado")
 }
 seguir <- Sys.getenv("SEGUIR_SE_VAZIO", "1") == "1"
@@ -115,7 +118,8 @@ checks <- list(
 )
 message("checks: ", paste(names(checks), unlist(checks), sep = "=", collapse = "; "))
 
-out <- list(persona = persona, modelo = "qwen3.5:9b", provedor = "ollama",
+modelo_usado <- tryCatch(chat$get_model(), error = function(e) NA_character_)
+out <- list(persona = persona, modelo = modelo_usado, provedor = provedor,
             data = format(Sys.time(), "%Y-%m-%d %H:%M %Z"),
             registros = registros, ledger_total = ledger(tools),
             checks = checks)
@@ -125,7 +129,8 @@ jsonlite::write_json(out, paste0(saida, ".json"), auto_unbox = TRUE,
 
 # Transcrição legível.
 corta <- function(x, n = 1500) if (nchar(x) > n) paste0(substr(x, 1, n), " [...]") else x
-linhas <- c(sprintf("# Aceite %s (ollama qwen3.5:9b, thinking=%s) %s", persona, pensar, out$data), "")
+linhas <- c(sprintf("# Aceite %s (%s %s, thinking=%s) %s", persona, provedor,
+                    out$modelo, pensar, out$data), "")
 for (i in seq_along(registros)) {
   r <- registros[[i]]
   linhas <- c(linhas, sprintf("## Pergunta %d (%.1f s)", i, r$segundos), "",
