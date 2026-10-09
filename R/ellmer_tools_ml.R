@@ -870,6 +870,17 @@ eduBR_tool_metricas_floresta <- function(sessao) {
     conf$real <- as.character(conf$real)
     conf$predito <- as.character(conf$predito)
     conf$n <- as.integer(conf$n)
+    # Totais prontos por classe: o modelo de linguagem n\u00e3o deve somar a
+    # matriz (no aceite de 2026-10-09 ele inventou os totais).
+    classes <- unique(c(conf$real, conf$predito))
+    totais <- tibble::tibble(
+      classe = classes,
+      n_real = vapply(classes, function(k) sum(conf$n[conf$real == k]), integer(1)),
+      n_predito = vapply(classes, function(k) sum(conf$n[conf$predito == k]), integer(1)),
+      acertos = vapply(classes, function(k) {
+        sum(conf$n[conf$real == k & conf$predito == k])
+      }, integer(1))
+    )
 
     resumo <- tibble::tibble(
       acuracia = m$acuracia,
@@ -902,6 +913,7 @@ eduBR_tool_metricas_floresta <- function(sessao) {
         floresta_id = floresta_id,
         teste_id = teste_id,
         confusao = eduBR_registros(conf),
+        totais_classe = eduBR_registros(totais),
         f1_classe = as.list(attr(m, "f1_classe")),
         auc_classe = if (is.null(auc_classe)) NULL else as.list(auc_classe)
       )
@@ -917,9 +929,13 @@ eduBR_tool_metricas_floresta <- function(sessao) {
       "`f1_macro` (m\u00e9dia do F1 das 3 classes), `auc_macro` (m\u00e9dia ",
       "one-vs-rest; 0,5 = acaso) e `n_teste`; em `metadados.contexto`, a ",
       "matriz de confus\u00e3o em formato longo (`real`, `predito`, `n`) e F1/AUC ",
-      "por classe. Compare SEMPRE com o baseline: com ter\u00e7os, ele fica perto ",
-      "de 0,33; acur\u00e1cia s\u00f3 tem valor acima dele. Erros entre baixo e alto ",
-      "s\u00e3o mais graves que entre classes vizinhas."
+      "por classe e `totais_classe` (por classe: `n_real`, `n_predito`, ",
+      "`acertos`) \u2014 use esses totais prontos, n\u00e3o some a matriz. ",
+      "`ganho_sobre_baseline` \u00e9 diferen\u00e7a de acur\u00e1cia em pontos (0,25 = 25 ",
+      "pontos percentuais, n\u00e3o 25%). Compare SEMPRE com o baseline: com ",
+      "ter\u00e7os, ele fica perto de 0,33; acur\u00e1cia s\u00f3 tem valor acima dele. ",
+      "Erros entre baixo e alto (classes opostas) s\u00e3o mais graves que entre ",
+      "classes vizinhas (baixo/medio, medio/alto)."
     ),
     arguments = list(
       floresta_id = ellmer::type_string(
