@@ -37,7 +37,7 @@ pensar <- Sys.getenv("THINK", "1") == "1"
 novo <- function() {
   if (pensar) chat_edubr("ollama", tools = tools, echo = "none")
   else chat_edubr("ollama", tools = tools, echo = "none",
-                  api_args = list(reasoning_effort = "none"))
+                  raciocinio = "desligado")
 }
 seguir <- Sys.getenv("SEGUIR_SE_VAZIO", "1") == "1"
 chat <- novo()

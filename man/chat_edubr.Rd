@@ -12,7 +12,8 @@ chat_edubr(
   base_url = NULL,
   echo = c("none", "output", "all"),
   ...,
-  persona = NULL
+  persona = NULL,
+  raciocinio = c("padrao", "desligado")
 )
 }
 \arguments{
@@ -42,10 +43,16 @@ prompt de sistema da persona (\code{\link[=prompt_persona]{prompt_persona()}}). 
 a persona com que \code{tools} foram criadas; \code{tools} sem persona recebem
 um prompt genérico curto; sem \code{tools} nem \code{persona}, só
 \code{system_prompt}. Uma \code{persona} diferente da das \code{tools} é erro.}
+
+\item{raciocinio}{\code{"padrao"} (comportamento do modelo) ou \code{"desligado"}.
+No Ollama, \code{"desligado"} envia \code{reasoning_effort = "none"} (útil em
+fluxos longos de tools: com raciocínio ligado, o \verb{qwen3.5:9b} às vezes
+fecha o turno sem texto e o pedido seguinte falha com HTTP 400). Na
+Anthropic não muda nada: o ellmer já não liga o raciocínio estendido.}
 }
 \value{
-Um objeto \code{Chat} do ellmer, com os atributos \code{provedor} e
-\code{persona}.
+Um objeto \code{Chat} do ellmer, com os atributos \code{provedor},
+\code{persona} e \code{raciocinio}.
 }
 \description{
 Cria um chat do \href{https://ellmer.tidyverse.org}{ellmer} com um de dois

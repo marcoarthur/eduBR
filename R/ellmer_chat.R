@@ -89,8 +89,14 @@ eduBR_texto_opcional <- function(x, nome) {
 #'   um prompt genérico curto; sem `tools` nem `persona`, só
 #'   `system_prompt`. Uma `persona` diferente da das `tools` é erro.
 #'
-#' @return Um objeto `Chat` do ellmer, com os atributos `provedor` e
-#'   `persona`.
+#' @param raciocinio `"padrao"` (comportamento do modelo) ou `"desligado"`.
+#'   No Ollama, `"desligado"` envia `reasoning_effort = "none"` (útil em
+#'   fluxos longos de tools: com raciocínio ligado, o `qwen3.5:9b` às vezes
+#'   fecha o turno sem texto e o pedido seguinte falha com HTTP 400). Na
+#'   Anthropic não muda nada: o ellmer já não liga o raciocínio estendido.
+#'
+#' @return Um objeto `Chat` do ellmer, com os atributos `provedor`,
+#'   `persona` e `raciocinio`.
 #'
 #' @examples
 #' \dontrun{
@@ -111,7 +117,8 @@ eduBR_texto_opcional <- function(x, nome) {
 chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
                        system_prompt = NULL, base_url = NULL,
                        echo = c("none", "output", "all"), ...,
-                       persona = NULL) {
+                       persona = NULL,
+                       raciocinio = c("padrao", "desligado")) {
   rlang::check_installed("ellmer", reason = "para conversar com um LLM.")
   provedor <- eduBR_resolver_provedor(provedor)
   modelo <- eduBR_texto_opcional(modelo, "modelo")
@@ -125,6 +132,7 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
   persona <- eduBR_persona_efetiva(persona, tools)
   system_prompt <- eduBR_prompt_sistema(persona, tools, system_prompt)
 
+  raciocinio <- match.arg(raciocinio)
   args <- list(system_prompt = system_prompt, echo = echo, ...)
   if (provedor == "anthropic") {
     if (!nzchar(Sys.getenv("ANTHROPIC_API_KEY", ""))) {
@@ -147,6 +155,24 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
     base_url <- base_url %||% eduBR_env_opcional("OLLAMA_BASE_URL") %||%
       "http://localhost:11434"
     args$base_url <- base_url
+    if (raciocinio == "desligado") {
+      api <- args$api_args %||% list()
+      if (!is.list(api)) {
+        stop("`api_args` deve ser uma lista.", call. = FALSE)
+      }
+      if (!is.null(api$reasoning_effort) &&
+          !identical(api$reasoning_effort, "none")) {
+        stop(
+          paste0(
+            "`raciocinio = \"desligado\"` conflita com ",
+            "`api_args$reasoning_effort`; use s\u00f3 um dos dois."
+          ),
+          call. = FALSE
+        )
+      }
+      api$reasoning_effort <- "none"
+      args$api_args <- api
+    }
   }
   args$model <- modelo
   args <- args[!vapply(args, is.null, logical(1))]
@@ -176,6 +202,7 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
   }
   attr(chat, "provedor") <- provedor
   attr(chat, "persona") <- persona
+  attr(chat, "raciocinio") <- raciocinio
   chat
 }
 

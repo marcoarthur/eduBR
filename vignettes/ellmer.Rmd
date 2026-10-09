@@ -271,7 +271,7 @@ na base inteira.
 tools <- ferramentas_edubr(con, persona = "especialista-ml")
 chat <- chat_edubr(
   "ollama", tools = tools,
-  api_args = list(reasoning_effort = "none")   # ver "Limitações"
+  raciocinio = "desligado"   # ver "Limitações"
 )
 chat$chat(paste(
   "Treine uma floresta aleatória para classificar o desempenho (terços da",
@@ -356,7 +356,7 @@ conferir: qualquer número derivado (somas, razões) contra o `contexto` de
   ligado, o `qwen3.5:9b` às vezes termina o turno só com raciocínio e sem
   texto ou chamada (resposta vazia), e o chat seguinte falha com
   `HTTP 400 invalid message content type`. No fluxo de ML isso ocorreu em
-  2 de 2 tentativas; com `api_args = list(reasoning_effort = "none")` o
+  2 de 2 tentativas; com `chat_edubr(..., raciocinio = "desligado")` o
   fluxo completou. Na regressão da pesquisadora, ao contrário, o raciocínio
   ajudou. Prefira prévias curtas (`n` pequeno) e abra um chat novo se a
   resposta vier vazia.
