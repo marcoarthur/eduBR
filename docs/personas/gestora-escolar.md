@@ -34,6 +34,12 @@
 
 ## Entradas
 
+### 2026-10-09 — 12ª rodada (sem entregas para a gestora)
+
+A única entrega desde a 11ª rodada (#99: mensagem de geometrias vazias em
+`as_sf()`) não toca no fluxo da gestora (perfil, comparação, similares).
+Veredito mantido.
+
 ### 2026-10-09 — 11ª rodada (verificação de #98: escolas do cadastro do Censo)
 
 Entrega verificada: `escolas()`/`escola()` passam a ler o cadastro do Censo
@@ -336,6 +342,7 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 12ª rodada): sem mudanças no fluxo da gestora.
 - **Aprova** (2026-10-09, 11ª rodada): a escola é encontrada pelo INEP no
   cadastro do Censo, com rede e localização rotuladas.
 - **Aprova** (2026-10-09, 10ª rodada): fluxo da gestora 2/2 também com

@@ -38,6 +38,27 @@
 
 ## Entradas
 
+### 2026-10-09 — 15ª rodada (verificação de #99: geometrias vazias)
+
+Entrega verificada: `as_sf()` informa geometrias vazias e `escolas()`
+documenta a cobertura de coordenadas (#99, PR #101).
+
+- **Follow-up da 14ª — `as_sf()` informa quantas geometrias vieram
+  vazias?** → sim, por mensagem e sem warning:
+  - `as_sf(escolas(con, uf = "AC", ativas = TRUE))` → "992 de 1524 linhas
+    sem geometria (sem coordenada na fonte)"; a contagem confere com
+    `sf::st_is_empty()`. Das vazias, 940 são rurais e 52 urbanas.
+  - Ubatuba (`co_municipio = 3555406`) → 6 de 84.
+  - Com `n = 50` → 33 de 50 (conta o que foi materializado).
+  - `suppressMessages()` silencia a mensagem.
+
+  **✓ atendido.**
+- **Documentação** → o Rd de `escolas()` e o de `as_sf()` trazem a
+  cobertura (≈19% das ativas sem ponto; 24% rural; 65% no AC). **✓
+  atendido.**
+
+Pendências zeradas; nenhuma sugestão nova.
+
 ### 2026-10-09 — 14ª rodada (verificação de #98: tipos, ano e mapa)
 
 Entrega verificada: `escolas()` a partir de `clean.censo_escolas` (PR #98).
@@ -443,14 +464,12 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - **[baixa]** Chat local: para regressão, preferir `raciocinio =
   "padrao"` no Ollama ou o provedor Anthropic (com raciocínio desligado o
   9B erra argumentos; documentado em `docs/ellmer.md` nesta rodada).
-- **[baixa]** Cobertura de coordenadas: documentar em `escolas()` que
-  ~19% das escolas ativas do Censo não têm coordenada (65% no AC) e fazer
-  `as_sf()` informar (mensagem, não aviso) quantas geometrias vieram
-  vazias (#99).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova** (2026-10-09, 15ª rodada): o mapa de escolas diz quantas
+  ficaram sem ponto e por quê; nenhuma pendência do pacote.
 - **Aprova** (2026-10-09, 14ª rodada): tipos, ano e joins por código
   corretos com o cadastro do Censo; a falta de coordenadas é dos dados
   (sugestão [baixa] para avisar o usuário).

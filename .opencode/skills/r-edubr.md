@@ -433,5 +433,7 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   **aprovam**; sugestão [baixa] entregue (#99): `escolas()` documenta a
   cobertura de coordenadas (~19% das ativas sem ponto no Censo) e
   `as_sf()` informa, por mensagem, quantas geometrias vieram vazias.
+  Verificado na curadoria seguinte (gestora 12ª, pesquisadora 15ª, ML
+  16ª): as três **aprovam**, sem sugestões novas.
 - Bloqueados no EduMaps: INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).
