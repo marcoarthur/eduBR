@@ -35,6 +35,32 @@
 
 ## Entradas
 
+### 2026-10-09 — 11ª rodada (verificação de #70, #72, #74, #75)
+
+Tools no banco sem LLM + transcrições de hoje (`ml_r4`, `ml_r5`).
+
+**M34 — `raciocinio = "desligado"` (#70).**
+- Resposta: `chat_edubr()` tem o argumento; com ele o fluxo completo
+  (`features_escola → … → metricas_floresta`) fechou em 57–65 s com
+  resposta (`ml_r4`, `ml_r5`).
+- Status: **✓ atendido**.
+
+**M35 — totais por classe e ganho em pontos (#74).**
+- Resposta: `metricas_floresta` devolve `totais_classe` (ex.: baixo 99
+  real/125 predito/76 acertos; os totais somam o teste e os acertos/n dão
+  a acurácia 0,592) e a descrição explica "pontos percentuais". No chat
+  (`ml_r5`) o modelo usou os totais corretos (198/201/200) e escreveu
+  "+27,2 pontos" — exatamente o que errava na 10ª rodada. Ainda produziu
+  um parágrafo confuso sobre tipos de erro.
+- Status: **✓ atendido**, com ressalva de redação.
+
+**M36 — auditoria de chamadas recusadas (#75) e taxa (#72).**
+- Resposta: recusas do ellmer entram no ledger como
+  `argumento_recusado` (testado com o `CallbackManager` real; foi o que
+  revelou os argumentos inventados da pesquisadora). Taxa do ML: 1/1 —
+  inconclusiva (a rodada maior foi interrompida pelo limite térmico).
+- Status: **✓ atendido** (taxa pendente de mais execuções, N ≤ 2).
+
 ### 2026-10-09 — 10ª rodada (pergunta ao chat, camada `ellmer`)
 
 Foco: o fluxo de classificação pedido em linguagem natural a um LLM
@@ -395,30 +421,27 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 - [x] Report: export em PDF + parâmetros de recorte (#28).
 - [x] Covariáveis do perfil para modelos (#37).
 - [x] PCA sem códigos `tp_*`, sinal fixo e report revisado (#40).
+- [x] PCA sem componentes nulos e com opção de remover redundantes (#48, #54).
+- [x] Raciocínio desligável no chat (#70) e totais por classe (#74).
+- [x] Recusas do ellmer no ledger (#75).
 - [ ] Série histórica de INSE (bloqueada por dados no pipeline EduMaps).
-- [ ] Repetir M32 com o provedor Anthropic (conta sem créditos em
-  2026-10-09).
+- [ ] Repetir M32 com o provedor Anthropic (#73, conta sem créditos).
+- [ ] Taxa do fluxo de ML com mais execuções (N ≤ 2 por rodada).
 - [ ] Follow-up M33: pelo chat, "quais features importam? retreine só com
-  as 20 primeiras e compare" (`importancia_floresta` → `treinar_floresta`
-  com `features` → `metricas_floresta` no mesmo teste).
+  as 20 primeiras e compare".
 
 ## Sugestões priorizadas
 
-- **[média]** `chat_edubr()`: opção explícita para desligar o raciocínio
-  do Ollama (o `qwen3.5:9b` só completou o fluxo assim) e prévia de
-  `features_escola` mais enxuta (80 colunas no `contexto`).
-- **[baixa]** `metricas_floresta`: devolver o total real por classe no
-  teste junto da matriz, para o modelo não "inventar" denominadores.
-
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
-- **[baixa]** `pca_perfil()`: opção para excluir colunas redundantes (ex.:
-  `*_score`) e o report de PCA dizer explicitamente se elas entram — hoje a
-  infraestrutura pesa duas vezes (efeito pequeno em PC1, moderado em PC2)
-  (#54).
+- **[baixa]** Chat: o modelo local ainda escreve interpretações confusas
+  da matriz de confusão; reavaliar com modelo maior (#73, #83).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-09, 11ª rodada): as correções #70 e
+  #74 aparecem no chat (fluxo fecha; totais e ganho corretos); ressalvas:
+  taxa ainda com N pequeno e redação confusa ocasional do modelo local.
 - **Aprova com ressalvas** (2026-10-09, 10ª rodada, chat com
   `qwen3.5:9b`): o fluxo completo (amostra reprodutível → terços → holdout
   → floresta → métricas contra o baseline) sai de uma pergunta, com

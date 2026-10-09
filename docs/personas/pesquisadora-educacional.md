@@ -38,6 +38,35 @@
 
 ## Entradas
 
+### 2026-10-09 — 9ª rodada (verificação de #71, #72, #75)
+
+Tools no banco sem LLM + transcrições de hoje + **uma** execução nova do
+chat (limite N ≤ 2).
+
+**R20 — o limite de texto protege a janela do modelo (#71)?**
+- Resposta: `redes_municipio(uf = "SP")` devolve 13 de 20 linhas (~3,4k
+  tokens) com aviso "Resposta reduzida… filtre mais, peça menos linhas ou
+  colunas"; `ideb(uf = "SP", ano = 2023, n = 500)` devolve 30 linhas
+  (~3,5k) com `truncado`; prévia de `covariaveis_escola` com `n = 50` →
+  `parametro_invalido` ("Use um inteiro entre 1 e 20"); o aviso aponta o
+  próximo passo com `dados_id`.
+- Status: **✓ atendido**. Efeito colateral: tabelas grandes não chegam
+  mais ao modelo — perguntas regionais dependem de agregação (ver
+  sugestão).
+
+**R21 — a regressão pelo chat fecha (#72)?**
+- Resposta: taxa de sucesso **1/4** no critério estrito; a cadeia
+  `covariaveis_escola → especificar_regressao → executar_regressao →
+  coeficientes` completou **4/4**, mas houve argumentos inventados
+  (recusados pelo ellmer e agora visíveis no ledger, #75), chamada repetida
+  com erro e coeficiente não citado. Na `pesq_r7` (raciocínio ligado) a
+  cadeia completou e a **resposta final foi `HTTP 400 invalid message
+  content type`**; numa execução nova com `raciocinio = "desligado"` a
+  cadeia completou e o turno terminou com um plano ("Vou rodar a regressão
+  sem cortes primeiro…"), sem conclusão.
+- Status: **lacuna (modelo local)** — a camada responde certo a cada tool;
+  o modelo de 9B não fecha a cadeia de 4 passos com resposta.
+
 ### 2026-10-09 — 8ª rodada (pergunta ao chat, camada `ellmer`)
 
 Foco: regressão declarativa pedida em linguagem natural a um LLM
@@ -285,26 +314,34 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - [x] Tipo/ano de referência no `catalogo()` (#24).
 - [x] Mesma edição do IDEB nas comparações (#21).
 - [x] `as_sf()` com `n` e sem aviso (#36).
-- [ ] Repetir R18 com o provedor Anthropic (conta sem créditos em
-  2026-10-09) e medir a taxa de sucesso do modelo local em várias
-  execuções.
-- [ ] Follow-up R19: pelo chat, pedir explicitamente R² e `n` por corte
-  (`metricas`) e controlar por rede (`cuts = ["rede"]` com `rede =
-  "publica"`).
+- [x] Prévias enxutas / limite de texto por resposta (#71).
+- [x] Taxa de sucesso medida (#72): 1/4 estrito, cadeia completa 4/4.
+- [ ] Regressão pelo chat com resposta final confiável (modelo local não
+  fecha a cadeia; testar com Anthropic #73 e/ou tool composta).
+- [ ] Follow-up R19: pelo chat, pedir R² e `n` por corte (`metricas`) e
+  controlar por rede (`cuts = ["rede"]`, `rede = "publica"`).
 - [ ] Join escola→município **por código** em `escolas()` (bloqueado:
   `clean.escolas` não tem a coluna; contornado por `covariaveis_escola()`,
   `ideb()`, `docentes_rede()` e `gestores()`, que trazem `co_municipio`).
 
 ## Sugestões priorizadas
 
-- **[média]** Chat: prévias enxutas por padrão (o modelo pediu prévias de
-  100 linhas × 30 colunas e perdeu a pergunta na janela do Ollama).
-
+- **[média]** Tool composta de regressão (ex.: `regressao_escolas`: recorte
+  + fórmula + cortes → coeficientes e métricas numa chamada) para modelos
+  pequenos, que se perdem em cadeias de 4 tools; manter as tools
+  separadas para modelos maiores (#81).
+- **[baixa]** Tools de agregação (ex.: IDEB médio por município/UF/rede)
+  para perguntas regionais, já que tabelas grandes agora chegam cortadas
+  ao modelo (#82).
 - **[média]** `co_municipio` em `clean.escolas` (pedido ao pipeline EduMaps).
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova com ressalvas** (2026-10-09, 9ª rodada): tools e limites
+  corretos e protegendo a janela do modelo; a regressão pelo chat com o
+  modelo local de 9B não fecha com resposta confiável (1/4 estrito) — falta
+  validar com Anthropic (#73) ou simplificar o fluxo (tool composta).
 - **Aprova com ressalvas** (2026-10-09, 8ª rodada, chat com
   `qwen3.5:9b`): a regressão declarativa sai de uma pergunta em linguagem
   natural, com handles, recortes e leitura não causal, e os coeficientes
