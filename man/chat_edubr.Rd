@@ -61,8 +61,14 @@ raciocínio). \code{NULL} usa \code{EDUBR_MAX_TOKENS}; sem ela, 4096 no Ollama
 Anthropic e no Gemini. Combinado com \code{params} passado em \code{...}.}
 }
 \value{
-Um objeto \code{Chat} do ellmer, com os atributos \code{provedor},
-\code{persona}, \code{raciocinio} e \code{max_tokens}.
+Um objeto \code{Chat} do ellmer (da subclasse \code{EduBRChat}), com os
+atributos \code{provedor}, \code{persona}, \code{raciocinio} e \code{max_tokens}. Em
+\verb{$chat()} e \verb{$chat_structured()}, um HTTP 429 (cota ou limite de
+requisições esgotado) vira um erro de classe \code{eduBR_cota_esgotada},
+com mensagem em PT-BR que diz o provedor, o modelo, quando tentar de
+novo (se a API informar) e o que fazer; o erro original fica como
+causa. \verb{$stream()} e os métodos assíncronos repassam o erro do
+ellmer como está.
 }
 \description{
 Cria um chat do \href{https://ellmer.tidyverse.org}{ellmer} com um de três

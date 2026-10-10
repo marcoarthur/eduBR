@@ -63,7 +63,16 @@ chat <- chat_edubr("gemini", tools = tools)
 
 No plano gratuito da API, a cota é pequena (20 requisições por dia no
 `gemini-3.7-flash`, em 2026-10-10), e cada pergunta com ferramentas gasta
-várias; ao estourar, a API devolve HTTP 429.
+várias; ao estourar, a API devolve HTTP 429. O chat de `chat_edubr()`
+traduz o 429 (de qualquer provedor) num erro `eduBR_cota_esgotada`, em
+PT-BR, que diz o provedor, o modelo, quando tentar de novo e o que fazer:
+
+```
+Cota ou limite de requisições esgotado no provedor "gemini" (modelo
+gemini-3.7-flash): a API respondeu HTTP 429. A API indica tentar de novo
+em 10h26m11s. Enquanto isso: espere, troque de modelo
+(EDUBR_GEMINI_MODELO) ou de provedor (...) ou use um plano pago.
+```
 
 ### Ollama (modelo local)
 

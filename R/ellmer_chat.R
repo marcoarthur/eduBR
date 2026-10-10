@@ -119,8 +119,14 @@ eduBR_texto_opcional <- function(x, nome) {
 #'   (respostas longas eram cortadas com o padrão) e o padrão do ellmer na
 #'   Anthropic e no Gemini. Combinado com `params` passado em `...`.
 #'
-#' @return Um objeto `Chat` do ellmer, com os atributos `provedor`,
-#'   `persona`, `raciocinio` e `max_tokens`.
+#' @return Um objeto `Chat` do ellmer (da subclasse `EduBRChat`), com os
+#'   atributos `provedor`, `persona`, `raciocinio` e `max_tokens`. Em
+#'   `$chat()` e `$chat_structured()`, um HTTP 429 (cota ou limite de
+#'   requisições esgotado) vira um erro de classe `eduBR_cota_esgotada`,
+#'   com mensagem em PT-BR que diz o provedor, o modelo, quando tentar de
+#'   novo (se a API informar) e o que fazer; o erro original fica como
+#'   causa. `$stream()` e os métodos assíncronos repassam o erro do
+#'   ellmer como está.
 #'
 #' @examples
 #' \dontrun{
@@ -242,7 +248,9 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
   args <- args[!vapply(args, is.null, logical(1))]
 
   chat <- tryCatch(
-    do.call(eduBR_chat_construtor(provedor), args),
+    eduBR_chat_com_mensagens(
+      do.call(eduBR_chat_construtor(provedor), args), echo
+    ),
     error = function(e) {
       if (provedor == "ollama") {
         stop(
@@ -297,4 +305,108 @@ eduBR_max_tokens <- function(max_tokens, provedor) {
 eduBR_env_opcional <- function(nome) {
   v <- Sys.getenv(nome, "")
   if (nzchar(v)) v else NULL
+}
+
+# `self` e `super` são definidos pelo R6 nos métodos da classe.
+utils::globalVariables(c("self", "super"))
+
+# Subclasse do Chat do ellmer que traduz o HTTP 429 (cota ou limite de
+# requisições) numa mensagem acionável em PT-BR (#105). O ellmer não tem
+# gancho para erros de requisição (on_request_end não dispara), e os
+# métodos do R6 são travados; por isso a subclasse. Criada sob demanda,
+# porque o ellmer é Suggests.
+eduBR_classe_chat <- local({
+  classe <- NULL
+  function() {
+    if (is.null(classe)) {
+      classe <<- R6::R6Class(
+        "EduBRChat",
+        inherit = ellmer::Chat,
+        public = list(
+          chat = function(...) {
+            eduBR_traduzir_429(super$chat(...), self)
+          },
+          chat_structured = function(...) {
+            eduBR_traduzir_429(super$chat_structured(...), self)
+          }
+        )
+      )
+    }
+    classe
+  }
+})
+
+# Recria um chat do ellmer como EduBRChat (mesmo provedor, modelo e prompt).
+# Objetos que não são Chat (ex.: construtores falsos dos testes) passam.
+eduBR_chat_com_mensagens <- function(chat, echo) {
+  if (!inherits(chat, "Chat")) {
+    return(chat)
+  }
+  eduBR_classe_chat()$new(
+    provider = chat$get_provider(),
+    model = chat$get_model_object(),
+    system_prompt = chat$get_system_prompt(),
+    echo = echo
+  )
+}
+
+eduBR_traduzir_429 <- function(expr, chat) {
+  tryCatch(expr, httr2_http_429 = function(e) {
+    rlang::abort(
+      eduBR_mensagem_429(e, chat),
+      class = "eduBR_cota_esgotada", parent = e, call = NULL
+    )
+  })
+}
+
+eduBR_mensagem_429 <- function(e, chat) {
+  provedor <- attr(chat, "provedor", exact = TRUE) %||%
+    tryCatch(chat$get_provider()@name, error = function(x) "?")
+  modelo <- tryCatch(chat$get_model(), error = function(x) "?")
+  espera <- eduBR_espera_429(e)
+  troca <- switch(
+    provedor,
+    gemini = "troque de modelo (EDUBR_GEMINI_MODELO) ou de provedor",
+    anthropic = "troque de modelo (EDUBR_ANTHROPIC_MODELO) ou de provedor",
+    "troque de provedor"
+  )
+  paste0(
+    sprintf(
+      paste0(
+        "Cota ou limite de requisi\u00e7\u00f5es esgotado no provedor ",
+        "\"%s\" (modelo %s): a API respondeu HTTP 429. "
+      ),
+      provedor, modelo
+    ),
+    if (!is.null(espera)) {
+      sprintf("A API indica tentar de novo em %s. ", espera)
+    },
+    sprintf(
+      paste0(
+        "Enquanto isso: espere, %s (chat_edubr(\"anthropic\" | ",
+        "\"gemini\" | \"ollama\")) ou use um plano pago. Cada pergunta ",
+        "com ferramentas gasta v\u00e1rias requisi\u00e7\u00f5es."
+      ),
+      troca
+    )
+  )
+}
+
+# Tempo de espera informado pela API: "retry in 1h2m3.4s" no texto do erro
+# (Gemini) ou, sem ele, o cabeçalho retry-after em segundos (> 0). NULL se
+# não houver.
+eduBR_espera_429 <- function(e) {
+  m <- regmatches(
+    conditionMessage(e),
+    regexpr("retry in [0-9hms.]+[0-9]s?", conditionMessage(e))
+  )
+  if (length(m)) {
+    return(sub("\\.[0-9]+s$", "s", sub("^retry in ", "", m)))
+  }
+  ra <- tryCatch(httr2::resp_header(e$resp, "retry-after"),
+                 error = function(x) NULL)
+  if (!is.null(ra) && grepl("^[0-9]+$", ra) && as.numeric(ra) > 0) {
+    return(sprintf("%s s", ra))
+  }
+  NULL
 }
