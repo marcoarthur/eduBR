@@ -184,9 +184,11 @@ instalado localmente e no container; em `Suggests`):
 - Prompts por persona em `inst/prompts/`; matriz pergunta × tool em
   `docs/ellmer.md`; plano e decisões em `plans/ellmer-tools.md`; vignette
   `vignettes/ellmer.Rmd` (transcrições reais gravadas, `eval = FALSE`).
-- **Anthropic**: `ANTHROPIC_API_KEY` no `~/.Renviron` do `rsuser` (nunca
-  no código). **Ollama**: roda na máquina do dono do repo (`qwen3.5:9b`);
-  o container o alcança por **túnel SSH reverso**:
+- **Anthropic**: `ANTHROPIC_API_KEY` no `~/.Renviron` (permissão 600) do
+  `ubaxala` e do `rsuser` no container; nunca no código nem em saída de
+  log. **Ollama**: roda no host de desenvolvimento (`qwen3.5:9b`); local,
+  `chat_edubr("ollama")` usa `localhost:11434` direto, e o container o
+  alcança por **túnel SSH reverso**:
 
   ```bash
   tools/tunnel-ollama.sh abrir    # ou status | fechar
