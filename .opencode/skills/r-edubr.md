@@ -446,5 +446,10 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   `as_sf()` informa, por mensagem, quantas geometrias vieram vazias.
   Verificado na curadoria seguinte (gestora 12ª, pesquisadora 15ª, ML
   16ª): as três **aprovam**, sem sugestões novas.
+- Gemini como terceiro provedor (#104, 2026-10-10). Curadoria (gestora
+  13ª, pesquisadora 16ª, ML 17ª): as três **aprovam**; ML 2/2 com o
+  Gemini, gestora e pesquisadora sem medida completa (cota gratuita de 20
+  requisições/dia). Sugestão [baixa]: HTTP 429 vira mensagem acionável em
+  PT-BR no `chat_edubr()`.
 - Bloqueados no EduMaps: INSE histórico
   (painel `inse_{t-1}` → `ideb_t`); similaridade vetorial (PgVector).

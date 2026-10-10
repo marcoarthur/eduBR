@@ -38,6 +38,29 @@
 
 ## Entradas
 
+### 2026-10-10 — 16ª rodada (Gemini como provedor, #104)
+
+Entrega verificada: `chat_edubr("gemini")` (PR #104).
+
+- **Regressão pelo chat com o Gemini** (cenário da taxa: AC municipal,
+  IDEB fund. I × biblioteca + docentes, por localização) → das 2
+  execuções, uma parou em HTTP 429 (cota gratuita). A outra chamou
+  `regressao_escolas` com os argumentos certos, sem erro, e deu resposta
+  completa (n = 43 rural, 885 no recorte, 758 descartadas por `null`;
+  números iguais aos da Anthropic). O critério automático não achou no
+  texto o coeficiente de `in_biblioteca` urbano (−0,599), e o CSV corta a
+  resposta em 600 caracteres, então não foi possível conferir à mão.
+  **parcial.**
+- **Configuração** → modelo por `EDUBR_GEMINI_MODELO` respeitado (a
+  chamada foi com `gemini-3.8-flash`); sem chave, o erro diz para definir
+  `GEMINI_API_KEY`. **✓ atendido.**
+- **Cota** → nesta rodada, nova tentativa também deu 429. **lacuna** de
+  cota, com a mesma **sugestão** da gestora: traduzir o 429 numa mensagem
+  acionável.
+
+Follow-up: repetir o cenário de regressão com o Gemini quando houver cota,
+gravando a resposta inteira (`tools/aceite-ellmer.R`).
+
 ### 2026-10-09 — 15ª rodada (verificação de #99: geometrias vazias)
 
 Entrega verificada: `as_sf()` informa geometrias vazias e `escolas()`
@@ -454,6 +477,8 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
   resposta truncada).
 - [x] R19 com Anthropic: resposta completa, tool composta, números
   corretos (#73, #89; 12ª rodada).
+- [ ] Regressão pelo chat com o Gemini, conferida na resposta inteira
+  (#104; bloqueado pela cota gratuita).
 - [x] Join escola→município **por código** em `escolas()` (13ª rodada:
   `escolas()` lê `clean.censo_escolas`, fonte de verdade; era bloqueado:
   `clean.escolas` não tem a coluna; contornado por `covariaveis_escola()`,
@@ -464,10 +489,16 @@ cruzadas com o perfil docente por rede, em todas as dimensões do Censo).
 - **[baixa]** Chat local: para regressão, preferir `raciocinio =
   "padrao"` no Ollama ou o provedor Anthropic (com raciocínio desligado o
   9B erra argumentos; documentado em `docs/ellmer.md` nesta rodada).
+- **[baixa]** `chat_edubr()`: transformar o HTTP 429 (cota esgotada) numa
+  mensagem acionável em PT-BR (qual provedor, que a cota acabou, quando
+  tentar de novo), como já é feito na falha de conexão com o Ollama.
 - **[baixa]** Alinhar `ranking_escola` (dados vazios em dev).
 
 ## Veredito
 
+- **Aprova** (2026-10-10, 16ª rodada): o Gemini escolhe a tool composta
+  certa e responde com os números corretos; a taxa ficou incompleta por
+  cota, não por falha do pacote.
 - **Aprova** (2026-10-09, 15ª rodada): o mapa de escolas diz quantas
   ficaram sem ponto e por quê; nenhuma pendência do pacote.
 - **Aprova** (2026-10-09, 14ª rodada): tipos, ano e joins por código

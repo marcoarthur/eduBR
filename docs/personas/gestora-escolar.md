@@ -34,6 +34,22 @@
 
 ## Entradas
 
+### 2026-10-10 — 13ª rodada (Gemini como provedor, #104)
+
+Entrega verificada: `chat_edubr("gemini")` (PR #104). Nada mudou nas tools
+da gestora.
+
+- **G16/G17 pelo chat com o Gemini** → **sem medida**. As duas execuções
+  da taxa (`gemini-3.7-flash`, 2026-10-10) pararam em HTTP 429 antes da
+  resposta, porque a chave está no plano gratuito (20 requisições por dia).
+  Nesta rodada, a nova tentativa com `gemini-3.8-flash` também deu 429
+  (cota do projeto). **lacuna** (de cota, não do pacote).
+- O erro chega cru ao usuário ("HTTP 429 Too Many Requests… check your
+  plan and billing details"), em inglês. Para uma gestora, isso não diz o
+  que fazer. **sugestão.**
+
+Follow-up: repetir G16/G17 com o Gemini quando houver cota.
+
 ### 2026-10-09 — 12ª rodada (sem entregas para a gestora)
 
 A única entrega desde a 11ª rodada (#99: mensagem de geometrias vazias em
@@ -334,14 +350,18 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 - [x] Repetir G16/G17 com o provedor Anthropic (#73: 2/2, 10ª rodada).
 - [x] Follow-up G19 pelo chat: evolução do IDEB e escola só de ensino
   médio (9ª rodada).
+- [ ] G16/G17 pelo chat com o Gemini (#104; bloqueado pela cota gratuita).
 
 ## Sugestões priorizadas
 
-- Nenhuma em aberto. (Redação solta do modelo local: com Anthropic não
-  ocorre; #83 fechada sem mudar o prompt.)
+- **[baixa]** `chat_edubr()`: transformar o HTTP 429 (cota esgotada) numa
+  mensagem acionável em PT-BR (qual provedor, que a cota acabou, quando
+  tentar de novo), como já é feito na falha de conexão com o Ollama.
 
 ## Veredito
 
+- **Aprova** (2026-10-10, 13ª rodada): o fluxo da gestora segue aprovado
+  com Anthropic e Ollama; o Gemini ficou sem medida por cota.
 - **Aprova** (2026-10-09, 12ª rodada): sem mudanças no fluxo da gestora.
 - **Aprova** (2026-10-09, 11ª rodada): a escola é encontrada pelo INEP no
   cadastro do Censo, com rede e localização rotuladas.
