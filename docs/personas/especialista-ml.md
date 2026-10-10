@@ -541,7 +541,7 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 - **[baixa]** `chat_edubr()`: transformar o HTTP 429 (cota esgotada) numa
   mensagem acionável em PT-BR (qual provedor, que a cota acabou, quando
-  tentar de novo), como já é feito na falha de conexão com o Ollama.
+  tentar de novo), como já é feito na falha de conexão com o Ollama (#105).
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 

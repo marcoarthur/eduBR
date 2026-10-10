@@ -356,7 +356,7 @@ no IDEB?". Escola de teste: 13078070 (Boa Vista do Ramos/AM).
 
 - **[baixa]** `chat_edubr()`: transformar o HTTP 429 (cota esgotada) numa
   mensagem acionável em PT-BR (qual provedor, que a cota acabou, quando
-  tentar de novo), como já é feito na falha de conexão com o Ollama.
+  tentar de novo), como já é feito na falha de conexão com o Ollama (#105).
 
 ## Veredito
 
