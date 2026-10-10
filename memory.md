@@ -111,6 +111,16 @@ implementação ficam no código; memória de curadoria fica em
 - O Ollama roda na máquina do dono do repo; o container o alcança por
   **túnel SSH reverso** (`tools/tunnel-ollama.sh abrir|status|fechar`) — a
   porta 11434 não é acessível direto da rede do container.
+- **Gemini** (2026-10-10): terceiro provedor em `chat_edubr("gemini")`, via
+  `ellmer::chat_google_gemini()` (padrão do ellmer: `gemini-3.7-flash`). A
+  chave vem só de `GEMINI_API_KEY`/`GOOGLE_API_KEY` no ambiente; sem ela,
+  erro, para não cair nas credenciais do Google Cloud nem no login pelo
+  navegador. Escolha automática: Anthropic > Gemini > Ollama.
+  `raciocinio = "desligado"` não muda nada no Gemini (ajuste por
+  `params(reasoning_effort = )`, que o ellmer traduz em `thinkingLevel`).
+  Aceite: smoke ok ("16" em 11,9 s); taxa N = 2 com ML 2/2, mas gestora e
+  pesquisadora pararam na cota gratuita (20 requisições/dia no
+  `gemini-3.7-flash`, HTTP 429). Medir de novo com cota paga.
 - Smoke com LLM real: `tools/test-container.sh --llm ollama|anthropic`
   (Ollama com túnel aberto). Primeiro resultado: `qwen3.5:9b` chamou
   `catalogo` e respondeu "16" em ~19 s.

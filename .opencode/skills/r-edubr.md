@@ -55,7 +55,7 @@ R/
                           importancia_floresta, metricas_floresta, pca_perfil
   ellmer_ledger.R         ledger(), orçamento (chamadas/linhas), CSV opcional
   ellmer_personas.R       prompt_persona(), registrar_tools()
-  ellmer_chat.R           chat_edubr() (anthropic | ollama)
+  ellmer_chat.R           chat_edubr() (anthropic | gemini | ollama)
 inst/prompts/   <persona>.md — prompts de sistema (lidos por prompt_persona())
 vignettes/      ellmer.Rmd — 3 cenários com transcrições reais (eval = FALSE)
 ```
@@ -418,7 +418,7 @@ de 2026-10-07 abriu #20–#28, **todas entregues** em 2026-10-07:
   sinalizado no perfil (#53); `pca_perfil(excluir =, redundantes =)` e
   report de PCA sem os `*_score` redundantes (#54).
 - Camada `ellmer` (2026-10-08/09, PRs #61–#68 + chunk 7): tools por
-  persona, ledger, orçamento, `chat_edubr()` (Anthropic/Ollama), prompts,
+  persona, ledger, orçamento, `chat_edubr()` (Anthropic/Gemini/Ollama), prompts,
   vignette e aceite com chat real. Rodada de curadoria **com o chat**
   (2026-10-09): ver `docs/personas/`.
 - Backlog da camada ellmer (atualizado na curadoria de 2026-10-09, última):

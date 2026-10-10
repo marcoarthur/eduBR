@@ -21,6 +21,7 @@ sem_vars_llm <- function(env = parent.frame()) {
   withr::local_envvar(
     c(EDUBR_LLM_PROVEDOR = NA, ANTHROPIC_API_KEY = NA, OLLAMA_BASE_URL = NA,
       EDUBR_OLLAMA_MODELO = NA, EDUBR_ANTHROPIC_MODELO = NA,
+      GEMINI_API_KEY = NA, GOOGLE_API_KEY = NA, EDUBR_GEMINI_MODELO = NA,
       EDUBR_MAX_TOKENS = NA),
     .local_envir = env
   )
@@ -54,6 +55,41 @@ test_that("com ANTHROPIC_API_KEY o padrão é anthropic", {
   expect_false("api_key" %in% names(cap$args))
 })
 
+test_that("gemini: chave no ambiente, escolha automática e modelo", {
+  sem_vars_llm()
+  cap <- new.env()
+  local_mocked_bindings(eduBR_chat_construtor = construtor_falso(cap))
+
+  expect_error(chat_edubr("gemini"), "GEMINI_API_KEY")
+
+  withr::local_envvar(GEMINI_API_KEY = "chave-de-teste")
+  chat <- chat_edubr(system_prompt = "papel")
+  expect_equal(attr(chat, "provedor"), "gemini")
+  expect_equal(cap$provedor, "gemini")
+  expect_null(cap$args$model)
+  expect_null(cap$args$base_url)
+  expect_null(cap$args$api_args)
+  expect_null(cap$args$params)
+  expect_equal(cap$args$system_prompt, "papel")
+  expect_false(any(c("api_key", "credentials") %in% names(cap$args)))
+  expect_equal(attr(chat, "raciocinio"), "padrao")
+  expect_error(chat_edubr("gemini", base_url = "http://x"), "ollama")
+
+  withr::local_envvar(EDUBR_GEMINI_MODELO = "gemini-x")
+  chat_edubr("gemini", max_tokens = 2000, raciocinio = "desligado")
+  expect_equal(cap$args$model, "gemini-x")
+  expect_equal(cap$args$params$max_tokens, 2000L)
+  expect_null(cap$args$api_args)
+
+  withr::local_envvar(GEMINI_API_KEY = NA, GOOGLE_API_KEY = "chave-google")
+  chat_edubr()
+  expect_equal(cap$provedor, "gemini")
+
+  withr::local_envvar(ANTHROPIC_API_KEY = "chave-de-teste")
+  chat_edubr()
+  expect_equal(cap$provedor, "anthropic")
+})
+
 test_that("EDUBR_LLM_PROVEDOR e argumentos têm precedência", {
   sem_vars_llm()
   withr::local_envvar(
@@ -82,7 +118,7 @@ test_that("erros claros: provedor, chave, base_url, tools", {
   cap <- new.env()
   local_mocked_bindings(eduBR_chat_construtor = construtor_falso(cap))
 
-  expect_error(chat_edubr("openai"), "anthropic, ollama")
+  expect_error(chat_edubr("openai"), "anthropic, gemini, ollama")
   expect_error(chat_edubr("anthropic"), "ANTHROPIC_API_KEY")
   withr::local_envvar(ANTHROPIC_API_KEY = "chave-de-teste")
   expect_error(chat_edubr("anthropic", base_url = "http://x"), "ollama")
@@ -182,11 +218,11 @@ test_that("falha de conexão com o Ollama vira mensagem acionável", {
   expect_error(chat_edubr("ollama"), "tunnel-ollama.sh")
 })
 
-# Smoke com LLM real: EDUBR_LLM_SMOKE=ollama|anthropic (+ EDUBR_SMOKE para o
+# Smoke com LLM real: EDUBR_LLM_SMOKE=ollama|anthropic|gemini (+ EDUBR_SMOKE para o
 # banco). Ollama no container exige o túnel aberto (tools/tunnel-ollama.sh).
 test_that("LLM real usa a ferramenta catalogo", {
   provedor <- Sys.getenv("EDUBR_LLM_SMOKE", "")
-  skip_if(provedor == "", "Defina EDUBR_LLM_SMOKE=ollama|anthropic")
+  skip_if(provedor == "", "Defina EDUBR_LLM_SMOKE=ollama|anthropic|gemini")
 
   con <- conecta(service = "edumaps")
   withr::defer(DBI::dbDisconnect(con))

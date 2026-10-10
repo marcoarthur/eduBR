@@ -86,3 +86,21 @@ tools e não aparecem as frases sem base vistas no Ollama (ex.: "única
 escola da região com biblioteca", leitura confusa da matriz de confusão,
 "meta nacional de 5,8"). A redação solta é limitação do modelo local, não
 dos prompts — nenhum ajuste de prompt foi necessário.
+
+## Gemini, 2026-10-10
+
+`PROVEDOR=gemini` (`gemini-3.7-flash`, padrão do ellmer 0.5.0), N = 2,
+mesmo critério estrito (`taxa-gemini.csv`). Chave no **plano gratuito**:
+cota de 20 requisições por dia nesse modelo, e um fluxo com tools gasta
+várias por pergunta.
+
+| Cenário | Gemini | Observação |
+|---|---|---|
+| gestora | 0/2 | as duas execuções pararam em HTTP 429 (cota), sem chegar à resposta |
+| pesquisadora | 0/2 | #1: HTTP 429; #2: `regressao_escolas` certa, sem erro, resposta completa, mas o número-chave não foi achado no texto pelo critério automático |
+| ml | **2/2**, mediana 144 s | fluxo completo + `importancia_floresta` |
+
+Smoke (`EDUBR_LLM_SMOKE=gemini`): `catalogo` chamado e resposta "16" em
+11,9 s. Leitura: a integração funciona; a taxa da gestora e da
+pesquisadora ficou **sem medida**, porque a cota acabou. Repetir com cota
+paga (ou no dia seguinte, um cenário por vez).
