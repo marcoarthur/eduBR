@@ -218,6 +218,89 @@ test_that("falha de conexão com o Ollama vira mensagem acionável", {
   expect_error(chat_edubr("ollama"), "tunnel-ollama.sh")
 })
 
+test_that("chat_edubr() devolve um EduBRChat com prompt, modelo e tools", {
+  skip_if_not_installed("R6")
+  sem_vars_llm()
+  withr::local_envvar(GEMINI_API_KEY = "chave-de-teste")
+
+  tools <- ferramentas_edubr("fake_con", persona = "gestora-escolar")
+  chat <- chat_edubr("gemini", modelo = "gemini-x", tools = tools,
+                     system_prompt = "papel")
+  expect_s3_class(chat, "EduBRChat")
+  expect_s3_class(chat, "Chat")
+  expect_equal(chat$get_model(), "gemini-x")
+  expect_match(chat$get_system_prompt(), "papel$")
+  expect_setequal(names(chat$get_tools()), names(tools))
+  expect_equal(attr(chat, "provedor"), "gemini")
+})
+
+# Resposta HTTP simulada (sem rede); retry-after 0 evita a espera do
+# retry do ellmer.
+resposta_http <- function(status, mensagem) {
+  function(req) {
+    httr2::response(
+      status,
+      headers = list("Content-Type" = "application/json", "retry-after" = "0"),
+      body = charToRaw(sprintf(
+        '{"error":{"code":%d,"message":"%s"}}', status, mensagem
+      ))
+    )
+  }
+}
+
+test_that("HTTP 429 vira mensagem acionável em PT-BR (#105)", {
+  skip_if_not_installed("R6")
+  skip_if_not_installed("httr2")
+  sem_vars_llm()
+  withr::local_envvar(GEMINI_API_KEY = "chave-secreta-de-teste")
+  chat <- chat_edubr("gemini", modelo = "gemini-x")
+  httr2::local_mocked_responses(
+    resposta_http(429, "Quota exceeded. Please retry in 1h2m3.45s.")
+  )
+
+  e <- tryCatch(chat$chat("oi"), error = function(e) e)
+  expect_s3_class(e, "eduBR_cota_esgotada")
+  expect_s3_class(e$parent, "httr2_http_429")
+  msg <- conditionMessage(e)
+  expect_match(msg, "provedor \"gemini\" (modelo gemini-x)", fixed = TRUE)
+  expect_match(msg, "tentar de novo em 1h2m3s", fixed = TRUE)
+  expect_match(msg, "EDUBR_GEMINI_MODELO", fixed = TRUE)
+  expect_false(grepl("chave-secreta-de-teste", msg, fixed = TRUE))
+
+  e2 <- tryCatch(chat$chat_structured("oi", type = ellmer::type_string()),
+                 error = function(e) e)
+  expect_s3_class(e2, "eduBR_cota_esgotada")
+})
+
+test_that("outros erros HTTP passam sem tradução", {
+  skip_if_not_installed("R6")
+  skip_if_not_installed("httr2")
+  sem_vars_llm()
+  withr::local_envvar(GEMINI_API_KEY = "chave-de-teste")
+  chat <- chat_edubr("gemini", modelo = "gemini-x")
+  httr2::local_mocked_responses(resposta_http(400, "Bad request"))
+
+  e <- tryCatch(chat$chat("oi"), error = function(e) e)
+  expect_s3_class(e, "httr2_http_400")
+  expect_false(inherits(e, "eduBR_cota_esgotada"))
+})
+
+test_that("tempo de espera: texto da API, retry-after ou nenhum", {
+  skip_if_not_installed("httr2")
+  erro <- function(msg, ra = NULL) {
+    hd <- if (is.null(ra)) list() else list("retry-after" = ra)
+    structure(
+      class = c("httr2_http_429", "error", "condition"),
+      list(message = msg, resp = httr2::response(429, headers = hd))
+    )
+  }
+  expect_equal(eduBR_espera_429(erro("Please retry in 10h27m59.69s.")),
+               "10h27m59s")
+  expect_equal(eduBR_espera_429(erro("Rate limited", ra = "30")), "30 s")
+  expect_null(eduBR_espera_429(erro("Rate limited", ra = "0")))
+  expect_null(eduBR_espera_429(erro("Rate limited")))
+})
+
 # Smoke com LLM real: EDUBR_LLM_SMOKE=ollama|anthropic|gemini (+ EDUBR_SMOKE para o
 # banco). Ollama no container exige o túnel aberto (tools/tunnel-ollama.sh).
 test_that("LLM real usa a ferramenta catalogo", {

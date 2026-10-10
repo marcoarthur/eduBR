@@ -121,6 +121,14 @@ implementação ficam no código; memória de curadoria fica em
   Aceite: smoke ok ("16" em 11,9 s); taxa N = 2 com ML 2/2, mas gestora e
   pesquisadora pararam na cota gratuita (20 requisições/dia no
   `gemini-3.7-flash`, HTTP 429). Medir de novo com cota paga.
+- **HTTP 429 em PT-BR** (#105): o ellmer não tem gancho para erro de
+  requisição (`on_request_end` não dispara em erro) e os métodos do R6 são
+  travados. Por isso `chat_edubr()` devolve uma subclasse `EduBRChat` de
+  `ellmer::Chat` (recriada com o mesmo provedor, modelo e prompt), em que
+  `$chat()`/`$chat_structured()` traduzem `httr2_http_429` em
+  `eduBR_cota_esgotada` (erro original como causa). `$stream()` e os
+  assíncronos não traduzem. A cota da chave gratuita do Gemini vale para
+  o projeto todo, não por modelo.
 - Smoke com LLM real: `tools/test-container.sh --llm ollama|anthropic`
   (Ollama com túnel aberto). Primeiro resultado: `qwen3.5:9b` chamou
   `catalogo` e respondeu "16" em ~19 s.
