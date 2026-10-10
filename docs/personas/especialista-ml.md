@@ -35,6 +35,25 @@
 
 ## Entradas
 
+### 2026-10-10 — 17ª rodada (Gemini como provedor, #104)
+
+Entrega verificada: `chat_edubr("gemini")` (PR #104).
+
+- **M32 pelo chat com o Gemini** (`gemini-3.7-flash`, taxa N = 2) →
+  **2/2**: `features_escola` → `classificar_desempenho` → `dividir_dados`
+  → `treinar_floresta` → `metricas_floresta` → `importancia_floresta`,
+  sem erro, com a acurácia da tool presente na resposta. Mediana de 144 s
+  (Anthropic: 32 s), com pico de 15.601 tokens. **✓ atendido.**
+- **Comparação de provedores** → no fluxo de ML, Anthropic 2/2 e Gemini
+  2/2 no mesmo critério estrito; o Gemini foi mais lento e chamou
+  `importancia_floresta` sem que a pergunta pedisse. **✓ atendido.**
+- **Custo de requisições** → um fluxo de ML gasta várias requisições por
+  pergunta; no plano gratuito (20 por dia), cabem uns 2 fluxos por dia.
+  Registrar ao comparar provedores. **sugestão**, junto da mensagem do
+  429.
+
+Pendências do pacote zeradas; resta a de dados (INSE histórico).
+
 ### 2026-10-09 — 16ª rodada (verificação de #99)
 
 - **Ruído na saída** → a mensagem nova de `as_sf()` sobre geometrias
@@ -520,11 +539,16 @@ Foco: avaliar o novo fluxo de modelagem (`ideb_regiao()` +
 
 ## Sugestões priorizadas
 
+- **[baixa]** `chat_edubr()`: transformar o HTTP 429 (cota esgotada) numa
+  mensagem acionável em PT-BR (qual provedor, que a cota acabou, quando
+  tentar de novo), como já é feito na falha de conexão com o Ollama (#105).
 - **[média]** Carregar SAEBs anteriores (INSE histórico) → painel
   `inse_{t-1}` → `ideb_t` (código pronto; bloqueado no EduMaps).
 
 ## Veredito
 
+- **Aprova** (2026-10-10, 17ª rodada): fluxo de ML 2/2 também com o
+  Gemini; o pacote é agnóstico ao provedor.
 - **Aprova** (2026-10-09, 16ª rodada): a mensagem nova não polui pipelines
   (silenciável, sem warning).
 - **Aprova** (2026-10-09, 15ª rodada): `escolas()` do Censo compõe lazy
