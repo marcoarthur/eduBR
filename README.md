@@ -278,8 +278,18 @@ rmarkdown::render(
 
 ## Testes
 
-Rodar **apenas no container de teste** (`rstudio.dev`, como `rsuser`) —
-nunca na máquina local. O script sincroniza o working tree e roda lá:
+Rodar **localmente**, na máquina de desenvolvimento (com `edumaps` no
+`~/.pg_service.conf` para o smoke):
+
+```bash
+Rscript -e 'devtools::test()'                       # unitarios (sem banco)
+EDUBR_SMOKE=1 Rscript -e 'devtools::test()'         # + smoke contra o [edumaps]
+EDUBR_LLM_SMOKE=ollama Rscript -e 'devtools::test(filter = "ellmer-chat")'
+Rscript -e 'devtools::check()'                      # inclui a vignette (exige qpdf)
+```
+
+Opcional: conferir a compatibilidade com o RStudio Server (`rstudio.dev`,
+dbplyr 2.5.0), sincronizando o working tree e rodando lá:
 
 ```bash
 tools/test-container.sh                  # testes unitarios (sem banco)

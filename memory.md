@@ -69,14 +69,19 @@ implementação ficam no código; memória de curadoria fica em
   `redundantes = "remover"`).
 - `integer64` vira número **só** onde o cálculo exige (k-NN, PCA); a saída
   das funções de acesso mantém o tipo do banco (#16 segue valendo).
-- **Testes rodam só no container `rstudio.dev` como `rsuser`** (regra do
-  README); o `AGENTS.md` ainda diz o contrário e será corrigido.
+- ~~Testes rodam só no container `rstudio.dev` como `rsuser`~~ —
+  **revisto em 2026-10-09**: a regra existia por causa do laptop anterior
+  (CPU fraca). No host atual, `ubaxala` (12 núcleos, 15 GB), os testes,
+  o smoke e o `check` rodam **localmente** (ambiente completo: dbplyr
+  2.6.0, `ellmer` 0.5.0, `qpdf`). O container fica opcional, para conferir
+  a compatibilidade com o dbplyr 2.5.0 do RStudio Server.
 
 ## 2026-10-08 — camada `ellmer` (plano em `plans/ellmer-tools.md`)
 
 - **Runtime**: `chat_anthropic()` no container; a chave
   (`ANTHROPIC_API_KEY`) é configurada pelo dono do repo no ambiente do
-  `rsuser`, nunca no código. `ellmer` 0.5.0 existe só no container.
+  `rsuser`, nunca no código. `ellmer` 0.5.0 existia só no container
+  (instalado também no `ubaxala` em 2026-10-09).
 - **Handles na sessão** para encadear objetos R (dados, espec, regressão,
   floresta): o LLM recebe ids, não objetos; somem ao fim da sessão.
 - **Ledger** persistido (quando pedido) em

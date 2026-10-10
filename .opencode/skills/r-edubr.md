@@ -213,9 +213,9 @@ Colunas usadas nos filtros existentes (confira no banco antes de assumir):
   dimensão) → `predizer_floresta()` (fator `nivel_pred` + `p_<classe>`) →
   `metricas_floresta()`.
 - Report/exemplo: `analysis/classificacao_desempenho_rf.Rmd`. `ranger` fica em
-  **Suggests** (check 0/0/0); **não** usar `vip` (instalação só no container;
-  daria NOTA no check local).
-- Ambiente de execução: **container `rstudio.dev` (rsuser)** — o treino usa
+  **Suggests** (check 0/0/0); **não** usar `vip` (não é dependência
+  declarada; daria NOTA no check).
+- Ambiente de execução do report: **container `rstudio.dev` (rsuser)** — o treino usa
   **amostra estratificada de até 15 mil escolas por etapa** (`n_amostra`),
   `num.threads = 2` e `trees = 250`; sem isso o container estoura memória
   (`Killed` por OOM, host ~8 GB) ao treinar com a base completa (41k fund. I).
@@ -343,7 +343,18 @@ permite **teste sem banco** (mock). Nunca hardcode host/senha.
 
 ## Testes
 
-Só no container `rstudio.dev`, como `rsuser` (dbplyr 2.5 lá × 2.6 local):
+**Localmente**, no host de desenvolvimento `ubaxala` (regra revista em
+2026-10-09; a de "só no container" era por causa do laptop antigo):
+
+```bash
+Rscript -e 'devtools::test()'                          # unitários (sem banco)
+EDUBR_SMOKE=1 Rscript -e 'devtools::test()'            # + smoke (banco real)
+EDUBR_LLM_SMOKE=ollama Rscript -e 'devtools::test(filter = "ellmer-chat")'
+_R_CHECK_SYSTEM_CLOCK_=FALSE Rscript -e 'devtools::check()'
+```
+
+Opcional, para a compatibilidade com o RStudio Server (dbplyr 2.5 lá ×
+2.6 local) — use ao introduzir tradução dbplyr nova:
 
 ```bash
 tools/test-container.sh                 # unitários (sem banco)
@@ -364,7 +375,7 @@ tools/test-container.sh --check         # devtools::check() (com vignette)
 - **Roxygen2** com `markdown = TRUE`; todo `export()` gera entrada em
   `NAMESPACE` e `man/*.Rd` — nunca editar esses arquivos à mão.
 - Após mudar docs: `devtools::document()`.
-- Antes de PR: `tools/test-container.sh --smoke` e `--check` (0 erros,
+- Antes de PR: smoke e `check` locais (0 erros,
   0 notas; 2 warnings pré-existentes: não-ASCII em `R/pca.R`/`R/perfil.R`
   e link `eduBR_tbl`).
 - Dependências: `DESCRIPTION` → `Imports` (`DBI`, `RPostgres`, `dplyr`,
