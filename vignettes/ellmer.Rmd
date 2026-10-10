@@ -61,6 +61,10 @@ EDUBR_GEMINI_MODELO=gemini-...   # opcional; sem ela, o padrão do ellmer
 chat <- chat_edubr("gemini", tools = tools)
 ```
 
+No plano gratuito da API, a cota é pequena (20 requisições por dia no
+`gemini-3.7-flash`, em 2026-10-10), e cada pergunta com ferramentas gasta
+várias; ao estourar, a API devolve HTTP 429.
+
 ### Ollama (modelo local)
 
 O endereço vem de `OLLAMA_BASE_URL` (padrão `http://localhost:11434`) e o
