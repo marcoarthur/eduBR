@@ -102,7 +102,7 @@ não gera diferença no `man/` (o do container reformata).
 devtools::test()                                        # unitários (sem banco)
 EDUBR_SMOKE=1 Rscript -e 'devtools::test()'             # + smoke (banco real)
 EDUBR_SMOKE=1 Rscript -e 'devtools::test(filter = "ellmer")'
-EDUBR_LLM_SMOKE=ollama Rscript -e 'devtools::test(filter = "ellmer-chat")'
+EDUBR_LLM_SMOKE=ollama Rscript -e 'devtools::test(filter = "ellmer-chat")'  # ou anthropic, gemini
 _R_CHECK_SYSTEM_CLOCK_=FALSE Rscript -e 'devtools::check()'
 devtools::document()                                    # NAMESPACE/man
 ```
@@ -126,6 +126,7 @@ tools/test-container.sh --smoke            # + EDUBR_SMOKE=1 (banco real)
 tools/test-container.sh --filter ellmer    # só test-*ellmer*.R
 tools/test-container.sh --llm ollama       # + smoke com LLM real (túnel aberto)
 tools/test-container.sh --llm anthropic    # idem, com ANTHROPIC_API_KEY no rsuser
+tools/test-container.sh --llm gemini       # idem, com GEMINI_API_KEY no rsuser
 tools/test-container.sh --check            # devtools::check() (constrói a vignette)
 tools/test-container.sh --no-sync ...      # sem rsync antes
 ```
@@ -179,14 +180,16 @@ instalado localmente e no container; em `Suggests`):
   `integer64` como texto, teto de 1000 linhas por resposta, timeout e
   orçamento por sessão, handles `dados_<k>`/`espec_<k>`/`regressao_<k>`/
   `floresta_<k>`).
-- `chat_edubr("anthropic" | "ollama", tools = , persona = )`,
+- `chat_edubr("anthropic" | "gemini" | "ollama", tools = , persona = )`,
   `registrar_tools(chat, tools)`, `prompt_persona()` e `ledger(tools)`.
 - Prompts por persona em `inst/prompts/`; matriz pergunta × tool em
   `docs/ellmer.md`; plano e decisões em `plans/ellmer-tools.md`; vignette
   `vignettes/ellmer.Rmd` (transcrições reais gravadas, `eval = FALSE`).
 - **Anthropic**: `ANTHROPIC_API_KEY` no `~/.Renviron` (permissão 600) do
   `ubaxala` e do `rsuser` no container; nunca no código nem em saída de
-  log. **Ollama**: roda no host de desenvolvimento (`qwen3.5:9b`); local,
+  log. **Gemini**: `GEMINI_API_KEY` (ou `GOOGLE_API_KEY`) no mesmo
+  `~/.Renviron`, com as mesmas regras; modelo por `EDUBR_GEMINI_MODELO`
+  (padrão do ellmer). **Ollama**: roda no host de desenvolvimento (`qwen3.5:9b`); local,
   `chat_edubr("ollama")` usa `localhost:11434` direto, e o container o
   alcança por **túnel SSH reverso**:
 

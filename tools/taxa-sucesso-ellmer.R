@@ -7,7 +7,7 @@
 # Anthropic: ANTHROPIC_API_KEY no ~/.Renviron):
 #
 #   EDUBR_DEST=/home/rsuser/projetos/eduBR   # pacote (load_all)
-#   PROVEDOR=ollama                          # ou anthropic
+#   PROVEDOR=ollama                          # ou anthropic, gemini
 #   N=2                                      # repeticoes por cenario (max. 2)
 #   CENARIOS=gestora,pesquisadora,ml         # subconjunto opcional
 #   SAIDA=/tmp/taxa/ollama                   # prefixo: <SAIDA>.md e .csv

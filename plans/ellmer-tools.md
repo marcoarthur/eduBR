@@ -55,7 +55,7 @@
 | D14 | Dependência | `ellmer` em **Suggests** + `rlang::check_installed()`; `jsonlite` em Suggests (testes). | Pacote segue leve para quem não usa LLM. |
 | D15 | `registrar_tools()` | **Exportado** (a spec diz "interno"): o usuário/vignette precisa chamá-lo para anexar tools + system prompt da persona ao `chat`. | Sem ele a vignette usaria internos. |
 | D16 | Vignette | `eval = FALSE` com transcrições **gravadas** no container (chat real via `chat_edubr()`, Anthropic e/ou Ollama), para o `check` não depender de rede/chave. `knitr`/`rmarkdown` em Suggests + `VignetteBuilder: knitr`. | `check` reprodutível. |
-| D18 | Provedores | `chat_edubr()` exportada escolhe o provedor (argumento > `EDUBR_LLM_PROVEDOR` > `anthropic` se houver chave > `ollama`) e registra as tools; smoke com LLM real via `tools/test-container.sh --llm ollama|anthropic`. | Usar Ollama local sem custo e Anthropic quando houver chave. |
+| D18 | Provedores | `chat_edubr()` exportada escolhe o provedor (argumento > `EDUBR_LLM_PROVEDOR` > `anthropic` se houver chave > `ollama`) e registra as tools; smoke com LLM real via `tools/test-container.sh --llm ollama|anthropic`. | Usar Ollama local sem custo e Anthropic quando houver chave. *(2026-10-10: Gemini como terceiro provedor, mesma regra de chave; ordem automática Anthropic > Gemini > Ollama.)* |
 | D17 | Prompts | `inst/prompts/<persona>.md` estáticos, escritos a partir de `docs/personas/` (que fica fora do build); `prompt_persona(persona)` lê via `system.file()`. | `docs/` não vai para o pacote instalado. |
 
 ## 3. Inventário de tools (cada uma justificada por pergunta de persona)

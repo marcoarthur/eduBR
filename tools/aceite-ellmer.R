@@ -1,6 +1,6 @@
 # tools/aceite-ellmer.R
 #
-# Aceite da camada ellmer com chat real (Ollama ou Anthropic): faz as perguntas de um
+# Aceite da camada ellmer com chat real (Ollama, Anthropic ou Gemini): faz as perguntas de um
 # arquivo a uma persona e grava a transcricao (turns, chamadas de tool com
 # argumentos, resultados, resposta, tempo, tokens e ledger) em <SAIDA>.json
 # e <SAIDA>.md, mais checagens de fronteira (nomes fisicos, integer64 cru,
@@ -18,7 +18,8 @@
 #   SEGUIR_SE_VAZIO=1                     # repete com um pedido de resposta
 #                                         #     se a resposta vier vazia
 #   NOVO_CHAT=0                           # 1 = um chat por pergunta
-#   PROVEDOR=ollama                       # ou anthropic (ANTHROPIC_API_KEY
+#   PROVEDOR=ollama                       # ou gemini (GEMINI_API_KEY), ou
+#                                         #    anthropic (ANTHROPIC_API_KEY
 #                                         #    no ~/.Renviron do rsuser)
 #
 # Transcricoes de 2026-10-09 em docs/aceite-ellmer/.

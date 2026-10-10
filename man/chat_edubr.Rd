@@ -18,11 +18,12 @@ chat_edubr(
 )
 }
 \arguments{
-\item{provedor}{\code{"anthropic"}, \code{"ollama"} ou \code{NULL} (escolha automática).}
+\item{provedor}{\code{"anthropic"}, \code{"gemini"}, \code{"ollama"} ou \code{NULL} (escolha
+automática).}
 
 \item{modelo}{Nome do modelo. \code{NULL} usa \code{EDUBR_ANTHROPIC_MODELO} /
-\code{EDUBR_OLLAMA_MODELO}; sem elas, o padrão do ellmer (Anthropic) ou
-\code{"qwen3.5:9b"} (Ollama).}
+\code{EDUBR_GEMINI_MODELO} / \code{EDUBR_OLLAMA_MODELO}; sem elas, o padrão do
+ellmer (Anthropic e Gemini) ou \code{"qwen3.5:9b"} (Ollama).}
 
 \item{tools}{Lista opcional de \code{\link[=ferramentas_edubr]{ferramentas_edubr()}} para registrar no
 chat.}
@@ -31,8 +32,8 @@ chat.}
 \code{tools}), vão \strong{depois} do prompt da persona, separadas por uma linha
 em branco.}
 
-\item{base_url}{Endereço do servidor (só Ollama; Anthropic usa o padrão
-do ellmer).}
+\item{base_url}{Endereço do servidor (só Ollama; Anthropic e Gemini usam
+o padrão do ellmer).}
 
 \item{echo}{Repassado ao ellmer (\code{"none"}, \code{"output"} ou \code{"all"}).}
 
@@ -49,21 +50,22 @@ um prompt genérico curto; sem \code{tools} nem \code{persona}, só
 do modelo) ou \code{"desligado"}. Sem valor, o Ollama usa \code{"desligado"} —
 com o raciocínio ligado o \verb{qwen3.5:9b} às vezes fecha o turno sem texto
 (e o pedido seguinte falha com HTTP 400), o que aconteceu em fluxos com
-várias tools (#94) — e a Anthropic usa \code{"padrao"}. \code{"desligado"} envia
-\code{reasoning_effort = "none"} no Ollama; na Anthropic não muda nada (o
-ellmer já não liga o raciocínio estendido).}
+várias tools (#94) — e Anthropic e Gemini usam \code{"padrao"}.
+\code{"desligado"} envia \code{reasoning_effort = "none"} no Ollama; na Anthropic
+e no Gemini não muda nada (no Gemini, ajuste o raciocínio com
+\code{params = ellmer::params(reasoning_effort = )} em \code{...}).}
 
 \item{max_tokens}{Limite de tokens gerados por resposta (inclui os de
 raciocínio). \code{NULL} usa \code{EDUBR_MAX_TOKENS}; sem ela, 4096 no Ollama
 (respostas longas eram cortadas com o padrão) e o padrão do ellmer na
-Anthropic. Combinado com \code{params} passado em \code{...}.}
+Anthropic e no Gemini. Combinado com \code{params} passado em \code{...}.}
 }
 \value{
 Um objeto \code{Chat} do ellmer, com os atributos \code{provedor},
 \code{persona}, \code{raciocinio} e \code{max_tokens}.
 }
 \description{
-Cria um chat do \href{https://ellmer.tidyverse.org}{ellmer} com um de dois
+Cria um chat do \href{https://ellmer.tidyverse.org}{ellmer} com um de três
 provedores e, opcionalmente, registra nele as ferramentas de
 \code{\link[=ferramentas_edubr]{ferramentas_edubr()}}:
 }
@@ -72,6 +74,10 @@ provedores e, opcionalmente, registra nele as ferramentas de
 \item \strong{\code{"anthropic"}}: API da Anthropic via \code{\link[ellmer:chat_anthropic]{ellmer::chat_anthropic()}}. A
 chave vem \strong{só} da variável de ambiente \code{ANTHROPIC_API_KEY} (ex.: no
 \verb{~/.Renviron}); nunca a coloque no código.
+\item \strong{\code{"gemini"}}: API do Google Gemini via \code{\link[ellmer:chat_google_gemini]{ellmer::chat_google_gemini()}}.
+A chave vem \strong{só} de \code{GEMINI_API_KEY} ou \code{GOOGLE_API_KEY} (ex.: no
+\verb{~/.Renviron}); o eduBR exige uma delas e não recorre às credenciais
+do Google Cloud nem ao login pelo navegador.
 \item \strong{\code{"ollama"}}: modelo local via \code{\link[ellmer:chat_ollama]{ellmer::chat_ollama()}}. O endereço vem
 de \code{base_url}, de \code{OLLAMA_BASE_URL} ou do padrão
 \verb{http://localhost:11434}. Para usar no container um Ollama que roda em
@@ -81,7 +87,8 @@ no repositório). O modelo precisa suportar \emph{tool calling} (ex.:
 }
 
 Sem \code{provedor}, a escolha segue: \code{EDUBR_LLM_PROVEDOR}; senão \code{"anthropic"}
-se \code{ANTHROPIC_API_KEY} estiver definida; senão \code{"ollama"}.
+se \code{ANTHROPIC_API_KEY} estiver definida; senão \code{"gemini"} se houver
+chave do Gemini; senão \code{"ollama"}.
 }
 \examples{
 \dontrun{
@@ -90,6 +97,9 @@ tools <- ferramentas_edubr(con, persona = "gestora-escolar")
 
 # Anthropic (ANTHROPIC_API_KEY no ambiente)
 chat <- chat_edubr("anthropic", tools = tools)
+
+# Google Gemini (GEMINI_API_KEY no ambiente)
+chat <- chat_edubr("gemini", tools = tools)
 
 # Ollama local (ou via túnel no container)
 chat <- chat_edubr("ollama", modelo = "qwen3.5:9b", tools = tools)

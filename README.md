@@ -190,6 +190,8 @@ tools <- ferramentas_edubr(con, persona = "gestora-escolar")
 
 # Anthropic: ANTHROPIC_API_KEY no ~/.Renviron (nunca no código)
 chat <- chat_edubr("anthropic", tools = tools)
+# Google Gemini: GEMINI_API_KEY (ou GOOGLE_API_KEY) no ~/.Renviron
+chat <- chat_edubr("gemini", tools = tools)
 # Ollama local (OLLAMA_BASE_URL; padrão http://localhost:11434, modelo qwen3.5:9b)
 chat <- chat_edubr("ollama", tools = tools)
 
@@ -284,7 +286,7 @@ Rodar **localmente**, na máquina de desenvolvimento (com `edumaps` no
 ```bash
 Rscript -e 'devtools::test()'                       # unitarios (sem banco)
 EDUBR_SMOKE=1 Rscript -e 'devtools::test()'         # + smoke contra o [edumaps]
-EDUBR_LLM_SMOKE=ollama Rscript -e 'devtools::test(filter = "ellmer-chat")'
+EDUBR_LLM_SMOKE=ollama Rscript -e 'devtools::test(filter = "ellmer-chat")'  # ou anthropic, gemini
 Rscript -e 'devtools::check()'                      # inclui a vignette (exige qpdf)
 ```
 

@@ -1,10 +1,11 @@
 # R/ellmer_chat.R
 #
-# Criação do chat (ellmer) com o provedor escolhido: API da Anthropic (chave
-# no ambiente) ou Ollama (local ou via túnel). As ferramentas do eduBR não
-# dependem do provedor; só o construtor do chat muda.
+# Criação do chat (ellmer) com o provedor escolhido: API da Anthropic ou do
+# Google Gemini (chave no ambiente) ou Ollama (local ou via túnel). As
+# ferramentas do eduBR não dependem do provedor; só o construtor do chat
+# muda.
 
-eduBR_provedores <- function() c("anthropic", "ollama")
+eduBR_provedores <- function() c("anthropic", "gemini", "ollama")
 
 eduBR_ollama_modelo_padrao <- function() "qwen3.5:9b"
 
@@ -13,12 +14,19 @@ eduBR_chat_construtor <- function(provedor) {
   switch(
     provedor,
     anthropic = ellmer::chat_anthropic,
+    gemini = ellmer::chat_google_gemini,
     ollama = ellmer::chat_ollama
   )
 }
 
+# Chave do Gemini: GEMINI_API_KEY ou GOOGLE_API_KEY (as que o ellmer lê).
+eduBR_tem_chave_gemini <- function() {
+  nzchar(Sys.getenv("GEMINI_API_KEY", "")) ||
+    nzchar(Sys.getenv("GOOGLE_API_KEY", ""))
+}
+
 # Provedor efetivo: argumento > EDUBR_LLM_PROVEDOR > anthropic se houver
-# chave > ollama.
+# chave > gemini se houver chave > ollama.
 eduBR_resolver_provedor <- function(provedor) {
   if (is.null(provedor)) {
     env <- Sys.getenv("EDUBR_LLM_PROVEDOR", "")
@@ -26,6 +34,8 @@ eduBR_resolver_provedor <- function(provedor) {
       env
     } else if (nzchar(Sys.getenv("ANTHROPIC_API_KEY", ""))) {
       "anthropic"
+    } else if (eduBR_tem_chave_gemini()) {
+      "gemini"
     } else {
       "ollama"
     }
@@ -52,13 +62,17 @@ eduBR_texto_opcional <- function(x, nome) {
 
 #' Chat com LLM para as ferramentas do eduBR
 #'
-#' Cria um chat do [ellmer](https://ellmer.tidyverse.org) com um de dois
+#' Cria um chat do [ellmer](https://ellmer.tidyverse.org) com um de três
 #' provedores e, opcionalmente, registra nele as ferramentas de
 #' [ferramentas_edubr()]:
 #'
 #' - **`"anthropic"`**: API da Anthropic via [ellmer::chat_anthropic()]. A
 #'   chave vem **só** da variável de ambiente `ANTHROPIC_API_KEY` (ex.: no
 #'   `~/.Renviron`); nunca a coloque no código.
+#' - **`"gemini"`**: API do Google Gemini via [ellmer::chat_google_gemini()].
+#'   A chave vem **só** de `GEMINI_API_KEY` ou `GOOGLE_API_KEY` (ex.: no
+#'   `~/.Renviron`); o eduBR exige uma delas e não recorre às credenciais
+#'   do Google Cloud nem ao login pelo navegador.
 #' - **`"ollama"`**: modelo local via [ellmer::chat_ollama()]. O endereço vem
 #'   de `base_url`, de `OLLAMA_BASE_URL` ou do padrão
 #'   `http://localhost:11434`. Para usar no container um Ollama que roda em
@@ -67,19 +81,21 @@ eduBR_texto_opcional <- function(x, nome) {
 #'   `qwen3.5:9b`, `granite4.1:8b`).
 #'
 #' Sem `provedor`, a escolha segue: `EDUBR_LLM_PROVEDOR`; senão `"anthropic"`
-#' se `ANTHROPIC_API_KEY` estiver definida; senão `"ollama"`.
+#' se `ANTHROPIC_API_KEY` estiver definida; senão `"gemini"` se houver
+#' chave do Gemini; senão `"ollama"`.
 #'
-#' @param provedor `"anthropic"`, `"ollama"` ou `NULL` (escolha automática).
+#' @param provedor `"anthropic"`, `"gemini"`, `"ollama"` ou `NULL` (escolha
+#'   automática).
 #' @param modelo Nome do modelo. `NULL` usa `EDUBR_ANTHROPIC_MODELO` /
-#'   `EDUBR_OLLAMA_MODELO`; sem elas, o padrão do ellmer (Anthropic) ou
-#'   `"qwen3.5:9b"` (Ollama).
+#'   `EDUBR_GEMINI_MODELO` / `EDUBR_OLLAMA_MODELO`; sem elas, o padrão do
+#'   ellmer (Anthropic e Gemini) ou `"qwen3.5:9b"` (Ollama).
 #' @param tools Lista opcional de [ferramentas_edubr()] para registrar no
 #'   chat.
 #' @param system_prompt Instruções de sistema opcionais. Com `persona` (ou
 #'   `tools`), vão **depois** do prompt da persona, separadas por uma linha
 #'   em branco.
-#' @param base_url Endereço do servidor (só Ollama; Anthropic usa o padrão
-#'   do ellmer).
+#' @param base_url Endereço do servidor (só Ollama; Anthropic e Gemini usam
+#'   o padrão do ellmer).
 #' @param echo Repassado ao ellmer (`"none"`, `"output"` ou `"all"`).
 #' @param ... Outros argumentos repassados ao construtor do ellmer.
 #' @param persona `NULL` ou uma de `"gestora-escolar"`,
@@ -93,14 +109,15 @@ eduBR_texto_opcional <- function(x, nome) {
 #'   do modelo) ou `"desligado"`. Sem valor, o Ollama usa `"desligado"` —
 #'   com o raciocínio ligado o `qwen3.5:9b` às vezes fecha o turno sem texto
 #'   (e o pedido seguinte falha com HTTP 400), o que aconteceu em fluxos com
-#'   várias tools (#94) — e a Anthropic usa `"padrao"`. `"desligado"` envia
-#'   `reasoning_effort = "none"` no Ollama; na Anthropic não muda nada (o
-#'   ellmer já não liga o raciocínio estendido).
+#'   várias tools (#94) — e Anthropic e Gemini usam `"padrao"`.
+#'   `"desligado"` envia `reasoning_effort = "none"` no Ollama; na Anthropic
+#'   e no Gemini não muda nada (no Gemini, ajuste o raciocínio com
+#'   `params = ellmer::params(reasoning_effort = )` em `...`).
 #'
 #' @param max_tokens Limite de tokens gerados por resposta (inclui os de
 #'   raciocínio). `NULL` usa `EDUBR_MAX_TOKENS`; sem ela, 4096 no Ollama
 #'   (respostas longas eram cortadas com o padrão) e o padrão do ellmer na
-#'   Anthropic. Combinado com `params` passado em `...`.
+#'   Anthropic e no Gemini. Combinado com `params` passado em `...`.
 #'
 #' @return Um objeto `Chat` do ellmer, com os atributos `provedor`,
 #'   `persona`, `raciocinio` e `max_tokens`.
@@ -112,6 +129,9 @@ eduBR_texto_opcional <- function(x, nome) {
 #'
 #' # Anthropic (ANTHROPIC_API_KEY no ambiente)
 #' chat <- chat_edubr("anthropic", tools = tools)
+#'
+#' # Google Gemini (GEMINI_API_KEY no ambiente)
+#' chat <- chat_edubr("gemini", tools = tools)
 #'
 #' # Ollama local (ou via túnel no container)
 #' chat <- chat_edubr("ollama", modelo = "qwen3.5:9b", tools = tools)
@@ -178,6 +198,21 @@ chat_edubr <- function(provedor = NULL, modelo = NULL, tools = NULL,
       stop("`base_url` s\u00f3 se aplica ao provedor \"ollama\".", call. = FALSE)
     }
     modelo <- modelo %||% eduBR_env_opcional("EDUBR_ANTHROPIC_MODELO")
+  } else if (provedor == "gemini") {
+    if (!eduBR_tem_chave_gemini()) {
+      stop(
+        paste0(
+          "Defina a vari\u00e1vel de ambiente GEMINI_API_KEY (ou ",
+          "GOOGLE_API_KEY), ex.: no ~/.Renviron, para usar o provedor ",
+          "\"gemini\"; a chave nunca deve ir no c\u00f3digo."
+        ),
+        call. = FALSE
+      )
+    }
+    if (!is.null(base_url)) {
+      stop("`base_url` s\u00f3 se aplica ao provedor \"ollama\".", call. = FALSE)
+    }
+    modelo <- modelo %||% eduBR_env_opcional("EDUBR_GEMINI_MODELO")
   } else {
     modelo <- modelo %||% eduBR_env_opcional("EDUBR_OLLAMA_MODELO") %||%
       eduBR_ollama_modelo_padrao()

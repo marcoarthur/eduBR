@@ -37,8 +37,8 @@ while [[ $# -gt 0 ]]; do
     --smoke) smoke="EDUBR_SMOKE=1"; shift ;;
     --llm)
       case "$2" in
-        ollama|anthropic) llm="EDUBR_LLM_SMOKE=$2"; shift 2 ;;
-        *) echo "--llm aceita ollama ou anthropic" >&2; exit 2 ;;
+        ollama|anthropic|gemini) llm="EDUBR_LLM_SMOKE=$2"; shift 2 ;;
+        *) echo "--llm aceita ollama, anthropic ou gemini" >&2; exit 2 ;;
       esac
       ;;
     --filter) filtro="$2"; shift 2 ;;

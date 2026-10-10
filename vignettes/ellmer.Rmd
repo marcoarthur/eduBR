@@ -46,6 +46,21 @@ tools <- ferramentas_edubr(con, persona = "gestora-escolar")
 chat <- chat_edubr("anthropic", tools = tools)
 ```
 
+### Google Gemini
+
+A chave vem **só** de `GEMINI_API_KEY` (ou `GOOGLE_API_KEY`), por exemplo
+no `~/.Renviron` (nunca no código); sem ela, `chat_edubr("gemini")` dá erro
+em vez de tentar as credenciais do Google Cloud ou o login pelo navegador:
+
+```
+GEMINI_API_KEY=...
+EDUBR_GEMINI_MODELO=gemini-...   # opcional; sem ela, o padrão do ellmer
+```
+
+```{r}
+chat <- chat_edubr("gemini", tools = tools)
+```
+
 ### Ollama (modelo local)
 
 O endereço vem de `OLLAMA_BASE_URL` (padrão `http://localhost:11434`) e o
@@ -66,7 +81,8 @@ tools/tunnel-ollama.sh abrir    # status | fechar
 ```
 
 Sem `provedor`, `chat_edubr()` usa `EDUBR_LLM_PROVEDOR`; senão
-`"anthropic"` se houver `ANTHROPIC_API_KEY`; senão `"ollama"`.
+`"anthropic"` se houver `ANTHROPIC_API_KEY`; senão `"gemini"` se houver
+`GEMINI_API_KEY`/`GOOGLE_API_KEY`; senão `"ollama"`.
 
 ### Chat criado à parte
 
