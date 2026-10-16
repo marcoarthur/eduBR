@@ -302,14 +302,19 @@ plano → execução → aprovação
 3. **Aprovação**: só pedir PR após o aceite explícito da implementação.
 4. **PR + merge (via `gh`)**:
 
+   Quando todos os checks obrigatórios do CI passarem, fazer o merge do PR
+   e apagar a branch remota e local. O merge não depende de uma confirmação
+   adicional.
+
    ```bash
    git push -u origin <branch>
    gh pr create --base main --head <branch> \
      --title "<título em PT-BR>" --body "<entregas, testes, validação>"
    gh pr merge <n> --merge --delete-branch
+   git checkout main && git fetch origin && git merge --ff-only origin/main
+   git branch -d <branch>
    ```
 
-   Depois: `git checkout main && git fetch origin && git merge --ff-only origin/main`.
 5. **Deploy**: o `eduBR` é biblioteca; não há deploy nos containers. A
    instalação é local via `devtools::install()`.
 
