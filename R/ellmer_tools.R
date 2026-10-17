@@ -15,7 +15,8 @@
 
 # Personas aceitas pelo filtro de ferramentas_edubr().
 eduBR_personas <- function() {
-  c("gestora-escolar", "pesquisadora-educacional", "especialista-ml")
+  c("gestora-escolar", "pesquisadora-educacional", "especialista-ml",
+    "analista-espacial")
 }
 
 # Teto absoluto de linhas devolvidas ao LLM por chamada (D4).
@@ -802,7 +803,7 @@ eduBR_tools_registro <- function() {
     ),
     perfil_escola = list(
       criar = eduBR_tool_perfil_escola,
-      personas = c("gestora-escolar", "pesquisadora-educacional")
+      personas = c("gestora-escolar", "pesquisadora-educacional", "analista-espacial")
     ),
     resumo_escola = list(
       criar = eduBR_tool_resumo_escola,
@@ -826,11 +827,11 @@ eduBR_tools_registro <- function() {
     ),
     municipios = list(
       criar = eduBR_tool_municipios,
-      personas = "pesquisadora-educacional"
+      personas = c("pesquisadora-educacional", "analista-espacial")
     ),
     redes_municipio = list(
       criar = eduBR_tool_redes_municipio,
-      personas = "pesquisadora-educacional"
+      personas = c("pesquisadora-educacional", "analista-espacial")
     ),
     docentes_rede = list(
       criar = eduBR_tool_docentes_rede,
@@ -846,7 +847,7 @@ eduBR_tools_registro <- function() {
     ),
     covariaveis_escola = list(
       criar = eduBR_tool_covariaveis_escola,
-      personas = c("pesquisadora-educacional", "especialista-ml")
+      personas = c("pesquisadora-educacional", "especialista-ml", "analista-espacial")
     ),
     perfil_gestor = list(
       criar = eduBR_tool_perfil_gestor,
@@ -874,7 +875,19 @@ eduBR_tools_registro <- function() {
     ),
     regressao_escolas = list(
       criar = eduBR_tool_regressao_escolas,
-      personas = c("pesquisadora-educacional", "especialista-ml")
+      personas = c("pesquisadora-educacional", "especialista-ml", "analista-espacial")
+    ),
+    ivet_socioeconomico = list(
+      criar = eduBR_tool_ivet_socioeconomico,
+      personas = "analista-espacial"
+    ),
+    ivet_contexto = list(
+      criar = eduBR_tool_ivet_contexto,
+      personas = "analista-espacial"
+    ),
+    regressao_ivet = list(
+      criar = eduBR_tool_regressao_ivet,
+      personas = "analista-espacial"
     ),
     listar_handles = list(
       criar = eduBR_tool_listar_handles,

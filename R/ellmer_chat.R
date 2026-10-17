@@ -98,8 +98,8 @@ eduBR_texto_opcional <- function(x, nome) {
 #'   o padrão do ellmer).
 #' @param echo Repassado ao ellmer (`"none"`, `"output"` ou `"all"`).
 #' @param ... Outros argumentos repassados ao construtor do ellmer.
-#' @param persona `NULL` ou uma de `"gestora-escolar"`,
-#'   `"pesquisadora-educacional"`, `"especialista-ml"`: o chat já sai com o
+#' @param persona `NULL` ou uma das personas aceitas, incluindo
+#'   `"analista-espacial"`: o chat já sai com o
 #'   prompt de sistema da persona ([prompt_persona()]). Sem `persona`, usa
 #'   a persona com que `tools` foram criadas; `tools` sem persona recebem
 #'   um prompt genérico curto; sem `tools` nem `persona`, só

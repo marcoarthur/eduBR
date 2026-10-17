@@ -10,7 +10,8 @@ test_that("catalogo() expoe as relacoes esperadas", {
       "escolas", "municipios", "ibge", "populacao", "redes", "indicadores",
       "scores", "censo_escolas", "censo_docentes", "censo_matriculas",
       "censo_gestor",
-      "ideb", "inse", "escola_features", "clusters", "similaridade"
+      "ideb", "ivet_entorno", "inse", "escola_features", "clusters",
+      "similaridade"
     )
   )
 })
@@ -39,6 +40,11 @@ test_that("catalogo() informa chave, tipo e ano por dominio", {
   censo <- cat[cat$dominio == "censo_escolas", ]
   expect_equal(censo$coluna_ano, "nu_ano_censo")
   expect_equal(censo$anos, "2025")
+
+  ivet <- cat[cat$dominio == "ivet_entorno", ]
+  expect_equal(ivet$granularidade, "escola \u00d7 ano escolar \u00d7 raio")
+  expect_equal(ivet$tipo_chave, "bigint")
+  expect_equal(ivet$coluna_ano, "nu_ano_censo")
 })
 
 test_that("catalogo() deixa NA nos metadados de relacao registrada", {

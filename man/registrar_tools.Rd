@@ -12,8 +12,7 @@ registrar_tools(chat, tools, persona = NULL)
 
 \item{tools}{Lista criada por \code{\link[=ferramentas_edubr]{ferramentas_edubr()}}.}
 
-\item{persona}{\code{NULL} ou uma de \code{"gestora-escolar"},
-\code{"pesquisadora-educacional"}, \code{"especialista-ml"}.}
+\item{persona}{\code{NULL} ou uma das personas listadas por \code{eduBR_personas()}.}
 }
 \value{
 O \code{chat}, invisível (modificado no lugar).

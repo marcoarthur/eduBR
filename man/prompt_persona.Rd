@@ -7,8 +7,8 @@
 prompt_persona(persona)
 }
 \arguments{
-\item{persona}{Uma de \code{"gestora-escolar"}, \code{"pesquisadora-educacional"}
-ou \code{"especialista-ml"}.}
+\item{persona}{Uma das personas listadas por \code{eduBR_personas()}, incluindo
+\code{"analista-espacial"}.}
 }
 \value{
 Texto (character de comprimento 1).

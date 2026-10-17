@@ -50,8 +50,8 @@ eduBR_arquivo_prompt <- function(persona) {
 #'
 #' Os textos ficam em `inst/prompts/<persona>.md` no código-fonte.
 #'
-#' @param persona Uma de `"gestora-escolar"`, `"pesquisadora-educacional"`
-#'   ou `"especialista-ml"`.
+#' @param persona Uma das personas listadas por `eduBR_personas()`, incluindo
+#'   `"analista-espacial"`.
 #'
 #' @return Texto (character de comprimento 1).
 #'
@@ -152,8 +152,7 @@ eduBR_validar_tools <- function(tools) {
 #' @param chat Objeto `Chat` do ellmer (ex.: de [chat_edubr()] ou
 #'   `ellmer::chat_anthropic()`).
 #' @param tools Lista criada por [ferramentas_edubr()].
-#' @param persona `NULL` ou uma de `"gestora-escolar"`,
-#'   `"pesquisadora-educacional"`, `"especialista-ml"`.
+#' @param persona `NULL` ou uma das personas listadas por `eduBR_personas()`.
 #'
 #' @return O `chat`, invisível (modificado no lugar).
 #'

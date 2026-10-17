@@ -22,7 +22,19 @@ Gerado a partir de `eduBR_tools_registro()` (conferido em
 - **gestora-escolar** (6): `catalogo`, `perfil_escola`, `resumo_escola`, `serie_ideb_escola`, `escolas_similares`, `scores_escola`
 - **pesquisadora-educacional** (16): `catalogo`, `perfil_escola`, `municipios`, `redes_municipio`, `docentes_rede`, `ideb`, `tendencia_ideb_regiao`, `covariaveis_escola`, `perfil_gestor`, `especificar_regressao`, `executar_regressao`, `coeficientes`, `metricas`, `ideb_agregado`, `regressao_escolas`, `listar_handles`
 - **especialista-ml** (19): `catalogo`, `scores_escola`, `indicadores_escola`, `ideb`, `tendencia_ideb_regiao`, `covariaveis_escola`, `especificar_regressao`, `executar_regressao`, `coeficientes`, `metricas`, `regressao_escolas`, `listar_handles`, `features_escola`, `classificar_desempenho`, `dividir_dados`, `treinar_floresta`, `importancia_floresta`, `metricas_floresta`, `pca_perfil`
+- **analista-espacial** (9): `catalogo`, `perfil_escola`, `municipios`, `redes_municipio`, `covariaveis_escola`, `regressao_escolas`, `ivet_socioeconomico`, `ivet_contexto`, `regressao_ivet`
 <!-- tools-por-persona:fim -->
+
+## Analista espacial
+
+Fonte: [`personas/analista-espacial.md`](personas/analista-espacial.md).
+
+| ID | Pergunta | Tool(s) | Status |
+|---|---|---|---|
+| A1 | Quais componentes do entorno de uma escola se destacam e quais estão indisponíveis? | `ivet_socioeconomico`, `catalogo` | coberto; ausências preservadas |
+| A2 | Como o entorno se compara à média das escolas da mesma rede no município e na UF? | `ivet_contexto`, `municipios`, `redes_municipio` | coberto; médias simples entre escolas |
+| A3 | Quais componentes territoriais estão associados ao IDEB das escolas? | `regressao_ivet`, `covariaveis_escola`, `regressao_escolas`, `perfil_escola` | coberto quando os dados permitem; associação, não causalidade |
+| A4 | Como o raio, o período de referência e a cobertura dos dados limitam a análise? | `ivet_socioeconomico`, `ivet_contexto`, `regressao_ivet`, `catalogo` | coberto; setores de referência 2022 |
 
 ## Gestora escolar
 

@@ -39,8 +39,8 @@ o padrão do ellmer).}
 
 \item{...}{Outros argumentos repassados ao construtor do ellmer.}
 
-\item{persona}{\code{NULL} ou uma de \code{"gestora-escolar"},
-\code{"pesquisadora-educacional"}, \code{"especialista-ml"}: o chat já sai com o
+\item{persona}{\code{NULL} ou uma das personas aceitas, incluindo
+\code{"analista-espacial"}: o chat já sai com o
 prompt de sistema da persona (\code{\link[=prompt_persona]{prompt_persona()}}). Sem \code{persona}, usa
 a persona com que \code{tools} foram criadas; \code{tools} sem persona recebem
 um prompt genérico curto; sem \code{tools} nem \code{persona}, só
